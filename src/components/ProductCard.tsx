@@ -4,6 +4,7 @@ import { useI18n, pickName, pickDesc } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import { Button } from "@/components/ui/button";
+import { resolveImage } from "@/lib/images";
 import { toast } from "sonner";
 
 interface Product {
@@ -30,7 +31,7 @@ export function ProductCard({ product }: { product: Product }) {
     <div className="group flex flex-col overflow-hidden rounded-2xl border bg-card transition-all hover:shadow-lg hover:-translate-y-1">
       <Link to="/products/$id" params={{ id: product.id }} className="block aspect-square overflow-hidden bg-secondary">
         {product.image_url ? (
-          <img src={product.image_url} alt={pickName(product, lang)} loading="lazy"
+          <img src={resolveImage(product.image_url)!} alt={pickName(product, lang)} loading="lazy"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground text-sm">No image</div>
