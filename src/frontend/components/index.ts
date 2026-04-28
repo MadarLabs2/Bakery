@@ -1,4 +1,3 @@
-// Frontend component re-exports. Real implementations under src/components/
-export { Header } from "@/components/Header";
-export { Footer } from "@/components/Footer";
-export { ProductCard } from "@/components/ProductCard";
+export { Header } from "./Header";
+export { Footer } from "./Footer";
+export { ProductCard } from "./ProductCard";

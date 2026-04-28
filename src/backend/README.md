@@ -1,36 +1,19 @@
 # Backend
 
-All server-side / data layer code for the Gluten-Free Bakery web app.
+Server-side and data-layer code for the Gluten-Free Bakery web app.
 
-This project does **not** ship a separate Node.js/Express server. Instead the
-backend is composed of two layers, both deployed automatically:
+This project does **not** ship a separate Express server. The backend is:
 
-1. **Lovable Cloud (Postgres + Auth + Storage + Row Level Security)**
-   The actual database & auth provider. Schema, RLS policies, triggers and
-   storage buckets are defined as SQL migrations in `supabase/migrations/`.
+1. **Supabase** (Postgres + Auth + Storage + RLS) — migrations live in `supabase/migrations/`.
+2. **TanStack Start server functions** — add under `server/` using `createServerFn` when you need custom server logic.
 
-2. **TanStack Start server functions** (when custom server logic is needed)
-   Live under `./server/` as `*.functions.ts` files using `createServerFn`.
-   These run only on the server and can safely use service-role keys.
+## Layout
 
-## What lives here (or is re-exported here)
+- **`supabase/typescript/`** — browser `client.ts`, server `client.server.ts`, `types.ts`, `auth-middleware.ts`. Import via `@supabase/...` or re-exports in `./db/`.
+- **`./db/`** — thin re-exports so routes can import `@/backend/db/client` without coupling to folder names.
 
-- **Database client** → `./db/`
-  - `client.ts` → browser-safe Supabase client (uses publishable key, RLS on)
-  - `client.server.ts` → admin client, service role key, **server only**
-  - `auth-middleware.ts` → middleware that authenticates server functions as the current user
-  - `types.ts` → auto-generated database types
-  Original sources live in `src/integrations/supabase/` (auto-managed by Lovable).
+## Security
 
-- **Database schema** → `supabase/migrations/*.sql`
-  All tables (products, categories, orders, carts, coupons, profiles,
-  user_roles, ...), RLS policies and triggers.
-
-- **Server functions** → `./server/`
-  Add custom server-side logic here as `*.functions.ts` files.
-
-## Security rules
-
-- Never import `./db/client.server` from frontend code.
+- Never import `./db/client.server` (service role) from route components that run as untrusted client code.
 - Never put `SUPABASE_SERVICE_ROLE_KEY` in any `VITE_*` variable.
-- All data access from the browser must respect RLS — that's the security model.
+- Browser access must respect RLS.
