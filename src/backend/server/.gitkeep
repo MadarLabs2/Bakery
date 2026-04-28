@@ -1,0 +1,15 @@
+Add custom TanStack server functions here as `*.functions.ts` files.
+
+Example:
+
+  // src/backend/server/products.functions.ts
+  import { createServerFn } from "@tanstack/react-start";
+  import { requireSupabaseAuth } from "@/backend/db/auth-middleware";
+
+  export const getMyOrders = createServerFn({ method: "GET" })
+    .middleware([requireSupabaseAuth])
+    .handler(async ({ context }) => {
+      const { supabase, userId } = context;
+      const { data } = await supabase.from("orders").select("*").eq("user_id", userId);
+      return data ?? [];
+    });
