@@ -7,10 +7,10 @@ import { ProductCard } from "@/components/ProductCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-interface Search { category?: string }
+interface SearchParams { category?: string }
 
 export const Route = createFileRoute("/products")({
-  validateSearch: (s: Record<string, unknown>): Search => ({ category: typeof s.category === "string" ? s.category : undefined }),
+  validateSearch: (s: Record<string, unknown>): SearchParams => ({ category: typeof s.category === "string" ? s.category : undefined }),
   component: ProductsPage,
   head: () => ({ meta: [{ title: "Products — Al-Nour Bakery" }, { name: "description", content: "Browse our gluten-free breads, pastries, cakes and cookies." }] }),
 });
