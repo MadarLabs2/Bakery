@@ -12,25 +12,28 @@ export function Footer() {
           </div>
           <p className="mt-3 text-sm text-muted-foreground max-w-xs">{t("tagline")}</p>
         </div>
-        <div className="text-sm space-y-2">
-          <h4 className="font-semibold mb-3">{t("contact")}</h4>
-          <p className="flex items-center gap-2">
-            <Phone className="h-4 w-4" /> 050-8588985
-          </p>
-          <p className="flex items-center gap-2">
-            <Mail className="h-4 w-4" /> hello@alnour-bakery.com
-          </p>
-          <p className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" /> Israel
-          </p>
+        <div className="space-y-2 text-sm">
+          <div className="mb-3 font-semibold text-foreground">{t("contact")}</div>
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 shrink-0" aria-hidden />
+            <span>050-8588985</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4 shrink-0" aria-hidden />
+            <span>hello@alnour-bakery.com</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 shrink-0" aria-hidden />
+            <span>Israel</span>
+          </div>
         </div>
         <div className="text-sm">
-          <h4 className="font-semibold mb-3">{t("about1")}</h4>
+          <div className="mb-3 font-semibold text-foreground">{t("about1")}</div>
           <p className="text-muted-foreground">{t("aboutBody")}</p>
         </div>
       </div>
       <div className="border-t py-4 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} {t("brand")}
+        © <span suppressHydrationWarning>{new Date().getFullYear()}</span> {t("brand")}
       </div>
     </footer>
   );
