@@ -21,13 +21,24 @@ function AdminLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) nav({ to: "/login" });
+    if (loading) return;
+    if (!user || !isAdmin) {
+      nav({ to: "/login" });
+    }
   }, [user, isAdmin, loading, nav]);
 
-  if (loading || !isAdmin) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-muted-foreground">
         Loading…
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-muted-foreground">
+        Redirecting…
       </div>
     );
   }

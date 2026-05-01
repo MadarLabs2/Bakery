@@ -27,16 +27,14 @@ export const Route = createFileRoute("/admin/products")({ component: AdminProduc
 
 const empty = {
   category_id: "",
-  name_en: "",
-  name_he: "",
-  name_ar: "",
-  description_en: "",
-  description_he: "",
-  description_ar: "",
+  name: "",
+  description: "",
+  ingredients: "",
+  allergens: "",
   price: 0,
   image_url: "",
   is_best_seller: false,
-  is_active: true,
+  is_available: true,
 };
 
 function AdminProducts() {
@@ -49,7 +47,7 @@ function AdminProducts() {
   const load = () => {
     supabase
       .from("products")
-      .select("*, category:categories(name_en)")
+      .select("*, category:categories(name)")
       .order("created_at", { ascending: false })
       .then(({ data }) => setProducts(data ?? []));
   };
@@ -58,13 +56,22 @@ function AdminProducts() {
     supabase
       .from("categories")
       .select("*")
-      .order("display_order")
+      .order("name")
       .then(({ data }) => setCategories(data ?? []));
   }, []);
 
   const save = async () => {
-    const payload = { ...editing, price: Number(editing.price) };
-    if (!payload.category_id) payload.category_id = null;
+    const payload = {
+      name: editing.name,
+      description: editing.description || null,
+      ingredients: editing.ingredients || null,
+      allergens: editing.allergens || null,
+      price: Number(editing.price),
+      image_url: editing.image_url || null,
+      category_id: editing.category_id || null,
+      is_best_seller: !!editing.is_best_seller,
+      is_available: !!editing.is_available,
+    };
     if (editing.id) {
       const { error } = await supabase.from("products").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
@@ -135,57 +142,39 @@ function AdminProducts() {
                   <SelectContent>
                     {categories.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.name_en}
+                        {c.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div>
-                  <Label>Name (EN)</Label>
-                  <Input
-                    value={editing.name_en}
-                    onChange={(e) => setEditing({ ...editing, name_en: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>שם (HE)</Label>
-                  <Input
-                    value={editing.name_he}
-                    onChange={(e) => setEditing({ ...editing, name_he: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>اسم (AR)</Label>
-                  <Input
-                    value={editing.name_ar}
-                    onChange={(e) => setEditing({ ...editing, name_ar: e.target.value })}
-                  />
-                </div>
+              <div>
+                <Label>Name</Label>
+                <Input
+                  value={editing.name}
+                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                />
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div>
-                  <Label>Desc (EN)</Label>
-                  <Textarea
-                    value={editing.description_en ?? ""}
-                    onChange={(e) => setEditing({ ...editing, description_en: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>תיאור (HE)</Label>
-                  <Textarea
-                    value={editing.description_he ?? ""}
-                    onChange={(e) => setEditing({ ...editing, description_he: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>وصف (AR)</Label>
-                  <Textarea
-                    value={editing.description_ar ?? ""}
-                    onChange={(e) => setEditing({ ...editing, description_ar: e.target.value })}
-                  />
-                </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea
+                  value={editing.description ?? ""}
+                  onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Ingredients</Label>
+                <Textarea
+                  value={editing.ingredients ?? ""}
+                  onChange={(e) => setEditing({ ...editing, ingredients: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Allergens</Label>
+                <Textarea
+                  value={editing.allergens ?? ""}
+                  onChange={(e) => setEditing({ ...editing, allergens: e.target.value })}
+                />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
@@ -214,6 +203,20 @@ function AdminProducts() {
                   )}
                 </div>
               </div>
+              <div>
+                <Label>Stock (internal — not shown to customers)</Label>
+                <Input
+                  type="number"
+                  value={editing.stock_quantity ?? ""}
+                  placeholder="optional"
+                  onChange={(e) =>
+                    setEditing({
+                      ...editing,
+                      stock_quantity: e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2">
                   <input
@@ -226,10 +229,10 @@ function AdminProducts() {
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={editing.is_active}
-                    onChange={(e) => setEditing({ ...editing, is_active: e.target.checked })}
+                    checked={editing.is_available}
+                    onChange={(e) => setEditing({ ...editing, is_available: e.target.checked })}
                   />{" "}
-                  Active
+                  Available
                 </label>
               </div>
               <Button onClick={save} className="w-full">
@@ -266,10 +269,10 @@ function AdminProducts() {
                     )}
                   </div>
                 </td>
-                <td>{p.name_en}</td>
-                <td>{p.category?.name_en ?? "—"}</td>
+                <td>{p.name}</td>
+                <td>{p.category?.name ?? "—"}</td>
                 <td>₪{Number(p.price).toFixed(2)}</td>
-                <td>{p.is_active ? "Active" : "Hidden"}</td>
+                <td>{p.is_available ? "Available" : "Hidden"}</td>
                 <td className="text-right pr-3">
                   <Button variant="ghost" size="icon" onClick={() => toggleBest(p)}>
                     {p.is_best_seller ? (

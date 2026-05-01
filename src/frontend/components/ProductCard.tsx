@@ -9,12 +9,8 @@ import { toast } from "sonner";
 
 interface Product {
   id: string;
-  name_en: string;
-  name_he: string;
-  name_ar: string;
-  description_en: string | null;
-  description_he: string | null;
-  description_ar: string | null;
+  name: string;
+  description: string | null;
   price: number;
   image_url: string | null;
   is_best_seller: boolean;
@@ -33,8 +29,8 @@ export function ProductCard({ product }: { product: Product }) {
     try {
       await addToCart(product.id);
       toast.success(pickName(product, lang) + " ✓");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Error");
     }
   };
 

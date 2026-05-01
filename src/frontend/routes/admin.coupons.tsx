@@ -177,7 +177,7 @@ function AdminCoupons() {
                 </td>
                 <td>₪{c.min_order_amount}</td>
                 <td>
-                  {c.uses_count}
+                  {c.used_count}
                   {c.max_uses ? `/${c.max_uses}` : ""}
                 </td>
                 <td>{c.is_active ? "Active" : "Off"}</td>

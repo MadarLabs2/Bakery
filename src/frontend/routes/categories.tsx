@@ -20,7 +20,7 @@ function CategoriesPage() {
     supabase
       .from("categories")
       .select("*")
-      .order("display_order")
+      .order("name")
       .then(({ data }) => setCats(data ?? []))
       .finally(() => setLoading(false));
   }, []);
@@ -42,7 +42,7 @@ function CategoriesPage() {
                   <Link
                     key={c.id}
                     to="/products"
-                    search={{ category: c.slug } as any}
+                    search={{ category: c.id } as any}
                     className="group relative aspect-[4/3] min-h-[120px] overflow-hidden rounded-2xl ring-1 ring-border/60"
                   >
                     {imgSrc ? (

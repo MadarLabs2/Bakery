@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useI18n } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
+import { supabase } from "@/backend/db/client";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
 import { Label } from "@/frontend/components/ui/label";
@@ -21,12 +22,26 @@ function LoginPage() {
     e.preventDefault();
     setBusy(true);
     const { error } = await signIn(email, password);
-    setBusy(false);
-    if (error) toast.error(error);
-    else {
+    if (error) {
+      toast.error(error);
+      setBusy(false);
+      return;
+    }
+    const { data: sessionData } = await supabase.auth.getSession();
+    const uid = sessionData.session?.user?.id;
+    if (uid) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", uid)
+        .maybeSingle();
+      toast.success("Welcome back!");
+      nav({ to: profile?.role === "admin" ? "/admin" : "/" });
+    } else {
       toast.success("Welcome back!");
       nav({ to: "/" });
     }
+    setBusy(false);
   };
 
   return (

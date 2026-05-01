@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
-import { useCart } from "@/frontend/lib/cart";
+import { rotateCartAfterOrder, useCart } from "@/frontend/lib/cart";
 import { supabase } from "@/backend/db/client";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
 function CheckoutPage() {
   const { t } = useI18n();
   const { user } = useAuth();
-  const { items, subtotal, clear } = useCart();
+  const { items, subtotal, refresh } = useCart();
   const nav = useNavigate();
 
   const [name, setName] = useState("");
@@ -24,7 +24,7 @@ function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
-  const [pay, setPay] = useState<"credit_card" | "cash">("cash");
+  const [pay, setPay] = useState<"card" | "cash">("cash");
   const [recv, setRecv] = useState<"pickup" | "delivery">("pickup");
   const [code, setCode] = useState("");
   const [discount, setDiscount] = useState(0);
@@ -44,7 +44,7 @@ function CheckoutPage() {
         if (data) {
           setName(data.full_name || "");
           setPhone(data.phone || "");
-          setEmail(data.email || user.email || "");
+          setEmail(user.email || "");
         } else setEmail(user.email || "");
       });
   }, [user, nav]);
@@ -56,7 +56,7 @@ function CheckoutPage() {
     if (!code) return;
     const { data, error } = await supabase
       .from("coupons")
-      .select("*")
+      .select("id, code, discount_type, discount_value, min_order_amount, max_uses, used_count, expires_at, is_active")
       .eq("code", code.toUpperCase())
       .eq("is_active", true)
       .maybeSingle();
@@ -67,6 +67,10 @@ function CheckoutPage() {
     }
     if (data.expires_at && new Date(data.expires_at) < new Date()) {
       toast.error("Coupon expired");
+      return;
+    }
+    if (data.max_uses != null && data.used_count >= data.max_uses) {
+      toast.error("Coupon no longer available");
       return;
     }
     if (subtotal < Number(data.min_order_amount ?? 0)) {
@@ -84,10 +88,22 @@ function CheckoutPage() {
   const placeOrder = async () => {
     if (!user || items.length === 0) return;
     setSubmitting(true);
+
+    let couponId: string | null = null;
+    if (discount > 0 && code) {
+      const { data: cpn } = await supabase
+        .from("coupons")
+        .select("id")
+        .eq("code", code.toUpperCase())
+        .maybeSingle();
+      couponId = cpn?.id ?? null;
+    }
+
     const { data: order, error } = await supabase
       .from("orders")
       .insert({
         user_id: user.id,
+        coupon_id: couponId,
         customer_name: name,
         customer_phone: phone,
         customer_email: email,
@@ -95,11 +111,12 @@ function CheckoutPage() {
         notes,
         payment_method: pay,
         delivery_method: recv,
+        payment_status: "pending",
+        order_status: "pending",
         subtotal,
-        discount,
+        discount_amount: discount,
         delivery_fee: deliveryFee,
-        total,
-        coupon_code: discount > 0 ? code.toUpperCase() : null,
+        total_amount: total,
       })
       .select()
       .single();
@@ -111,13 +128,20 @@ function CheckoutPage() {
     const orderItems = items.map((i) => ({
       order_id: order.id,
       product_id: i.product_id,
-      product_name: i.product.name_en,
-      unit_price: Number(i.product.price),
+      product_name: i.product.name,
+      product_price: Number(i.product.price),
       quantity: i.quantity,
-      line_total: i.quantity * Number(i.product.price),
+      total_price: i.quantity * Number(i.product.price),
     }));
     await supabase.from("order_items").insert(orderItems);
-    await clear();
+    try {
+      await rotateCartAfterOrder(user.id);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not reset cart");
+      setSubmitting(false);
+      return;
+    }
+    await refresh();
     toast.success(t("orderConfirmed"));
     nav({ to: "/orders" });
   };
@@ -179,14 +203,14 @@ function CheckoutPage() {
           <h2 className="font-display text-lg font-semibold">{t("paymentMethod")}</h2>
           <RadioGroup
             value={pay}
-            onValueChange={(v: any) => setPay(v)}
+            onValueChange={(v: "card" | "cash") => setPay(v)}
             className="grid gap-3 sm:grid-cols-2"
           >
             <label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
               <RadioGroupItem value="cash" /> <span>{t("cash")}</span>
             </label>
             <label className="flex items-center gap-3 rounded-lg border p-4 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-              <RadioGroupItem value="credit_card" /> <span>{t("creditCard")}</span>
+              <RadioGroupItem value="card" /> <span>{t("creditCard")}</span>
             </label>
           </RadioGroup>
         </section>
@@ -203,7 +227,7 @@ function CheckoutPage() {
           {items.map((i) => (
             <div key={i.id} className="flex justify-between">
               <span className="truncate">
-                {i.quantity}× {i.product.name_en}
+                {i.quantity}× {i.product.name}
               </span>
               <span>₪{(i.quantity * Number(i.product.price)).toFixed(2)}</span>
             </div>

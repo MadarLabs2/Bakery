@@ -126,18 +126,9 @@ export function useI18n() {
   return ctx;
 }
 
-export function pickName(p: { name_en: string; name_he: string; name_ar: string }, lang: Lang) {
-  return lang === "he" ? p.name_he : lang === "ar" ? p.name_ar : p.name_en;
+export function pickName(p: { name: string }, _lang: Lang) {
+  return p.name;
 }
-export function pickDesc(
-  p: {
-    description_en?: string | null;
-    description_he?: string | null;
-    description_ar?: string | null;
-  },
-  lang: Lang,
-) {
-  return (
-    (lang === "he" ? p.description_he : lang === "ar" ? p.description_ar : p.description_en) ?? ""
-  );
+export function pickDesc(p: { description?: string | null }, _lang: Lang) {
+  return p.description ?? "";
 }

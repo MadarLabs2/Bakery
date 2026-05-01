@@ -14,21 +14,24 @@ export const Route = createFileRoute("/admin/offers")({ component: AdminOffers }
 
 function AdminOffers() {
   const { user } = useAuth();
-  const [subscribers, setSubscribers] = useState<any[]>([]);
-  const [past, setPast] = useState<any[]>([]);
+  const [subscribers, setSubscribers] = useState<{ id: string; email: string }[]>([]);
+  const [past, setPast] = useState<
+    { id: string; subject: string; message: string; discount_code: string | null; sent_at: string }[]
+  >([]);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [discountCode, setDiscountCode] = useState("");
   const [sending, setSending] = useState(false);
 
   const load = () => {
     supabase
       .from("email_subscribers")
-      .select("*")
+      .select("id, email")
       .eq("is_active", true)
       .then(({ data }) => setSubscribers(data ?? []));
     supabase
-      .from("offers")
-      .select("*")
+      .from("email_campaigns")
+      .select("id, subject, message, discount_code, sent_at")
       .order("created_at", { ascending: false })
       .then(({ data }) => setPast(data ?? []));
   };
@@ -38,21 +41,22 @@ function AdminOffers() {
 
   const send = async () => {
     if (!subject || !body) return toast.error("Subject and body required");
+    if (!user?.id) return toast.error("Not signed in");
     setSending(true);
-    // Log the offer (real email sending requires email infrastructure; this records the campaign)
-    const { error } = await supabase.from("offers").insert({
+    const { error } = await supabase.from("email_campaigns").insert({
+      admin_id: user.id,
       subject,
-      body,
-      sent_count: subscribers.length,
-      created_by: user?.id ?? null,
+      message: body,
+      discount_code: discountCode.trim() || null,
     });
     setSending(false);
     if (error) return toast.error(error.message);
     toast.success(
-      `Offer logged for ${subscribers.length} subscriber(s). Connect email service to actually send.`,
+      `Campaign saved. ${subscribers.length} active subscriber(s) — connect an email provider to send.`,
     );
     setSubject("");
     setBody("");
+    setDiscountCode("");
     load();
   };
 
@@ -72,7 +76,15 @@ function AdminOffers() {
             />
           </div>
           <div>
-            <Label>Body</Label>
+            <Label>Optional discount code (existing coupon code)</Label>
+            <Input
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value)}
+              placeholder="WELCOME10"
+            />
+          </div>
+          <div>
+            <Label>Message</Label>
             <Textarea
               rows={8}
               value={body}
@@ -80,8 +92,8 @@ function AdminOffers() {
               placeholder="Hello! This week..."
             />
           </div>
-          <Button onClick={send} disabled={sending || subscribers.length === 0}>
-            <Send className="h-4 w-4" /> Send to {subscribers.length} subscriber(s)
+          <Button onClick={send} disabled={sending}>
+            <Send className="h-4 w-4" /> Log campaign
           </Button>
         </div>
         <div className="rounded-2xl border bg-card p-6">
@@ -102,20 +114,21 @@ function AdminOffers() {
       </div>
 
       <div className="rounded-2xl border bg-card p-6">
-        <h2 className="font-display text-xl font-bold mb-3">Past offers</h2>
+        <h2 className="font-display text-xl font-bold mb-3">Past campaigns</h2>
         <div className="space-y-2 text-sm">
           {past.map((o) => (
             <div key={o.id} className="border-b py-2 last:border-0">
               <div className="flex justify-between">
                 <b>{o.subject}</b>
                 <span className="text-xs text-muted-foreground">
-                  {format(new Date(o.created_at), "PP")} · {o.sent_count} sent
+                  {format(new Date(o.sent_at), "PP")}
+                  {o.discount_code ? ` · code: ${o.discount_code}` : ""}
                 </span>
               </div>
-              <p className="text-muted-foreground line-clamp-2">{o.body}</p>
+              <p className="text-muted-foreground line-clamp-2">{o.message}</p>
             </div>
           ))}
-          {past.length === 0 && <p className="text-muted-foreground">No campaigns sent.</p>}
+          {past.length === 0 && <p className="text-muted-foreground">No campaigns yet.</p>}
         </div>
       </div>
     </div>

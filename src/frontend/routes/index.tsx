@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight, Wheat, Heart, Award, Truck } from "lucide-react";
 import heroImg from "@/frontend/assets/hero.jpg";
+import heroVideo from "@/images/vecteezy_sun-drenched-slice-of-soft-white-bread-resting-on-a-ceramic_73935100.mp4";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { supabase } from "@/backend/db/client";
 import { Button } from "@/frontend/components/ui/button";
@@ -36,14 +37,14 @@ function HomePage() {
     supabase
       .from("products")
       .select("*")
-      .eq("is_active", true)
+      .eq("is_available", true)
       .eq("is_best_seller", true)
       .limit(4)
       .then(({ data }) => setBestSellers(data ?? []));
     supabase
       .from("categories")
       .select("*")
-      .order("display_order")
+      .order("name")
       .then(({ data }) => setCategories(data ?? []))
       .finally(() => setCategoriesLoading(false));
   }, []);
@@ -64,38 +65,43 @@ function HomePage() {
 
   return (
     <div>
-      {/* HERO — warm gradient, hero photo as inline image (no full-page background) */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-warm-gradient" />
-        <div className="container relative mx-auto grid gap-8 px-4 py-16 md:grid-cols-2 md:py-24 lg:py-32">
-          <div className="flex flex-col justify-center gap-6">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
+      {/* HERO — full-bleed background video (src/images/vecteezy_…mp4) + readable text overlay */}
+      <section className="relative min-h-[min(92vh,880px)] overflow-hidden">
+        <video
+          className="pointer-events-none absolute inset-0 h-full w-full scale-[1.02] object-cover object-center"
+          src={heroVideo}
+          poster={heroImg}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          aria-hidden
+        />
+        <div className="pointer-events-none absolute inset-0 bg-black/35" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-background/95 via-background/75 to-background/25 md:from-background/90 md:via-background/45 md:to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-warm-gradient opacity-40 mix-blend-multiply" />
+        <div className="container relative z-10 mx-auto flex min-h-[min(92vh,880px)] flex-col justify-center px-4 py-16 md:py-24 lg:py-32">
+          <div className="max-w-xl space-y-6">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/30 bg-primary/15 px-4 py-1.5 text-sm font-medium text-primary backdrop-blur-sm">
               <Wheat className="h-4 w-4" /> 100% Gluten-Free
             </span>
-            <h1 className="font-display text-4xl font-bold leading-[1.1] text-balance md:text-6xl lg:text-7xl">
+            <h1 className="font-display text-4xl font-bold leading-[1.1] text-balance text-foreground drop-shadow-sm md:text-6xl lg:text-7xl">
               {t("brand")}
             </h1>
-            <p className="max-w-md text-lg text-muted-foreground">{t("tagline")}</p>
+            <p className="max-w-md text-lg text-foreground/90 drop-shadow-sm md:text-xl">
+              {t("tagline")}
+            </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg">
                 <Link to="/products">
                   {t("shopAll")} <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
+              <Button asChild size="lg" variant="secondary" className="bg-background/80 backdrop-blur-sm">
                 <Link to="/about">{t("about1")}</Link>
               </Button>
             </div>
-          </div>
-          <div className="relative">
-            <div className="absolute -inset-4 rounded-3xl bg-accent/20 blur-2xl" />
-            <img
-              src={heroImg}
-              alt="Fresh gluten-free bread"
-              width={1600}
-              height={1024}
-              className="relative aspect-[4/3] w-full rounded-3xl object-cover shadow-2xl"
-            />
           </div>
         </div>
       </section>
@@ -159,7 +165,7 @@ function HomePage() {
                   <Link
                     key={c.id}
                     to="/products"
-                    search={{ category: c.slug } as any}
+                    search={{ category: c.id } as any}
                     className="group relative aspect-[4/5] min-h-[140px] overflow-hidden rounded-2xl ring-1 ring-border/60"
                   >
                     {imgSrc ? (

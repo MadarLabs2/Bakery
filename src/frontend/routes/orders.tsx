@@ -39,10 +39,10 @@ function OrdersPage() {
                 <div className="text-sm text-muted-foreground">
                   #{o.id.slice(0, 8)} · {format(new Date(o.created_at), "PP")}
                 </div>
-                <div className="font-display text-lg font-semibold capitalize">{o.status}</div>
+                <div className="font-display text-lg font-semibold capitalize">{o.order_status}</div>
               </div>
               <div className="font-display text-xl font-bold text-primary">
-                ₪{Number(o.total).toFixed(2)}
+                ₪{Number(o.total_amount).toFixed(2)}
               </div>
             </div>
             <div className="mt-3 space-y-1 text-sm">
@@ -51,7 +51,7 @@ function OrdersPage() {
                   <span>
                     {it.quantity}× {it.product_name}
                   </span>
-                  <span>₪{Number(it.line_total).toFixed(2)}</span>
+                  <span>₪{Number(it.total_price).toFixed(2)}</span>
                 </div>
               ))}
             </div>

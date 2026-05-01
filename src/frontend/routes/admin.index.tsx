@@ -18,10 +18,10 @@ function AdminDashboard() {
         .from("products")
         .select("*", { count: "exact", head: true })
         .eq("is_best_seller", true),
-      supabase.from("orders").select("total"),
+      supabase.from("orders").select("total_amount"),
       supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(8),
     ]).then(([o, p, b, totals, r]) => {
-      const revenue = (totals.data ?? []).reduce((s, x) => s + Number(x.total ?? 0), 0);
+      const revenue = (totals.data ?? []).reduce((s, x) => s + Number(x.total_amount ?? 0), 0);
       setStats({
         orders: o.count ?? 0,
         products: p.count ?? 0,
@@ -69,8 +69,8 @@ function AdminDashboard() {
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-semibold">₪{Number(o.total).toFixed(2)}</div>
-                <div className="text-xs capitalize text-muted-foreground">{o.status}</div>
+                <div className="font-semibold">₪{Number(o.total_amount).toFixed(2)}</div>
+                <div className="text-xs capitalize text-muted-foreground">{o.order_status}</div>
               </div>
             </div>
           ))}

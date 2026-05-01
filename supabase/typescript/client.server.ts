@@ -8,6 +8,8 @@ import type { Database } from "./types";
 function createSupabaseAdminClient() {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // For user-scoped server routes with RLS, use publishable key + JWT instead:
+  //   SUPABASE_URL + SUPABASE_PUBLISHABLE_KEY (see auth-middleware.ts)
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(

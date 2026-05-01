@@ -39,7 +39,7 @@ function ProductsPage() {
     supabase
       .from("categories")
       .select("*")
-      .order("display_order")
+      .order("name")
       .then(({ data }) => setCategories(data ?? []));
   }, []);
 
@@ -50,14 +50,14 @@ function ProductsPage() {
   useEffect(() => {
     let query = supabase
       .from("products")
-      .select("*, category:categories(slug, name_en, name_he, name_ar)")
-      .eq("is_active", true);
+      .select("id, name, description, price, image_url, is_best_seller, is_available, category_id, category:categories(id, name)")
+      .eq("is_available", true);
     supabase
       .from("categories")
-      .select("id, slug")
+      .select("id")
       .then(({ data: cats }) => {
         if (active && cats) {
-          const cat = cats.find((c) => c.slug === active);
+          const cat = cats.find((c) => c.id === active);
           if (cat) query = query.eq("category_id", cat.id);
         }
         query.then(({ data }) => setProducts(data ?? []));
@@ -67,7 +67,7 @@ function ProductsPage() {
   const filtered = products.filter((p) => {
     if (!q) return true;
     const s = q.toLowerCase();
-    return [p.name_en, p.name_he, p.name_ar].some((n) => n?.toLowerCase().includes(s));
+    return p.name?.toLowerCase().includes(s);
   });
 
   return (
@@ -95,9 +95,9 @@ function ProductsPage() {
           {categories.map((c) => (
             <Button
               key={c.id}
-              variant={active === c.slug ? "default" : "outline"}
+              variant={active === c.id ? "default" : "outline"}
               size="sm"
-              onClick={() => setActive(c.slug)}
+              onClick={() => setActive(c.id)}
             >
               {pickName(c, lang)}
             </Button>

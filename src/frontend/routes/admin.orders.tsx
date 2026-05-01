@@ -14,7 +14,15 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/orders")({ component: AdminOrders });
 
-const STATUSES = ["pending", "confirmed", "preparing", "ready", "delivered", "cancelled"];
+const STATUSES = [
+  "pending",
+  "confirmed",
+  "preparing",
+  "ready",
+  "out_for_delivery",
+  "completed",
+  "cancelled",
+];
 
 function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -33,7 +41,7 @@ function AdminOrders() {
   const setStatus = async (id: string, status: string) => {
     const { error } = await supabase
       .from("orders")
-      .update({ status: status as any })
+      .update({ order_status: status })
       .eq("id", id);
     if (error) toast.error(error.message);
     else {
@@ -73,9 +81,9 @@ function AdminOrders() {
                 <td className="capitalize">
                   {o.delivery_method} · {o.payment_method}
                 </td>
-                <td className="font-semibold">₪{Number(o.total).toFixed(2)}</td>
+                <td className="font-semibold">₪{Number(o.total_amount).toFixed(2)}</td>
                 <td onClick={(e) => e.stopPropagation()}>
-                  <Select value={o.status} onValueChange={(v) => setStatus(o.id, v)}>
+                  <Select value={o.order_status} onValueChange={(v) => setStatus(o.id, v)}>
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
@@ -119,7 +127,7 @@ function AdminOrders() {
                       <span>
                         {it.quantity}× {it.product_name}
                       </span>
-                      <span>₪{Number(it.line_total).toFixed(2)}</span>
+                      <span>₪{Number(it.total_price).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -128,10 +136,10 @@ function AdminOrders() {
                     <span>Subtotal</span>
                     <span>₪{Number(selected.subtotal).toFixed(2)}</span>
                   </div>
-                  {Number(selected.discount) > 0 && (
+                  {Number(selected.discount_amount) > 0 && (
                     <div className="flex justify-between text-primary">
-                      <span>Discount {selected.coupon_code && `(${selected.coupon_code})`}</span>
-                      <span>-₪{Number(selected.discount).toFixed(2)}</span>
+                      <span>Discount</span>
+                      <span>-₪{Number(selected.discount_amount).toFixed(2)}</span>
                     </div>
                   )}
                   {Number(selected.delivery_fee) > 0 && (
@@ -142,7 +150,7 @@ function AdminOrders() {
                   )}
                   <div className="flex justify-between font-display text-lg font-bold">
                     <span>Total</span>
-                    <span>₪{Number(selected.total).toFixed(2)}</span>
+                    <span>₪{Number(selected.total_amount).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

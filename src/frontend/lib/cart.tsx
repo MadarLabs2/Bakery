@@ -2,17 +2,22 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { supabase } from "@/backend/db/client";
 import { useAuth } from "./auth";
 
+/** Columns safe for customer UI (excludes internal stock_quantity). */
+const PRODUCT_EMBED =
+  "id, name, description, price, image_url, is_best_seller, is_available" as const;
+
 export interface CartItem {
   id: string;
   product_id: string;
   quantity: number;
   product: {
     id: string;
-    name_en: string;
-    name_he: string;
-    name_ar: string;
+    name: string;
+    description: string | null;
     price: number;
     image_url: string | null;
+    is_best_seller: boolean;
+    is_available: boolean;
   };
 }
 
@@ -30,31 +35,41 @@ interface CartCtx {
 
 const Ctx = createContext<CartCtx | undefined>(undefined);
 
-async function getOrCreateCartId(userId: string) {
+async function getOrCreateActiveCartId(userId: string) {
   const { data: existing } = await supabase
     .from("carts")
     .select("id")
     .eq("user_id", userId)
+    .eq("status", "active")
     .maybeSingle();
   if (existing?.id) return existing.id;
 
   const { data: inserted, error: insertError } = await supabase
     .from("carts")
-    .insert({ user_id: userId })
+    .insert({ user_id: userId, status: "active" })
     .select("id")
     .maybeSingle();
 
   if (inserted?.id) return inserted.id;
 
-  // Trigger may have created the cart, or a concurrent insert won the unique(user_id) race.
   const { data: retry } = await supabase
     .from("carts")
     .select("id")
     .eq("user_id", userId)
+    .eq("status", "active")
     .maybeSingle();
   if (retry?.id) return retry.id;
 
   throw new Error(insertError?.message ?? "Could not load or create your cart. Try signing in again.");
+}
+
+/** After a successful order: empty cart, archive it, open a new active cart. */
+export async function rotateCartAfterOrder(userId: string) {
+  const cartId = await getOrCreateActiveCartId(userId);
+  await supabase.from("cart_items").delete().eq("cart_id", cartId);
+  await supabase.from("carts").update({ status: "ordered" }).eq("id", cartId);
+  const { error } = await supabase.from("carts").insert({ user_id: userId, status: "active" });
+  if (error) throw new Error(error.message);
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -68,14 +83,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
-    const cartId = await getOrCreateCartId(user.id);
+    const cartId = await getOrCreateActiveCartId(user.id);
     const { data } = await supabase
       .from("cart_items")
-      .select(
-        "id, product_id, quantity, product:products(id, name_en, name_he, name_ar, price, image_url)",
-      )
+      .select(`id, product_id, quantity, product:products(${PRODUCT_EMBED})`)
       .eq("cart_id", cartId);
-    setItems((data as any) ?? []);
+    setItems((data as CartItem[]) ?? []);
     setLoading(false);
   }, [user]);
 
@@ -85,7 +98,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart: CartCtx["addToCart"] = async (productId, qty = 1) => {
     if (!user) throw new Error("Not authenticated");
-    const cartId = await getOrCreateCartId(user.id);
+    const cartId = await getOrCreateActiveCartId(user.id);
     const existing = items.find((i) => i.product_id === productId);
     if (existing) {
       await supabase
@@ -113,7 +126,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clear: CartCtx["clear"] = async () => {
     if (!user) return;
-    const cartId = await getOrCreateCartId(user.id);
+    const cartId = await getOrCreateActiveCartId(user.id);
     await supabase.from("cart_items").delete().eq("cart_id", cartId);
     await refresh();
   };

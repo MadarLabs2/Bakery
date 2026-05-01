@@ -24,7 +24,9 @@ function ProductDetail() {
   useEffect(() => {
     supabase
       .from("products")
-      .select("*, category:categories(name_en, name_he, name_ar, slug)")
+      .select(
+        "id, name, description, ingredients, allergens, price, image_url, is_best_seller, is_available, category_id, category:categories(id, name, description, image_url)",
+      )
       .eq("id", id)
       .maybeSingle()
       .then(({ data }) => setProduct(data));

@@ -1,8 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5";
   };
@@ -10,390 +8,407 @@ export type Database = {
     Tables: {
       cart_items: {
         Row: {
-          cart_id: string;
-          created_at: string;
           id: string;
+          cart_id: string;
           product_id: string;
           quantity: number;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
-          cart_id: string;
-          created_at?: string;
           id?: string;
+          cart_id: string;
           product_id: string;
-          quantity?: number;
+          quantity: number;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
-          cart_id?: string;
-          created_at?: string;
           id?: string;
+          cart_id?: string;
           product_id?: string;
           quantity?: number;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: "cart_items_cart_id_fkey";
-            columns: ["cart_id"];
-            isOneToOne: false;
-            referencedRelation: "carts";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "cart_items_product_id_fkey";
-            columns: ["product_id"];
-            isOneToOne: false;
-            referencedRelation: "products";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "cart_items_cart_id_fkey"; columns: ["cart_id"]; referencedRelation: "carts"; referencedColumns: ["id"] },
+          { foreignKeyName: "cart_items_product_id_fkey"; columns: ["product_id"]; referencedRelation: "products"; referencedColumns: ["id"] },
         ];
       };
       carts: {
         Row: {
-          created_at: string;
           id: string;
           user_id: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
-          created_at?: string;
           id?: string;
           user_id: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
-          created_at?: string;
           id?: string;
           user_id?: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [{ foreignKeyName: "carts_user_id_fkey"; columns: ["user_id"]; referencedRelation: "profiles"; referencedColumns: ["id"] }];
+      };
+      app_settings: {
+        Row: {
+          id: number;
+          admin_email: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          admin_email: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          admin_email?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
       categories: {
         Row: {
-          created_at: string;
-          display_order: number;
           id: string;
+          name: string;
+          description: string | null;
           image_url: string | null;
-          name_ar: string;
-          name_en: string;
-          name_he: string;
-          slug: string;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
-          created_at?: string;
-          display_order?: number;
           id?: string;
+          name: string;
+          description?: string | null;
           image_url?: string | null;
-          name_ar: string;
-          name_en: string;
-          name_he: string;
-          slug: string;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
-          created_at?: string;
-          display_order?: number;
           id?: string;
+          name?: string;
+          description?: string | null;
           image_url?: string | null;
-          name_ar?: string;
-          name_en?: string;
-          name_he?: string;
-          slug?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      contact_messages: {
+        Row: {
+          id: string;
+          full_name: string;
+          email: string;
+          phone: string | null;
+          message: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          full_name: string;
+          email: string;
+          phone?: string | null;
+          message: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          full_name?: string;
+          email?: string;
+          phone?: string | null;
+          message?: string;
+          status?: string;
+          created_at?: string;
         };
         Relationships: [];
       };
       coupons: {
         Row: {
-          code: string;
-          created_at: string;
-          discount_type: Database["public"]["Enums"]["discount_type"];
-          discount_value: number;
-          expires_at: string | null;
           id: string;
-          is_active: boolean;
+          code: string;
+          discount_type: string;
+          discount_value: number;
+          min_order_amount: number;
           max_uses: number | null;
-          min_order_amount: number | null;
-          uses_count: number;
+          used_count: number;
+          expires_at: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
         };
         Insert: {
-          code: string;
-          created_at?: string;
-          discount_type: Database["public"]["Enums"]["discount_type"];
-          discount_value: number;
-          expires_at?: string | null;
           id?: string;
-          is_active?: boolean;
+          code: string;
+          discount_type: string;
+          discount_value: number;
+          min_order_amount?: number;
           max_uses?: number | null;
-          min_order_amount?: number | null;
-          uses_count?: number;
+          used_count?: number;
+          expires_at?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
         };
         Update: {
-          code?: string;
-          created_at?: string;
-          discount_type?: Database["public"]["Enums"]["discount_type"];
-          discount_value?: number;
-          expires_at?: string | null;
           id?: string;
-          is_active?: boolean;
+          code?: string;
+          discount_type?: string;
+          discount_value?: number;
+          min_order_amount?: number;
           max_uses?: number | null;
-          min_order_amount?: number | null;
-          uses_count?: number;
+          used_count?: number;
+          expires_at?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
+      };
+      email_campaigns: {
+        Row: {
+          id: string;
+          admin_id: string;
+          subject: string;
+          message: string;
+          discount_code: string | null;
+          sent_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id: string;
+          subject: string;
+          message: string;
+          discount_code?: string | null;
+          sent_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          admin_id?: string;
+          subject?: string;
+          message?: string;
+          discount_code?: string | null;
+          sent_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "email_campaigns_admin_id_fkey"; columns: ["admin_id"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ];
       };
       email_subscribers: {
         Row: {
-          email: string;
           id: string;
+          email: string;
+          full_name: string | null;
           is_active: boolean;
-          subscribed_at: string;
-        };
-        Insert: {
-          email: string;
-          id?: string;
-          is_active?: boolean;
-          subscribed_at?: string;
-        };
-        Update: {
-          email?: string;
-          id?: string;
-          is_active?: boolean;
-          subscribed_at?: string;
-        };
-        Relationships: [];
-      };
-      offers: {
-        Row: {
-          body: string;
           created_at: string;
-          created_by: string | null;
-          id: string;
-          sent_count: number;
-          subject: string;
         };
         Insert: {
-          body: string;
-          created_at?: string;
-          created_by?: string | null;
           id?: string;
-          sent_count?: number;
-          subject: string;
+          email: string;
+          full_name?: string | null;
+          is_active?: boolean;
+          created_at?: string;
         };
         Update: {
-          body?: string;
-          created_at?: string;
-          created_by?: string | null;
           id?: string;
-          sent_count?: number;
-          subject?: string;
+          email?: string;
+          full_name?: string | null;
+          is_active?: boolean;
+          created_at?: string;
         };
         Relationships: [];
       };
       order_items: {
         Row: {
           id: string;
-          line_total: number;
           order_id: string;
           product_id: string | null;
           product_name: string;
+          product_price: number;
           quantity: number;
-          unit_price: number;
+          total_price: number;
+          created_at: string;
         };
         Insert: {
           id?: string;
-          line_total: number;
           order_id: string;
           product_id?: string | null;
           product_name: string;
+          product_price: number;
           quantity: number;
-          unit_price: number;
+          total_price: number;
+          created_at?: string;
         };
         Update: {
           id?: string;
-          line_total?: number;
           order_id?: string;
           product_id?: string | null;
           product_name?: string;
+          product_price?: number;
           quantity?: number;
-          unit_price?: number;
+          total_price?: number;
+          created_at?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: "order_items_order_id_fkey";
-            columns: ["order_id"];
-            isOneToOne: false;
-            referencedRelation: "orders";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "order_items_product_id_fkey";
-            columns: ["product_id"];
-            isOneToOne: false;
-            referencedRelation: "products";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "order_items_order_id_fkey"; columns: ["order_id"]; referencedRelation: "orders"; referencedColumns: ["id"] },
+          { foreignKeyName: "order_items_product_id_fkey"; columns: ["product_id"]; referencedRelation: "products"; referencedColumns: ["id"] },
         ];
       };
       orders: {
         Row: {
-          coupon_code: string | null;
-          created_at: string;
-          customer_email: string;
+          id: string;
+          user_id: string;
+          coupon_id: string | null;
           customer_name: string;
+          customer_email: string;
           customer_phone: string;
-          delivery_address: string | null;
+          delivery_method: string;
+          payment_method: string;
+          payment_status: string;
+          order_status: string;
+          subtotal: number;
+          discount_amount: number;
           delivery_fee: number;
-          delivery_method: Database["public"]["Enums"]["delivery_method"];
-          discount: number;
-          id: string;
+          total_amount: number;
+          delivery_address: string | null;
           notes: string | null;
-          payment_method: Database["public"]["Enums"]["payment_method"];
-          status: Database["public"]["Enums"]["order_status"];
-          subtotal: number;
-          total: number;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          coupon_code?: string | null;
-          created_at?: string;
-          customer_email: string;
-          customer_name: string;
-          customer_phone: string;
-          delivery_address?: string | null;
-          delivery_fee?: number;
-          delivery_method: Database["public"]["Enums"]["delivery_method"];
-          discount?: number;
-          id?: string;
-          notes?: string | null;
-          payment_method: Database["public"]["Enums"]["payment_method"];
-          status?: Database["public"]["Enums"]["order_status"];
-          subtotal: number;
-          total: number;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          coupon_code?: string | null;
-          created_at?: string;
-          customer_email?: string;
-          customer_name?: string;
-          customer_phone?: string;
-          delivery_address?: string | null;
-          delivery_fee?: number;
-          delivery_method?: Database["public"]["Enums"]["delivery_method"];
-          discount?: number;
-          id?: string;
-          notes?: string | null;
-          payment_method?: Database["public"]["Enums"]["payment_method"];
-          status?: Database["public"]["Enums"]["order_status"];
-          subtotal?: number;
-          total?: number;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
-      products: {
-        Row: {
-          category_id: string | null;
           created_at: string;
-          description_ar: string | null;
-          description_en: string | null;
-          description_he: string | null;
-          id: string;
-          image_url: string | null;
-          is_active: boolean;
-          is_best_seller: boolean;
-          name_ar: string;
-          name_en: string;
-          name_he: string;
-          price: number;
           updated_at: string;
         };
         Insert: {
-          category_id?: string | null;
-          created_at?: string;
-          description_ar?: string | null;
-          description_en?: string | null;
-          description_he?: string | null;
           id?: string;
-          image_url?: string | null;
-          is_active?: boolean;
-          is_best_seller?: boolean;
-          name_ar: string;
-          name_en: string;
-          name_he: string;
-          price: number;
+          user_id: string;
+          coupon_id?: string | null;
+          customer_name: string;
+          customer_email: string;
+          customer_phone: string;
+          delivery_method: string;
+          payment_method: string;
+          payment_status?: string;
+          order_status?: string;
+          subtotal: number;
+          discount_amount?: number;
+          delivery_fee?: number;
+          total_amount: number;
+          delivery_address?: string | null;
+          notes?: string | null;
+          created_at?: string;
           updated_at?: string;
         };
         Update: {
-          category_id?: string | null;
-          created_at?: string;
-          description_ar?: string | null;
-          description_en?: string | null;
-          description_he?: string | null;
           id?: string;
-          image_url?: string | null;
-          is_active?: boolean;
-          is_best_seller?: boolean;
-          name_ar?: string;
-          name_en?: string;
-          name_he?: string;
-          price?: number;
+          user_id?: string;
+          coupon_id?: string | null;
+          customer_name?: string;
+          customer_email?: string;
+          customer_phone?: string;
+          delivery_method?: string;
+          payment_method?: string;
+          payment_status?: string;
+          order_status?: string;
+          subtotal?: number;
+          discount_amount?: number;
+          delivery_fee?: number;
+          total_amount?: number;
+          delivery_address?: string | null;
+          notes?: string | null;
+          created_at?: string;
           updated_at?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: "products_category_id_fkey";
-            columns: ["category_id"];
-            isOneToOne: false;
-            referencedRelation: "categories";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "orders_user_id_fkey"; columns: ["user_id"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+          { foreignKeyName: "orders_coupon_id_fkey"; columns: ["coupon_id"]; referencedRelation: "coupons"; referencedColumns: ["id"] },
+        ];
+      };
+      products: {
+        Row: {
+          id: string;
+          category_id: string | null;
+          name: string;
+          description: string | null;
+          ingredients: string | null;
+          allergens: string | null;
+          price: number;
+          image_url: string | null;
+          stock_quantity: number | null;
+          is_best_seller: boolean;
+          is_available: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          category_id?: string | null;
+          name: string;
+          description?: string | null;
+          ingredients?: string | null;
+          allergens?: string | null;
+          price: number;
+          image_url?: string | null;
+          stock_quantity?: number | null;
+          is_best_seller?: boolean;
+          is_available?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          category_id?: string | null;
+          name?: string;
+          description?: string | null;
+          ingredients?: string | null;
+          allergens?: string | null;
+          price?: number;
+          image_url?: string | null;
+          stock_quantity?: number | null;
+          is_best_seller?: boolean;
+          is_available?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "products_category_id_fkey"; columns: ["category_id"]; referencedRelation: "categories"; referencedColumns: ["id"] },
         ];
       };
       profiles: {
         Row: {
-          created_at: string;
-          email: string | null;
-          full_name: string | null;
           id: string;
+          full_name: string | null;
           phone: string | null;
+          role: string;
+          created_at: string;
           updated_at: string;
         };
         Insert: {
-          created_at?: string;
-          email?: string | null;
-          full_name?: string | null;
           id: string;
+          full_name?: string | null;
           phone?: string | null;
+          role?: string;
+          created_at?: string;
           updated_at?: string;
         };
         Update: {
-          created_at?: string;
-          email?: string | null;
+          id?: string;
           full_name?: string | null;
-          id?: string;
           phone?: string | null;
+          role?: string;
+          created_at?: string;
           updated_at?: string;
-        };
-        Relationships: [];
-      };
-      user_roles: {
-        Row: {
-          created_at: string;
-          id: string;
-          role: Database["public"]["Enums"]["app_role"];
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          id?: string;
-          role: Database["public"]["Enums"]["app_role"];
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          role?: Database["public"]["Enums"]["app_role"];
-          user_id?: string;
         };
         Relationships: [];
       };
@@ -402,20 +417,13 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"];
-          _user_id: string;
-        };
+      is_admin: {
+        Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
     };
     Enums: {
-      app_role: "admin" | "customer";
-      delivery_method: "pickup" | "delivery";
-      discount_type: "percentage" | "fixed";
-      order_status: "pending" | "confirmed" | "preparing" | "ready" | "delivered" | "cancelled";
-      payment_method: "credit_card" | "cash";
+      [_ in never]: never;
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -540,12 +548,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "customer"],
-      delivery_method: ["pickup", "delivery"],
-      discount_type: ["percentage", "fixed"],
-      order_status: ["pending", "confirmed", "preparing", "ready", "delivered", "cancelled"],
-      payment_method: ["credit_card", "cash"],
-    },
+    Enums: {},
   },
 } as const;
