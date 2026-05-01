@@ -31,14 +31,30 @@ interface CartCtx {
 const Ctx = createContext<CartCtx | undefined>(undefined);
 
 async function getOrCreateCartId(userId: string) {
-  const { data } = await supabase.from("carts").select("id").eq("user_id", userId).maybeSingle();
-  if (data) return data.id;
-  const { data: created } = await supabase
+  const { data: existing } = await supabase
+    .from("carts")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existing?.id) return existing.id;
+
+  const { data: inserted, error: insertError } = await supabase
     .from("carts")
     .insert({ user_id: userId })
     .select("id")
-    .single();
-  return created!.id;
+    .maybeSingle();
+
+  if (inserted?.id) return inserted.id;
+
+  // Trigger may have created the cart, or a concurrent insert won the unique(user_id) race.
+  const { data: retry } = await supabase
+    .from("carts")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (retry?.id) return retry.id;
+
+  throw new Error(insertError?.message ?? "Could not load or create your cart. Try signing in again.");
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
