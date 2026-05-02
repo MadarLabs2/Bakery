@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Phone, Mail, MapPin } from "lucide-react";
+import { SocialLinks } from "@/frontend/components/SocialLinks";
+import { getContactPhoneDisplay, hasAnySocialLink } from "@/config/socialLinks";
 import { useI18n } from "@/frontend/lib/i18n";
 import { supabase } from "@/backend/db/client";
 import { Button } from "@/frontend/components/ui/button";
@@ -13,6 +15,7 @@ export const Route = createFileRoute("/contact")({ component: ContactPage });
 
 function ContactPage() {
   const { t } = useI18n();
+  const phoneDisplay = getContactPhoneDisplay();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -43,15 +46,23 @@ function ContactPage() {
     <div className="container mx-auto max-w-2xl px-4 py-16">
       <h1 className="font-display text-5xl font-bold">{t("contact")}</h1>
       <div className="mt-8 space-y-4 rounded-2xl border bg-card p-8">
-        <p className="flex items-center gap-3">
-          <Phone className="h-5 w-5 text-primary" /> 050-8588985
-        </p>
+        {phoneDisplay ? (
+          <p className="flex items-center gap-3">
+            <Phone className="h-5 w-5 text-primary" /> {phoneDisplay}
+          </p>
+        ) : null}
         <p className="flex items-center gap-3">
           <Mail className="h-5 w-5 text-primary" /> hello@alnour-bakery.com
         </p>
         <p className="flex items-center gap-3">
           <MapPin className="h-5 w-5 text-primary" /> Israel
         </p>
+        {hasAnySocialLink() ? (
+          <div className="border-t pt-5">
+            <p className="mb-3 text-sm font-semibold text-foreground">Social</p>
+            <SocialLinks size="md" />
+          </div>
+        ) : null}
       </div>
 
       <form onSubmit={submit} className="mt-10 space-y-4 rounded-2xl border bg-card p-8">

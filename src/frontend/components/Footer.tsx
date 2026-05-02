@@ -1,8 +1,11 @@
 import { useI18n } from "@/frontend/lib/i18n";
 import { Wheat, Phone, Mail, MapPin } from "lucide-react";
+import { SocialLinks } from "@/frontend/components/SocialLinks";
+import { getContactPhoneDisplay, hasAnySocialLink } from "@/config/socialLinks";
 
 export function Footer() {
   const { t } = useI18n();
+  const phoneDisplay = getContactPhoneDisplay();
   return (
     <footer className="mt-20 border-t bg-secondary/40">
       <div className="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-3">
@@ -14,10 +17,12 @@ export function Footer() {
         </div>
         <div className="space-y-2 text-sm">
           <div className="mb-3 font-semibold text-foreground">{t("contact")}</div>
-          <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4 shrink-0" aria-hidden />
-            <span>050-8588985</span>
-          </div>
+          {phoneDisplay ? (
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 shrink-0" aria-hidden />
+              <span>{phoneDisplay}</span>
+            </div>
+          ) : null}
           <div className="flex items-center gap-2">
             <Mail className="h-4 w-4 shrink-0" aria-hidden />
             <span>hello@alnour-bakery.com</span>
@@ -26,6 +31,14 @@ export function Footer() {
             <MapPin className="h-4 w-4 shrink-0" aria-hidden />
             <span>Israel</span>
           </div>
+          {hasAnySocialLink() ? (
+            <div className="pt-3">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Social
+              </div>
+              <SocialLinks size="sm" />
+            </div>
+          ) : null}
         </div>
         <div className="text-sm">
           <div className="mb-3 font-semibold text-foreground">{t("about1")}</div>

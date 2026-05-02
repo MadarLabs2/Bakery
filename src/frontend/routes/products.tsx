@@ -50,7 +50,9 @@ function ProductsPage() {
   useEffect(() => {
     let query = supabase
       .from("products")
-      .select("id, name, description, price, image_url, is_best_seller, is_available, category_id, category:categories(id, name)")
+      .select(
+        "id, name, description, price, image_url, is_best_seller, is_available, category_id, category:categories(id, name)",
+      )
       .eq("is_available", true);
     supabase
       .from("categories")
@@ -105,9 +107,11 @@ function ProductsPage() {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         {filtered.map((p) => (
-          <ProductCard key={p.id} product={p} />
+          <div key={p.id} className="flex h-full min-w-0">
+            <ProductCard product={p} compact />
+          </div>
         ))}
       </div>
       {filtered.length === 0 && (

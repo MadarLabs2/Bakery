@@ -12,6 +12,7 @@ import { AuthProvider } from "@/frontend/lib/auth";
 import { CartProvider } from "@/frontend/lib/cart";
 import { Header } from "@/frontend/components/Header";
 import { Footer } from "@/frontend/components/Footer";
+import { FloatingSocialLinks } from "@/frontend/components/FloatingSocialLinks";
 import { Toaster } from "@/frontend/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -71,10 +72,11 @@ function RootComponent() {
       <AuthProvider>
         <CartProvider>
           {!isAdmin && <Header />}
-          <main className={isAdmin ? "" : "min-h-[60vh]"}>
+          <main className={isAdmin ? "" : "min-h-[60vh] pb-28 sm:pb-24"}>
             <Outlet />
           </main>
           {!isAdmin && <Footer />}
+          {!isAdmin && <FloatingSocialLinks />}
           <Toaster richColors position="top-center" />
         </CartProvider>
       </AuthProvider>
