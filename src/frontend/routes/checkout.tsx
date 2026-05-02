@@ -61,20 +61,20 @@ function CheckoutPage() {
       .eq("is_active", true)
       .maybeSingle();
     if (error || !data) {
-      toast.error("Invalid coupon");
+      toast.error(t("invalidCoupon"));
       setDiscount(0);
       return;
     }
     if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      toast.error("Coupon expired");
+      toast.error(t("couponExpired"));
       return;
     }
     if (data.max_uses != null && data.used_count >= data.max_uses) {
-      toast.error("Coupon no longer available");
+      toast.error(t("couponExhausted"));
       return;
     }
     if (subtotal < Number(data.min_order_amount ?? 0)) {
-      toast.error(`Min order ₪${data.min_order_amount}`);
+      toast.error(`${t("couponMinOrderLabel")}: ₪${data.min_order_amount}`);
       return;
     }
     const d =
@@ -82,7 +82,7 @@ function CheckoutPage() {
         ? (subtotal * Number(data.discount_value)) / 100
         : Number(data.discount_value);
     setDiscount(d);
-    toast.success(`-₪${d.toFixed(2)}`);
+    toast.success(`${t("discountAppliedShort")} · −₪${d.toFixed(2)}`);
   };
 
   const placeOrder = async () => {
@@ -121,7 +121,7 @@ function CheckoutPage() {
       .select()
       .single();
     if (error || !order) {
-      toast.error(error?.message ?? "Error");
+      toast.error(error?.message ?? t("genericError"));
       setSubmitting(false);
       return;
     }
@@ -137,7 +137,7 @@ function CheckoutPage() {
     try {
       await rotateCartAfterOrder(user.id);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Could not reset cart");
+      toast.error(e instanceof Error ? e.message : t("cartResetFailed"));
       setSubmitting(false);
       return;
     }

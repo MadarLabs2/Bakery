@@ -15,11 +15,14 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/frontend/components/ui/dialog";
+import { AdminBackNav } from "@/frontend/components/admin/AdminBackNav";
 import { toast } from "sonner";
+import { useI18n } from "@/frontend/lib/i18n";
 
 export const Route = createFileRoute("/admin/coupons")({ component: AdminCoupons });
 
@@ -34,6 +37,7 @@ const empty = {
 };
 
 function AdminCoupons() {
+  const { t } = useI18n();
   const [items, setItems] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<any>(empty);
@@ -59,36 +63,38 @@ function AdminCoupons() {
     };
     const { error } = await supabase.from("coupons").insert(payload);
     if (error) return toast.error(error.message);
-    toast.success("Created");
+    toast.success(t("created"));
     setOpen(false);
     setForm(empty);
     load();
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Delete coupon?")) return;
+    if (!confirm(t("adminDeleteConfirmCoupon"))) return;
     const { error } = await supabase.from("coupons").delete().eq("id", id);
     if (error) toast.error(error.message);
     else load();
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-3xl font-bold">Coupons</h1>
+    <div className="space-y-6 p-6 md:p-8">
+      <AdminBackNav />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="font-display text-3xl font-bold">{t("adminDashCouponsTitle")}</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="h-4 w-4" /> New coupon
+              <Plus className="h-4 w-4" /> {t("adminBtnNewCoupon")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>New coupon</DialogTitle>
+              <DialogTitle>{t("adminDialogCouponNewTitle")}</DialogTitle>
+              <DialogDescription className="sr-only">{t("adminDialogCouponFormSr")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
               <div>
-                <Label>Code</Label>
+                <Label>{t("adminLabelCode")}</Label>
                 <Input
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
@@ -96,7 +102,7 @@ function AdminCoupons() {
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <Label>Type</Label>
+                  <Label>{t("adminLabelType")}</Label>
                   <Select
                     value={form.discount_type}
                     onValueChange={(v) => setForm({ ...form, discount_type: v })}
@@ -105,13 +111,13 @@ function AdminCoupons() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="percentage">Percentage</SelectItem>
-                      <SelectItem value="fixed">Fixed (₪)</SelectItem>
+                      <SelectItem value="percentage">{t("adminDiscountTypePercentage")}</SelectItem>
+                      <SelectItem value="fixed">{t("adminDiscountTypeFixed")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Value</Label>
+                  <Label>{t("adminLabelValue")}</Label>
                   <Input
                     type="number"
                     value={form.discount_value}
@@ -121,7 +127,7 @@ function AdminCoupons() {
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <Label>Min order</Label>
+                  <Label>{t("adminLabelMinOrder")}</Label>
                   <Input
                     type="number"
                     value={form.min_order_amount}
@@ -129,7 +135,7 @@ function AdminCoupons() {
                   />
                 </div>
                 <div>
-                  <Label>Max uses</Label>
+                  <Label>{t("adminLabelMaxUses")}</Label>
                   <Input
                     type="number"
                     value={form.max_uses ?? ""}
@@ -138,7 +144,7 @@ function AdminCoupons() {
                 </div>
               </div>
               <div>
-                <Label>Expires at</Label>
+                <Label>{t("adminLabelExpiresAt")}</Label>
                 <Input
                   type="datetime-local"
                   value={form.expires_at}
@@ -146,7 +152,7 @@ function AdminCoupons() {
                 />
               </div>
               <Button onClick={save} className="w-full">
-                Create
+                {t("adminCreate")}
               </Button>
             </div>
           </DialogContent>
@@ -156,12 +162,12 @@ function AdminCoupons() {
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left">
             <tr>
-              <th className="p-3">Code</th>
-              <th>Type</th>
-              <th>Value</th>
-              <th>Min</th>
-              <th>Uses</th>
-              <th>Status</th>
+              <th className="p-3">{t("adminThCode")}</th>
+              <th>{t("adminThType")}</th>
+              <th>{t("adminThValue")}</th>
+              <th>{t("adminThMin")}</th>
+              <th>{t("adminThUses")}</th>
+              <th>{t("adminThStatus")}</th>
               <th></th>
             </tr>
           </thead>
@@ -180,7 +186,7 @@ function AdminCoupons() {
                   {c.used_count}
                   {c.max_uses ? `/${c.max_uses}` : ""}
                 </td>
-                <td>{c.is_active ? "Active" : "Off"}</td>
+                <td>{c.is_active ? t("adminActive") : t("adminInactive")}</td>
                 <td className="text-right pr-3">
                   <Button variant="ghost" size="icon" onClick={() => remove(c.id)}>
                     <Trash2 className="h-4 w-4" />

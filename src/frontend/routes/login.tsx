@@ -35,10 +35,10 @@ function LoginPage() {
         .select("role")
         .eq("id", uid)
         .maybeSingle();
-      toast.success("Welcome back!");
+      toast.success(t("welcomeBack"));
       nav({ to: profile?.role === "admin" ? "/admin" : "/" });
     } else {
-      toast.success("Welcome back!");
+      toast.success(t("welcomeBack"));
       nav({ to: "/" });
     }
     setBusy(false);

@@ -123,6 +123,9 @@ CREATE TRIGGER trg_profiles_updated_at
 CREATE TABLE public.categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
+  name_en TEXT,
+  name_he TEXT,
+  name_ar TEXT,
   description TEXT,
   image_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

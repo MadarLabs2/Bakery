@@ -1,81 +1,98 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Package, ShoppingCart, Star, TrendingUp } from "lucide-react";
-import { supabase } from "@/backend/db/client";
-import { format } from "date-fns";
+import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
+import { BarChart3, FolderTree, Mail, Package, ShoppingCart, Tag } from "lucide-react";
+import { cn } from "@/frontend/lib/utils";
+import { useI18n } from "@/frontend/lib/i18n";
 
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
+type TileKeyPair = {
+  titleKey:
+    | "adminDashReportsTitle"
+    | "products"
+    | "categories"
+    | "adminDashOrdersTitle"
+    | "adminDashCouponsTitle"
+    | "adminDashEmailOffersTitle";
+  descKey:
+    | "adminDashReportsDesc"
+    | "adminDashProductsDesc"
+    | "adminDashCategoriesDesc"
+    | "adminDashOrdersDesc"
+    | "adminDashCouponsDesc"
+    | "adminDashEmailOffersDesc";
+};
+
+type LaunchTile = {
+  to: string;
+  icon: LucideIcon;
+} & TileKeyPair;
+
 function AdminDashboard() {
-  const [stats, setStats] = useState({ orders: 0, products: 0, bestSellers: 0, revenue: 0 });
-  const [recent, setRecent] = useState<any[]>([]);
+  const { t } = useI18n();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  useEffect(() => {
-    Promise.all([
-      supabase.from("orders").select("*", { count: "exact", head: true }),
-      supabase.from("products").select("*", { count: "exact", head: true }),
-      supabase
-        .from("products")
-        .select("*", { count: "exact", head: true })
-        .eq("is_best_seller", true),
-      supabase.from("orders").select("total_amount"),
-      supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(8),
-    ]).then(([o, p, b, totals, r]) => {
-      const revenue = (totals.data ?? []).reduce((s, x) => s + Number(x.total_amount ?? 0), 0);
-      setStats({
-        orders: o.count ?? 0,
-        products: p.count ?? 0,
-        bestSellers: b.count ?? 0,
-        revenue,
-      });
-      setRecent(r.data ?? []);
-    });
-  }, []);
-
-  const cards = [
-    { label: "Total Orders", value: stats.orders, icon: ShoppingCart },
-    { label: "Total Products", value: stats.products, icon: Package },
-    { label: "Best Sellers", value: stats.bestSellers, icon: Star },
-    { label: "Revenue", value: `₪${stats.revenue.toFixed(2)}`, icon: TrendingUp },
+  const launchTiles: LaunchTile[] = [
+    { to: "/admin/products", icon: Package, titleKey: "products", descKey: "adminDashProductsDesc" },
+    { to: "/admin/categories", icon: FolderTree, titleKey: "categories", descKey: "adminDashCategoriesDesc" },
+    {
+      to: "/admin/orders",
+      icon: ShoppingCart,
+      titleKey: "adminDashOrdersTitle",
+      descKey: "adminDashOrdersDesc",
+    },
+    { to: "/admin/coupons", icon: Tag, titleKey: "adminDashCouponsTitle", descKey: "adminDashCouponsDesc" },
+    {
+      to: "/admin/offers",
+      icon: Mail,
+      titleKey: "adminDashEmailOffersTitle",
+      descKey: "adminDashEmailOffersDesc",
+    },
+    { to: "/admin/reports", icon: BarChart3, titleKey: "adminDashReportsTitle", descKey: "adminDashReportsDesc" },
   ];
 
+  const isTileActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
+
   return (
-    <div className="p-6 md:p-8 space-y-8">
-      <h1 className="font-display text-3xl font-bold">Dashboard</h1>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((c) => (
-          <div key={c.label} className="rounded-2xl border bg-card p-6">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{c.label}</span>
-              <c.icon className="h-5 w-5 text-primary" />
-            </div>
-            <div className="mt-3 font-display text-3xl font-bold">{c.value}</div>
-          </div>
-        ))}
-      </div>
-      <div className="rounded-2xl border bg-card p-6">
-        <h2 className="font-display text-xl font-bold mb-4">Recent Orders</h2>
-        <div className="space-y-2">
-          {recent.length === 0 && <p className="text-sm text-muted-foreground">No orders yet.</p>}
-          {recent.map((o) => (
-            <div
-              key={o.id}
-              className="flex items-center justify-between border-b py-2 last:border-0"
+    <div className="space-y-10 p-6 md:p-8">
+      <header>
+        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          {t("adminPanelTitle")}
+        </h1>
+      </header>
+
+      <section aria-label={t("adminPanelTitle")}>
+        <h2 className="sr-only">{t("adminPanelTitle")}</h2>
+        <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,13.5rem),1fr))]">
+          {launchTiles.map((tile) => (
+            <Link
+              key={tile.to}
+              to={tile.to}
+              className={cn(
+                "group flex min-h-[7.75rem] flex-col rounded-xl border border-border bg-muted/35 p-4 text-start shadow-sm transition-all",
+                "hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/55 hover:shadow-md",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+                isTileActive(tile.to) &&
+                  "border-primary/60 bg-primary/[0.08] shadow-md ring-1 ring-primary/15",
+              )}
             >
-              <div>
-                <div className="font-medium">{o.customer_name}</div>
-                <div className="text-xs text-muted-foreground">
-                  #{o.id.slice(0, 8)} · {format(new Date(o.created_at), "PP")}
+              <div className="flex flex-1 flex-col gap-0.5">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="min-w-0 font-display text-[15px] font-semibold leading-snug text-foreground">
+                    {t(tile.titleKey)}
+                  </span>
+                  <tile.icon
+                    className="h-[1.125rem] w-[1.125rem] shrink-0 text-primary opacity-85 transition-opacity group-hover:opacity-100"
+                    strokeWidth={2}
+                    aria-hidden
+                  />
                 </div>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{t(tile.descKey)}</p>
               </div>
-              <div className="text-right">
-                <div className="font-semibold">₪{Number(o.total_amount).toFixed(2)}</div>
-                <div className="text-xs capitalize text-muted-foreground">{o.order_status}</div>
-              </div>
-            </div>
+            </Link>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

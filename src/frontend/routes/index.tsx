@@ -11,6 +11,7 @@ import { ProductCard } from "@/frontend/components/ProductCard";
 import { resolveImage } from "@/frontend/lib/images";
 import { cn } from "@/frontend/lib/utils";
 import { toast } from "sonner";
+import { ScrollReveal3D } from "@/frontend/components/ScrollReveal3D";
 
 function HeroVideoOverlay({ className }: { className?: string }) {
   const { t } = useI18n();
@@ -21,7 +22,7 @@ function HeroVideoOverlay({ className }: { className?: string }) {
         className,
       )}
     >
-      <div className="flex flex-col gap-4 sm:gap-5 md:gap-6">
+      <div className="flex flex-col items-center gap-4 text-center sm:gap-5 md:gap-6">
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200/35 bg-emerald-950/40 px-3 py-1.5 text-xs font-medium text-emerald-50 backdrop-blur-sm sm:text-sm">
           <Leaf className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
           100% Gluten-Free
@@ -29,7 +30,7 @@ function HeroVideoOverlay({ className }: { className?: string }) {
         <h1 className="font-display text-[1.65rem] font-bold leading-[1.12] text-balance text-[#fefdfb] [text-shadow:0_2px_28px_rgba(0,0,0,0.75)] sm:text-4xl sm:leading-[1.1] md:text-5xl lg:text-6xl">
           {t("brand")}
         </h1>
-        <div className="flex items-center gap-3 opacity-95" aria-hidden>
+        <div className="flex w-full max-w-md items-center gap-3 opacity-95" aria-hidden>
           <div className="h-px min-w-0 flex-1 bg-white/35" />
           <Wheat className="h-5 w-5 shrink-0 text-amber-200/95 sm:h-6 sm:w-6" strokeWidth={1.75} />
           <div className="h-px min-w-0 flex-1 bg-white/35" />
@@ -37,8 +38,8 @@ function HeroVideoOverlay({ className }: { className?: string }) {
         <p className="max-w-lg font-sans text-[0.9375rem] leading-relaxed text-white/92 [text-shadow:0_1px_16px_rgba(0,0,0,0.8)] sm:text-base md:text-lg">
           {t("tagline")}
         </p>
-        <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap">
-          <Button asChild size="lg" className="h-12 w-full rounded-xl font-medium shadow-lg sm:w-auto sm:min-w-[10rem]">
+        <div className="flex w-full flex-col items-center gap-3 pt-1 sm:flex-row sm:flex-wrap sm:justify-center">
+          <Button asChild size="lg" className="h-12 w-full max-w-xs rounded-xl font-medium shadow-lg sm:w-auto sm:min-w-[10rem]">
             <Link to="/products" className="gap-2">
               {t("shopAll")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
             </Link>
@@ -47,7 +48,7 @@ function HeroVideoOverlay({ className }: { className?: string }) {
             asChild
             size="lg"
             variant="outline"
-            className="h-12 w-full rounded-xl border-2 border-white/70 bg-white/10 font-medium text-white shadow-lg backdrop-blur-sm hover:bg-white/20 sm:w-auto sm:min-w-[10rem]"
+            className="h-12 w-full max-w-xs rounded-xl border-2 border-white/70 bg-white/10 font-medium text-white shadow-lg backdrop-blur-sm hover:bg-white/20 sm:w-auto sm:min-w-[10rem]"
           >
             <Link to="/about">{t("about1")}</Link>
           </Button>
@@ -108,17 +109,12 @@ function HomePage() {
 
         const msg = catRes.error?.message ?? prodRes.error?.message;
         if (msg) {
-          toast.error(
-            `${msg} — Check Supabase URL/key in your host’s env (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY) and redeploy.`,
-            { duration: 8000 },
-          );
+          toast.error(`${msg} — ${t("catalogConfigHint")}`, { duration: 8000 });
         }
       } catch (e) {
         console.error(e);
         if (!cancelled) {
-          toast.error(
-            "Could not reach the bakery catalog. Check your connection and Supabase settings.",
-          );
+          toast.error(t("catalogConnectionError"));
         }
       } finally {
         if (!cancelled) setCategoriesLoading(false);
@@ -129,7 +125,7 @@ function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   const subscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,11 +177,11 @@ function HomePage() {
           aria-hidden
         />
 
-        <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-7xl flex-col justify-end px-4 pb-[max(1.75rem,env(safe-area-inset-bottom,0px))] pt-24 sm:justify-center sm:px-6 sm:pb-20 sm:pt-20 md:min-h-[min(92vh,920px)] md:px-8 md:py-24">
+        <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-7xl flex-col justify-center px-4 py-[max(1.75rem,env(safe-area-inset-bottom,0px))] pt-[max(5.5rem,env(safe-area-inset-top,0px))] sm:px-6 sm:py-20 md:min-h-[min(92vh,920px)] md:px-8 md:py-24">
           <div className="pointer-events-none absolute start-2 top-24 opacity-[0.12] sm:start-6 sm:top-28 md:top-1/3 md:opacity-[0.08]" aria-hidden>
             <Wheat className="h-36 w-36 text-amber-100 sm:h-48 sm:w-48" strokeWidth={0.75} />
           </div>
-          <div className="relative mx-auto w-full max-w-lg sm:mx-0 sm:max-w-xl md:max-w-xl lg:max-w-2xl">
+          <div className="relative mx-auto w-full max-w-lg translate-y-[8.5rem] sm:translate-y-0 sm:max-w-xl md:max-w-xl lg:max-w-2xl">
             <HeroVideoOverlay className="w-full" />
           </div>
         </div>
@@ -218,22 +214,30 @@ function HomePage() {
             desc: { en: "We bring it to you.", he: "אנחנו מביאים אליכם.", ar: "نوصلها إليك." },
           },
         ].map((f, i) => (
-          <div key={i} className="rounded-2xl border bg-card p-6 text-center">
-            <f.icon className="mx-auto h-8 w-8 text-primary" />
-            <h3 className="mt-3 font-display text-lg font-semibold">{f.title[lang]}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{f.desc[lang]}</p>
-          </div>
+          <ScrollReveal3D
+            key={i}
+            variant={i % 2 === 0 ? "tilt-left" : "tilt-right"}
+            delayMs={i * 90}
+          >
+            <div className="h-full rounded-2xl border bg-card p-6 text-center">
+              <f.icon className="mx-auto h-8 w-8 text-primary" />
+              <h3 className="mt-3 font-display text-lg font-semibold">{f.title[lang]}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{f.desc[lang]}</p>
+            </div>
+          </ScrollReveal3D>
         ))}
       </section>
 
       {/* CATEGORIES — 2 per row on phones; placeholders while loading so section never collapses */}
       <section className="container mx-auto px-4 py-12">
-        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <h2 className="font-display text-3xl font-bold md:text-4xl">{t("categories")}</h2>
-          <Link to="/categories" className="shrink-0 text-sm text-primary hover:underline">
-            {t("shopAll")} →
-          </Link>
-        </div>
+        <ScrollReveal3D variant="tilt-up" className="mb-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <h2 className="font-display text-3xl font-bold md:text-4xl">{t("categories")}</h2>
+            <Link to="/categories" className="shrink-0 text-sm text-primary hover:underline">
+              {t("shopAll")} →
+            </Link>
+          </div>
+        </ScrollReveal3D>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
           {categoriesLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
@@ -244,32 +248,37 @@ function HomePage() {
               {t("noCategories")}
             </p>
           ) : (
-            categories.map((c) => {
+            categories.map((c, i) => {
               const imgSrc = c.image_url ? resolveImage(c.image_url) : null;
               return (
-                <Link
+                <ScrollReveal3D
                   key={c.id}
-                  to="/products"
-                  search={{ category: c.id } as any}
-                  className="group relative aspect-[4/5] min-h-[140px] overflow-hidden rounded-2xl ring-1 ring-border/60"
+                  variant={i % 2 === 0 ? "zoom" : "tilt-up"}
+                  delayMs={(i % 4) * 75}
                 >
-                  {imgSrc ? (
-                    <img
-                      src={imgSrc}
-                      alt={pickName(c, lang)}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/25 via-muted to-primary/10">
-                      <Wheat className="h-12 w-12 text-primary/40 sm:h-14 sm:w-14" />
-                    </div>
-                  )}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
-                  <h3 className="absolute bottom-3 left-3 right-3 font-display text-base font-bold leading-tight text-white drop-shadow-sm sm:bottom-4 sm:left-4 sm:right-4 sm:text-xl">
-                    {pickName(c, lang)}
-                  </h3>
-                </Link>
+                  <Link
+                    to="/products"
+                    search={{ category: c.id } as any}
+                    className="group relative block aspect-[4/5] min-h-[140px] overflow-hidden rounded-2xl ring-1 ring-border/60"
+                  >
+                    {imgSrc ? (
+                      <img
+                        src={imgSrc}
+                        alt={pickName(c, lang)}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/25 via-muted to-primary/10">
+                        <Wheat className="h-12 w-12 text-primary/40 sm:h-14 sm:w-14" />
+                      </div>
+                    )}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+                    <h3 className="absolute bottom-3 left-3 right-3 font-display text-base font-bold leading-tight text-white drop-shadow-sm sm:bottom-4 sm:left-4 sm:right-4 sm:text-xl">
+                      {pickName(c, lang)}
+                    </h3>
+                  </Link>
+                </ScrollReveal3D>
               );
             })
           )}
@@ -278,23 +287,32 @@ function HomePage() {
 
       {/* BEST SELLERS */}
       <section className="container mx-auto px-4 py-12">
-        <div className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <h2 className="font-display text-3xl font-bold md:text-4xl">★ {t("bestSellers")}</h2>
-          <Link to="/products" className="shrink-0 text-sm text-primary hover:underline">
-            {t("shopAll")} →
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+        <ScrollReveal3D variant="tilt-up" className="mb-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <h2 className="font-display text-3xl font-bold md:text-4xl">★ {t("bestSellers")}</h2>
+            <Link to="/products" className="shrink-0 text-sm text-primary hover:underline">
+              {t("shopAll")} →
+            </Link>
+          </div>
+        </ScrollReveal3D>
+        <div className="grid grid-cols-2 items-stretch gap-3 sm:gap-4 md:grid-cols-4">
           {bestSellers.length === 0 ? (
             <p className="col-span-2 text-center text-sm text-muted-foreground md:col-span-4">
               No best sellers yet — add products marked “best seller” and available in Admin, or
               check your Supabase connection.
             </p>
           ) : (
-            bestSellers.map((p) => (
-              <div key={p.id} className="flex h-full min-w-0">
-                <ProductCard product={p} compact />
-              </div>
+            bestSellers.map((p, i) => (
+              <ScrollReveal3D
+                key={p.id}
+                className="h-full min-h-0 w-full"
+                variant="tilt-up"
+                delayMs={(i % 4) * 80}
+              >
+                <div className="flex min-h-0 h-full min-w-0 w-full flex-col">
+                  <ProductCard product={p} compact className="min-h-0 flex-1" />
+                </div>
+              </ScrollReveal3D>
             ))
           )}
         </div>
@@ -302,26 +320,28 @@ function HomePage() {
 
       {/* SUBSCRIBE */}
       <section className="container mx-auto px-4 py-12">
-        <div className="rounded-3xl bg-primary/95 px-6 py-12 text-center text-primary-foreground md:px-12 md:py-16">
-          <h2 className="font-display text-3xl font-bold md:text-4xl">{t("subscribeTitle")}</h2>
-          <p className="mx-auto mt-3 max-w-xl text-primary-foreground/80">{t("subscribeDesc")}</p>
-          <form
-            onSubmit={subscribe}
-            className="mx-auto mt-6 flex max-w-md flex-col gap-2 sm:flex-row"
-          >
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t("email")}
-              className="flex-1 rounded-md bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground"
-            />
-            <Button type="submit" variant="secondary" size="lg" disabled={subbing}>
-              {t("subscribe")}
-            </Button>
-          </form>
-        </div>
+        <ScrollReveal3D variant="zoom">
+          <div className="rounded-3xl bg-primary/95 px-6 py-12 text-center text-primary-foreground md:px-12 md:py-16">
+            <h2 className="font-display text-3xl font-bold md:text-4xl">{t("subscribeTitle")}</h2>
+            <p className="mx-auto mt-3 max-w-xl text-primary-foreground/80">{t("subscribeDesc")}</p>
+            <form
+              onSubmit={subscribe}
+              className="mx-auto mt-6 flex max-w-md flex-col gap-2 sm:flex-row"
+            >
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t("email")}
+                className="flex-1 rounded-md bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground"
+              />
+              <Button type="submit" variant="secondary" size="lg" disabled={subbing}>
+                {t("subscribe")}
+              </Button>
+            </form>
+          </div>
+        </ScrollReveal3D>
       </section>
     </div>
   );

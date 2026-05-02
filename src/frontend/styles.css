@@ -93,3 +93,12 @@
     text-wrap: balance;
   }
 }
+
+/* ScrollReveal3D: disable 3D motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal-3d {
+    transform: none !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
+}

@@ -18,8 +18,12 @@ interface Product {
   is_best_seller: boolean;
 }
 
-/** True if full text is taller than three lines at this width (clone; works when flex would break line-clamp). */
-function isTextTruncatedInClamp(el: HTMLElement, fullText: string): boolean {
+/** Fixed 2-line block for compact cards — tight, fully clipped inside the card. */
+const COMPACT_DESC_LINES =
+  "min-h-[2.3125rem] max-h-[2.3125rem] sm:min-h-[2.5rem] sm:max-h-[2.5rem] md:min-h-[2.625rem] md:max-h-[2.625rem]";
+
+/** True if full text exceeds `maxLines` at this width (clone). */
+function isTextTruncatedInClamp(el: HTMLElement, fullText: string, maxLines: number): boolean {
   if (!fullText.trim()) return false;
   const width = el.getBoundingClientRect().width;
   if (width < 8) return false;
@@ -55,13 +59,21 @@ function isTextTruncatedInClamp(el: HTMLElement, fullText: string): boolean {
   const fontSize = parseFloat(cs.fontSize) || 14;
   const lineHeightPx =
     Number.isFinite(lhRaw) && lhRaw > 0 ? lhRaw : Number.isFinite(fontSize) ? fontSize * 1.375 : 18;
-  const threeLineCap = lineHeightPx * 3 + 1;
+  const lineCap = lineHeightPx * maxLines + 1;
 
-  return naturalHeight > threeLineCap;
+  return naturalHeight > lineCap;
 }
 
 /** “Read more” only when description needs more than ~3 lines at this card width. */
-function CompactProductDescription({ desc, productId }: { desc: string; productId: string }) {
+function CompactProductDescription({
+  desc,
+  productId,
+  onOpenDetail,
+}: {
+  desc: string;
+  productId: string;
+  onOpenDetail?: (id: string) => void;
+}) {
   const { t } = useI18n();
   const router = useRouter();
   const pRef = useRef<HTMLParagraphElement>(null);
@@ -76,7 +88,7 @@ function CompactProductDescription({ desc, productId }: { desc: string; productI
     let cancelled = false;
     const run = () => {
       const node = pRef.current;
-      if (!cancelled && node) setIsTruncated(isTextTruncatedInClamp(node, desc));
+      if (!cancelled && node) setIsTruncated(isTextTruncatedInClamp(node, desc, 2));
     };
     run();
     const rafId = requestAnimationFrame(() => {
@@ -98,32 +110,50 @@ function CompactProductDescription({ desc, productId }: { desc: string; productI
   }, [desc, productId]);
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1 overflow-hidden">
-      <p
-        ref={pRef}
-        className={cn(
-          "min-h-0 w-full max-h-[3lh] overflow-hidden text-ellipsis text-muted-foreground [overflow-wrap:anywhere] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:3]",
-          "break-words text-[11px] leading-snug sm:text-xs md:text-sm",
-        )}
-      >
-        {desc}
-      </p>
-      {isTruncated ? (
-        <button
-          type="button"
-          className="relative z-20 shrink-0 touch-manipulation py-2 text-start text-xs font-medium text-primary hover:underline"
-          onClick={() => {
-            void router.navigate({ to: "/products/$id", params: { id: productId } });
-          }}
+    <div className="min-w-0 overflow-hidden">
+      <div className="flex w-full shrink-0 flex-col gap-0">
+        <p
+          ref={pRef}
+          dir="auto"
+          className={cn(
+            COMPACT_DESC_LINES,
+            "box-border w-full overflow-hidden text-ellipsis text-muted-foreground [overflow-wrap:anywhere] [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]",
+            "hyphens-auto break-words text-[11px] leading-snug sm:text-xs md:text-sm",
+          )}
         >
-          {t("readMore")}
-        </button>
-      ) : null}
+          {desc}
+        </p>
+        <div className="flex min-h-[1.375rem] shrink-0 items-start">
+          {isTruncated ? (
+            <button
+              type="button"
+              className="touch-manipulation py-0 text-start text-[11px] font-medium text-primary underline-offset-2 hover:underline sm:text-xs"
+              onClick={() => {
+                if (onOpenDetail) onOpenDetail(productId);
+                else void router.navigate({ to: "/products/$id", params: { id: productId } });
+              }}
+            >
+              {t("readMore")}
+            </button>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
 
-export function ProductCard({ product, compact }: { product: Product; compact?: boolean }) {
+export function ProductCard({
+  product,
+  compact,
+  onProductNavigate,
+  className,
+}: {
+  product: Product;
+  compact?: boolean;
+  /** When set, image/title open detail via callback (e.g. modal) instead of navigating away */
+  onProductNavigate?: (id: string) => void;
+  className?: string;
+}) {
   const { lang, t } = useI18n();
   const { user } = useAuth();
   const { addToCart } = useCart();
@@ -136,9 +166,9 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
     }
     try {
       await addToCart(product.id);
-      toast.success(pickName(product, lang) + " ✓");
+      toast.success(`${pickName(product, lang)} · ${t("itemAddedToCartSuffix")}`);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Error");
+      toast.error(e instanceof Error ? e.message : t("genericError"));
     }
   };
 
@@ -146,71 +176,133 @@ export function ProductCard({ product, compact }: { product: Product; compact?: 
     <div
       className={cn(
         "group flex flex-col overflow-hidden rounded-2xl border bg-card transition-all hover:-translate-y-1 hover:shadow-lg",
-        compact && "h-full min-h-0 rounded-xl shadow-sm",
+        compact && "h-full min-h-0 w-full rounded-xl shadow-sm",
+        className,
       )}
     >
-      <Link
-        to="/products/$id"
-        params={{ id: product.id }}
-        className="block aspect-square shrink-0 overflow-hidden bg-secondary"
-      >
-        {product.image_url ? (
-          <img
-            src={resolveImage(product.image_url)!}
-            alt={pickName(product, lang)}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            No image
-          </div>
-        )}
-      </Link>
+      {onProductNavigate ? (
+        <button
+          type="button"
+          className="block aspect-square w-full shrink-0 overflow-hidden bg-secondary text-start"
+          onClick={() => onProductNavigate(product.id)}
+        >
+          {product.image_url ? (
+            <img
+              src={resolveImage(product.image_url)!}
+              alt={pickName(product, lang)}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              No image
+            </div>
+          )}
+        </button>
+      ) : (
+        <Link
+          to="/products/$id"
+          params={{ id: product.id }}
+          className="block aspect-square shrink-0 overflow-hidden bg-secondary"
+        >
+          {product.image_url ? (
+            <img
+              src={resolveImage(product.image_url)!}
+              alt={pickName(product, lang)}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              No image
+            </div>
+          )}
+        </Link>
+      )}
       <div
         className={cn(
-          "flex flex-col",
+          "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
           compact
-            ? "min-h-0 flex-1 gap-1.5 p-2 sm:p-3 md:gap-2 md:p-4"
+            ? "gap-1 p-2 sm:p-2.5 md:gap-1 md:p-3"
             : "flex-1 flex-col gap-2 p-4",
         )}
       >
-        {product.is_best_seller && (
-          <span
-            className={cn(
-              "inline-block w-fit shrink-0 rounded-full bg-accent/40 font-medium text-accent-foreground",
-              compact ? "px-1.5 py-0.5 text-[10px] sm:text-xs" : "px-2 py-0.5 text-xs",
-            )}
+        <div
+          className={cn(
+            "flex shrink-0 items-center",
+            /** Fixed height so cards with/without best-seller badge align (min-h alone was shorter than the real pill). */
+            compact ? "h-7 sm:h-8" : "h-9",
+          )}
+        >
+          {product.is_best_seller ? (
+            <span
+              className={cn(
+                "inline-flex max-h-full w-fit items-center rounded-full bg-accent/40 font-medium leading-none text-accent-foreground",
+                compact ? "px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs" : "px-2 py-1.5 text-xs",
+              )}
+            >
+              ★ {t("bestSellers")}
+            </span>
+          ) : null}
+        </div>
+        {onProductNavigate ? (
+          <button
+            type="button"
+            className="min-w-0 shrink-0 text-start"
+            onClick={() => onProductNavigate(product.id)}
           >
-            ★ {t("bestSellers")}
-          </span>
+            <h3
+              className={cn(
+                "font-display font-semibold leading-tight",
+                compact
+                  ? "line-clamp-2 min-h-[2.25rem] text-sm sm:min-h-[2.375rem] sm:text-base md:text-lg"
+                  : "text-lg",
+              )}
+            >
+              {pickName(product, lang)}
+            </h3>
+          </button>
+        ) : (
+          <Link to="/products/$id" params={{ id: product.id }} className="min-w-0 shrink-0">
+            <h3
+              className={cn(
+                "font-display font-semibold leading-tight",
+                compact
+                  ? "line-clamp-2 min-h-[2.25rem] text-sm sm:min-h-[2.375rem] sm:text-base md:text-lg"
+                  : "text-lg",
+              )}
+            >
+              {pickName(product, lang)}
+            </h3>
+          </Link>
         )}
-        <Link to="/products/$id" params={{ id: product.id }} className="shrink-0">
-          <h3
-            className={cn(
-              "font-display font-semibold leading-tight",
-              compact ? "text-sm sm:text-base md:text-lg" : "text-lg",
-            )}
-          >
-            {pickName(product, lang)}
-          </h3>
-        </Link>
 
         {compact ? (
           desc ? (
-            <CompactProductDescription desc={desc} productId={product.id} />
+            <CompactProductDescription
+              desc={desc}
+              productId={product.id}
+              onOpenDetail={onProductNavigate}
+            />
           ) : (
-            <span className="min-h-[1rem] flex-1" aria-hidden />
+            <div className="min-w-0 flex w-full shrink-0 flex-col" aria-hidden>
+              <div className={COMPACT_DESC_LINES} />
+              <div className="min-h-[1.375rem]" />
+            </div>
           )
         ) : (
-          <p className="text-sm text-muted-foreground line-clamp-2">{desc}</p>
+          <p dir="auto" className="line-clamp-2 min-h-[2.75rem] text-sm text-muted-foreground">
+            {desc}
+          </p>
         )}
+
+        <div className="min-h-0 flex-1" aria-hidden />
 
         <div
           className={cn(
-            "mt-auto flex gap-2",
+            "flex shrink-0 gap-2",
             compact
-              ? "shrink-0 flex-col items-stretch pt-1 md:flex-row md:items-center md:justify-between md:pt-2"
+              ? "flex-col items-stretch pt-0.5 md:flex-row md:items-center md:justify-between md:pt-1"
               : "items-center justify-between pt-2",
           )}
         >

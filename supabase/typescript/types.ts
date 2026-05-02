@@ -82,6 +82,9 @@ export type Database = {
         Row: {
           id: string;
           name: string;
+          name_en: string | null;
+          name_he: string | null;
+          name_ar: string | null;
           description: string | null;
           image_url: string | null;
           created_at: string;
@@ -90,6 +93,9 @@ export type Database = {
         Insert: {
           id?: string;
           name: string;
+          name_en?: string | null;
+          name_he?: string | null;
+          name_ar?: string | null;
           description?: string | null;
           image_url?: string | null;
           created_at?: string;
@@ -98,6 +104,9 @@ export type Database = {
         Update: {
           id?: string;
           name?: string;
+          name_en?: string | null;
+          name_he?: string | null;
+          name_ar?: string | null;
           description?: string | null;
           image_url?: string | null;
           created_at?: string;

@@ -23,7 +23,7 @@ function RegisterPage() {
     setBusy(false);
     if (error) toast.error(error);
     else {
-      toast.success("Account created — you can sign in!");
+      toast.success(t("accountCreatedSuccess"));
       nav({ to: "/login" });
     }
   };

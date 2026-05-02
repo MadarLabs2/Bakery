@@ -7,13 +7,14 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
+import faviconPng from "@/frontend/assets/brand-logo.png?url";
 import { I18nProvider } from "@/frontend/lib/i18n";
 import { AuthProvider } from "@/frontend/lib/auth";
 import { CartProvider } from "@/frontend/lib/cart";
 import { Header } from "@/frontend/components/Header";
 import { Footer } from "@/frontend/components/Footer";
 import { FloatingSocialLinks } from "@/frontend/components/FloatingSocialLinks";
-import { Toaster } from "@/frontend/components/ui/sonner";
+import { ResponsiveToaster } from "@/frontend/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -43,7 +44,11 @@ export const Route = createRootRoute({
         content: "Wholesome gluten-free breads, pastries, cakes and cookies — baked with love.",
       },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", type: "image/png", href: faviconPng },
+      { rel: "apple-touch-icon", href: faviconPng },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -71,13 +76,17 @@ function RootComponent() {
     <I18nProvider>
       <AuthProvider>
         <CartProvider>
-          {!isAdmin && <Header />}
-          <main className={isAdmin ? "" : "min-h-[60vh] pb-28 sm:pb-24"}>
+          <Header />
+          <main
+            className={
+              isAdmin ? "min-h-[calc(100dvh-4rem)]" : "min-h-[60vh] pb-28 sm:pb-24"
+            }
+          >
             <Outlet />
           </main>
           {!isAdmin && <Footer />}
           {!isAdmin && <FloatingSocialLinks />}
-          <Toaster richColors position="top-center" />
+          <ResponsiveToaster />
         </CartProvider>
       </AuthProvider>
     </I18nProvider>

@@ -8,9 +8,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/frontend/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/frontend/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/frontend/components/ui/dialog";
+import { AdminBackNav } from "@/frontend/components/admin/AdminBackNav";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useI18n } from "@/frontend/lib/i18n";
+import { adminOrderStatusLabel } from "@/frontend/lib/adminLabels";
 
 export const Route = createFileRoute("/admin/orders")({ component: AdminOrders });
 
@@ -25,6 +34,7 @@ const STATUSES = [
 ];
 
 function AdminOrders() {
+  const { t } = useI18n();
   const [orders, setOrders] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
 
@@ -45,24 +55,25 @@ function AdminOrders() {
       .eq("id", id);
     if (error) toast.error(error.message);
     else {
-      toast.success("Updated");
+      toast.success(t("updated"));
       load();
     }
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
-      <h1 className="font-display text-3xl font-bold">Orders</h1>
-      <div className="rounded-2xl border bg-card overflow-x-auto">
+    <div className="space-y-6 p-6 md:p-8">
+      <AdminBackNav />
+      <h1 className="font-display text-3xl font-bold">{t("adminDashOrdersTitle")}</h1>
+      <div className="overflow-x-auto rounded-2xl border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left">
             <tr>
-              <th className="p-3">#</th>
-              <th>Date</th>
-              <th>Customer</th>
-              <th>Method</th>
-              <th>Total</th>
-              <th>Status</th>
+              <th className="p-3">{t("adminThOrderShort")}</th>
+              <th>{t("adminThDate")}</th>
+              <th>{t("adminThCustomer")}</th>
+              <th>{t("adminThMethod")}</th>
+              <th>{t("adminThTotal")}</th>
+              <th>{t("adminThStatus")}</th>
             </tr>
           </thead>
           <tbody>
@@ -90,7 +101,7 @@ function AdminOrders() {
                     <SelectContent>
                       {STATUSES.map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s}
+                          {adminOrderStatusLabel(s, t)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -107,7 +118,10 @@ function AdminOrders() {
           {selected && (
             <>
               <DialogHeader>
-                <DialogTitle>Order #{selected.id.slice(0, 8)}</DialogTitle>
+                <DialogTitle>
+                  {t("adminOrderTitlePrefix")} #{selected.id.slice(0, 8)}
+                </DialogTitle>
+                <DialogDescription className="sr-only">{t("adminDialogOrderDetailSr")}</DialogDescription>
               </DialogHeader>
               <div className="space-y-3 text-sm">
                 <div>
@@ -121,7 +135,7 @@ function AdminOrders() {
                 {selected.notes && (
                   <div className="rounded bg-muted p-2 text-xs">{selected.notes}</div>
                 )}
-                <div className="border-t pt-3 space-y-1">
+                <div className="space-y-1 border-t pt-3">
                   {selected.items?.map((it: any) => (
                     <div key={it.id} className="flex justify-between">
                       <span>
@@ -131,25 +145,25 @@ function AdminOrders() {
                     </div>
                   ))}
                 </div>
-                <div className="border-t pt-2 space-y-1">
+                <div className="space-y-1 border-t pt-2">
                   <div className="flex justify-between">
-                    <span>Subtotal</span>
+                    <span>{t("adminOrderSubtotal")}</span>
                     <span>₪{Number(selected.subtotal).toFixed(2)}</span>
                   </div>
                   {Number(selected.discount_amount) > 0 && (
                     <div className="flex justify-between text-primary">
-                      <span>Discount</span>
+                      <span>{t("adminOrderDiscountLine")}</span>
                       <span>-₪{Number(selected.discount_amount).toFixed(2)}</span>
                     </div>
                   )}
                   {Number(selected.delivery_fee) > 0 && (
                     <div className="flex justify-between">
-                      <span>Delivery</span>
+                      <span>{t("adminOrderDeliveryLine")}</span>
                       <span>₪{Number(selected.delivery_fee).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-display text-lg font-bold">
-                    <span>Total</span>
+                    <span>{t("adminOrderTotalLine")}</span>
                     <span>₪{Number(selected.total_amount).toFixed(2)}</span>
                   </div>
                 </div>
