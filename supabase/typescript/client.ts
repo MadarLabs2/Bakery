@@ -28,6 +28,12 @@ function createSupabaseClient() {
       storage: typeof window !== "undefined" ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
+      ...(typeof window !== "undefined"
+        ? {
+            lock: async <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> =>
+              fn(),
+          }
+        : {}),
     },
   });
 }

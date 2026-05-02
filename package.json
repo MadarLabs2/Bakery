@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "verify:env": "node scripts/check-vite-env.mjs",
+    "prebuild": "npm run verify:env",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",

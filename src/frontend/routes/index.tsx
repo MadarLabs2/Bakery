@@ -34,19 +34,53 @@ function HomePage() {
   const [subbing, setSubbing] = useState(false);
 
   useEffect(() => {
-    supabase
-      .from("products")
-      .select("*")
-      .eq("is_available", true)
-      .eq("is_best_seller", true)
-      .limit(4)
-      .then(({ data }) => setBestSellers(data ?? []));
-    supabase
-      .from("categories")
-      .select("*")
-      .order("name")
-      .then(({ data }) => setCategories(data ?? []))
-      .finally(() => setCategoriesLoading(false));
+    let cancelled = false;
+
+    const loadCatalog = async () => {
+      try {
+        const [prodRes, catRes] = await Promise.all([
+          supabase
+            .from("products")
+            .select("*")
+            .eq("is_available", true)
+            .eq("is_best_seller", true)
+            .limit(4),
+          supabase.from("categories").select("*").order("name"),
+        ]);
+
+        if (cancelled) return;
+
+        if (prodRes.error) {
+          console.error("Best sellers:", prodRes.error);
+        }
+        if (catRes.error) {
+          console.error("Categories:", catRes.error);
+        }
+
+        setBestSellers(prodRes.data ?? []);
+        setCategories(catRes.data ?? []);
+
+        const msg = catRes.error?.message ?? prodRes.error?.message;
+        if (msg) {
+          toast.error(
+            `${msg} — Check Supabase URL/key in your host’s env (VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY) and redeploy.`,
+            { duration: 8000 },
+          );
+        }
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) {
+          toast.error("Could not reach the bakery catalog. Check your connection and Supabase settings.");
+        }
+      } finally {
+        if (!cancelled) setCategoriesLoading(false);
+      }
+    };
+
+    void loadCatalog();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const subscribe = async (e: React.FormEvent) => {
@@ -200,9 +234,14 @@ function HomePage() {
           </Link>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4">
-          {bestSellers.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
+          {bestSellers.length === 0 ? (
+            <p className="col-span-full text-center text-sm text-muted-foreground">
+              No best sellers yet — add products marked “best seller” and available in Admin, or check your Supabase
+              connection.
+            </p>
+          ) : (
+            bestSellers.map((p) => <ProductCard key={p.id} product={p} />)
+          )}
         </div>
       </section>
 

@@ -26,38 +26,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
+    let cancelled = false;
+
+    async function applyProfileRole(userId: string | undefined) {
+      if (!userId) {
+        if (!cancelled) setIsAdmin(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) {
+        console.error("profiles role:", error);
+        setIsAdmin(false);
+        return;
+      }
+      setIsAdmin(data?.role === "admin");
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
-      if (sess?.user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", sess.user.id)
-          .maybeSingle();
-        setIsAdmin(data?.role === "admin");
-      } else {
+      if (!sess?.user) {
         setIsAdmin(false);
+        return;
       }
+      // Never await other Supabase calls inside this callback — it can deadlock
+      // auth storage so getSession() never resolves and `loading` stays true forever.
+      queueMicrotask(() => {
+        void applyProfileRole(sess.user.id);
+      });
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .maybeSingle();
-        setIsAdmin(data?.role === "admin");
-      } else {
-        setIsAdmin(false);
+    void (async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (error) {
+          console.error("getSession:", error);
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
+          return;
+        }
+        const sess = data.session;
+        setSession(sess);
+        setUser(sess?.user ?? null);
+        await applyProfileRole(sess?.user?.id);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) {
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
-    });
+    })();
 
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const signIn: AuthCtx["signIn"] = async (email, password) => {
