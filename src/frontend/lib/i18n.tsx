@@ -15,6 +15,11 @@ export const dict: Dict = {
     he: "מאפים ללא גלוטן, אפויים באהבה.",
     ar: "مخبوزات خالية من الجلوتين، تُصنع بحب.",
   },
+  heroGlutenFreeBadge: {
+    en: "100% Gluten-Free",
+    he: "100% ללא גלוטן",
+    ar: "100٪ خالٍ من الجلوتين",
+  },
   language: { en: "Language", he: "שפה", ar: "اللغة" },
   menu: { en: "Menu", he: "תפריט", ar: "القائمة" },
   home: { en: "Home", he: "בית", ar: "الرئيسية" },

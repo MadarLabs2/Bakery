@@ -25,7 +25,7 @@ function HeroVideoOverlay({ className }: { className?: string }) {
       <div className="flex flex-col items-center gap-4 text-center sm:gap-5 md:gap-6">
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200/35 bg-emerald-950/40 px-3 py-1.5 text-xs font-medium text-emerald-50 backdrop-blur-sm sm:text-sm">
           <Leaf className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
-          100% Gluten-Free
+          {t("heroGlutenFreeBadge")}
         </span>
         <h1 className="font-display text-[1.65rem] font-bold leading-[1.12] text-balance text-[#fefdfb] [text-shadow:0_2px_28px_rgba(0,0,0,0.75)] sm:text-4xl sm:leading-[1.1] md:text-5xl lg:text-6xl">
           {t("brand")}
