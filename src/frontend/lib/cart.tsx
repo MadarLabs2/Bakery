@@ -4,7 +4,7 @@ import { useAuth } from "./auth";
 
 /** Columns safe for customer UI (excludes internal stock_quantity). */
 const PRODUCT_EMBED =
-  "id, name, description, price, image_url, is_best_seller, is_available" as const;
+  "id, name, description, description_en, description_he, description_ar, price, image_url, is_best_seller, is_available" as const;
 
 export interface CartItem {
   id: string;
@@ -14,6 +14,9 @@ export interface CartItem {
     id: string;
     name: string;
     description: string | null;
+    description_en?: string | null;
+    description_he?: string | null;
+    description_ar?: string | null;
     price: number;
     image_url: string | null;
     is_best_seller: boolean;

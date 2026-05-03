@@ -13,6 +13,9 @@ interface Product {
   id: string;
   name: string;
   description: string | null;
+  description_en?: string | null;
+  description_he?: string | null;
+  description_ar?: string | null;
   price: number;
   image_url: string | null;
   is_best_seller: boolean;
@@ -172,6 +175,18 @@ export function ProductCard({
     }
   };
 
+  const bestSellerBadge =
+    product.is_best_seller ? (
+      <span
+        className={cn(
+          "pointer-events-none absolute top-2 right-2 z-10 inline-flex max-w-[calc(100%-1rem)] items-center rounded-full bg-accent/90 font-medium leading-none text-accent-foreground shadow-md ring-1 ring-black/5 backdrop-blur-[2px]",
+          compact ? "px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs" : "px-2 py-1.5 text-xs",
+        )}
+      >
+        ★ {t("bestSellers")}
+      </span>
+    ) : null;
+
   return (
     <div
       className={cn(
@@ -183,9 +198,10 @@ export function ProductCard({
       {onProductNavigate ? (
         <button
           type="button"
-          className="block aspect-square w-full shrink-0 overflow-hidden bg-secondary text-start"
+          className="relative block aspect-square w-full shrink-0 overflow-hidden bg-secondary text-start"
           onClick={() => onProductNavigate(product.id)}
         >
+          {bestSellerBadge}
           {product.image_url ? (
             <img
               src={resolveImage(product.image_url)!}
@@ -203,8 +219,9 @@ export function ProductCard({
         <Link
           to="/products/$id"
           params={{ id: product.id }}
-          className="block aspect-square shrink-0 overflow-hidden bg-secondary"
+          className="relative block aspect-square shrink-0 overflow-hidden bg-secondary"
         >
+          {bestSellerBadge}
           {product.image_url ? (
             <img
               src={resolveImage(product.image_url)!}
@@ -227,24 +244,6 @@ export function ProductCard({
             : "flex-1 flex-col gap-2 p-4",
         )}
       >
-        <div
-          className={cn(
-            "flex shrink-0 items-center",
-            /** Fixed height so cards with/without best-seller badge align (min-h alone was shorter than the real pill). */
-            compact ? "h-7 sm:h-8" : "h-9",
-          )}
-        >
-          {product.is_best_seller ? (
-            <span
-              className={cn(
-                "inline-flex max-h-full w-fit items-center rounded-full bg-accent/40 font-medium leading-none text-accent-foreground",
-                compact ? "px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs" : "px-2 py-1.5 text-xs",
-              )}
-            >
-              ★ {t("bestSellers")}
-            </span>
-          ) : null}
-        </div>
         {onProductNavigate ? (
           <button
             type="button"

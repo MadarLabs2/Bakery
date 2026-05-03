@@ -1,62 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowRight, Wheat, Leaf, Heart, Award, Truck } from "lucide-react";
-import heroImg from "@/frontend/assets/hero.jpg";
-import heroVideo from "@/images/alnoor_bakery_profesional/alnoor_bakery_professional_12s.mp4";
+import { Wheat, Heart, Award, Truck } from "lucide-react";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { supabase } from "@/backend/db/client";
 import { Button } from "@/frontend/components/ui/button";
 import { Skeleton } from "@/frontend/components/ui/skeleton";
 import { ProductCard } from "@/frontend/components/ProductCard";
 import { resolveImage } from "@/frontend/lib/images";
-import { cn } from "@/frontend/lib/utils";
 import { toast } from "sonner";
 import { ScrollReveal3D } from "@/frontend/components/ScrollReveal3D";
-
-function HeroVideoOverlay({ className }: { className?: string }) {
-  const { t } = useI18n();
-  return (
-    <div
-      className={cn(
-        "w-full max-w-xl rounded-2xl border border-white/15 bg-black/35 px-5 py-8 shadow-none backdrop-blur-md sm:max-w-lg sm:rounded-3xl sm:px-7 sm:py-9 md:max-w-xl md:px-8 md:py-10 lg:max-w-2xl",
-        className,
-      )}
-    >
-      <div className="flex flex-col items-center gap-4 text-center sm:gap-5 md:gap-6">
-        <span className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200/35 bg-emerald-950/40 px-3 py-1.5 text-xs font-medium text-emerald-50 backdrop-blur-sm sm:text-sm">
-          <Leaf className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
-          {t("heroGlutenFreeBadge")}
-        </span>
-        <h1 className="font-display text-[1.65rem] font-bold leading-[1.12] text-balance text-[#fefdfb] [text-shadow:0_2px_28px_rgba(0,0,0,0.75)] sm:text-4xl sm:leading-[1.1] md:text-5xl lg:text-6xl">
-          {t("brand")}
-        </h1>
-        <div className="flex w-full max-w-md items-center gap-3 opacity-95" aria-hidden>
-          <div className="h-px min-w-0 flex-1 bg-white/35" />
-          <Wheat className="h-5 w-5 shrink-0 text-amber-200/95 sm:h-6 sm:w-6" strokeWidth={1.75} />
-          <div className="h-px min-w-0 flex-1 bg-white/35" />
-        </div>
-        <p className="max-w-lg font-sans text-[0.9375rem] leading-relaxed text-white/92 [text-shadow:0_1px_16px_rgba(0,0,0,0.8)] sm:text-base md:text-lg">
-          {t("tagline")}
-        </p>
-        <div className="flex w-full flex-col items-center gap-3 pt-1 sm:flex-row sm:flex-wrap sm:justify-center">
-          <Button asChild size="lg" className="h-12 w-full max-w-xs rounded-xl font-medium shadow-lg sm:w-auto sm:min-w-[10rem]">
-            <Link to="/products" className="gap-2">
-              {t("shopAll")} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-            </Link>
-          </Button>
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="h-12 w-full max-w-xs rounded-xl border-2 border-white/70 bg-white/10 font-medium text-white shadow-lg backdrop-blur-sm hover:bg-white/20 sm:w-auto sm:min-w-[10rem]"
-          >
-            <Link to="/about">{t("about1")}</Link>
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { HeroImageShowcase } from "@/frontend/components/HeroImageShowcase";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -79,6 +32,7 @@ function HomePage() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [subbing, setSubbing] = useState(false);
+  const [heroSlide, setHeroSlide] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -143,48 +97,10 @@ function HomePage() {
 
   return (
     <div>
-      {/* HERO — full-bleed video; copy on video (dark glass, no white box); phone-safe height */}
-      <section className="relative isolate min-h-[100svh] overflow-hidden bg-stone-950 md:min-h-[min(92vh,920px)]">
-        <video
-          className="pointer-events-none absolute inset-0 h-full min-h-[100svh] w-full scale-[1.06] object-cover object-[center_22%] contrast-[0.98] saturate-[1.05] sm:scale-[1.04] sm:object-[center_28%] md:min-h-full md:object-center"
-          src={heroVideo}
-          poster={heroImg}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/60 sm:via-black/15 md:to-black/50"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/65 via-black/30 to-black/15 sm:from-black/55 sm:via-black/22 rtl:bg-gradient-to-l"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_130%_90%_at_20%_55%,rgba(0,0,0,0.5)_0%,transparent_58%)] opacity-95 rtl:opacity-0"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(ellipse_130%_90%_at_80%_55%,rgba(0,0,0,0.5)_0%,transparent_58%)] opacity-95 rtl:block"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-black/25"
-          aria-hidden
-        />
-
-        <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-7xl flex-col justify-center px-4 py-[max(1.75rem,env(safe-area-inset-bottom,0px))] pt-[max(5.5rem,env(safe-area-inset-top,0px))] sm:px-6 sm:py-20 md:min-h-[min(92vh,920px)] md:px-8 md:py-24">
-          <div className="pointer-events-none absolute start-2 top-24 opacity-[0.12] sm:start-6 sm:top-28 md:top-1/3 md:opacity-[0.08]" aria-hidden>
-            <Wheat className="h-36 w-36 text-amber-100 sm:h-48 sm:w-48" strokeWidth={0.75} />
-          </div>
-          <div className="relative mx-auto w-full max-w-lg translate-y-[8.5rem] sm:translate-y-0 sm:max-w-xl md:max-w-xl lg:max-w-2xl">
-            <HeroVideoOverlay className="w-full" />
-          </div>
-        </div>
+      {/* HERO — semicircle dome only (images inside curve); no flat green bar underneath */}
+      <section className="relative isolate overflow-hidden bg-primary pb-[max(0rem,env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+0.875rem)] md:pt-[calc(env(safe-area-inset-top)+1rem)]">
+        <h1 className="sr-only">{t("brand")}</h1>
+        <HeroImageShowcase activeIndex={heroSlide} onActiveIndexChange={setHeroSlide} />
       </section>
 
       {/* FEATURES */}
@@ -219,8 +135,8 @@ function HomePage() {
             variant={i % 2 === 0 ? "tilt-left" : "tilt-right"}
             delayMs={i * 90}
           >
-            <div className="h-full rounded-2xl border bg-card p-6 text-center">
-              <f.icon className="mx-auto h-8 w-8 text-primary" />
+            <div className="home-feature-card group h-full cursor-default touch-manipulation rounded-2xl border border-border/80 bg-card p-6 text-center">
+              <f.icon className="mx-auto h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110 group-active:scale-95 motion-reduce:group-hover:scale-100" />
               <h3 className="mt-3 font-display text-lg font-semibold">{f.title[lang]}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{f.desc[lang]}</p>
             </div>

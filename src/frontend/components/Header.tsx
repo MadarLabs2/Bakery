@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Check, Globe, ShoppingBag, User as UserIcon, Menu } from "lucide-react";
-import brandLogo from "@/frontend/assets/brand-logo.png";
+import brandLogo from "@/images/alnoor_bakery_profesional/BakeryLogo.png";
 import { useEffect, useState } from "react";
 import { useI18n, type Lang, isRTL } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
@@ -100,31 +100,62 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background/85 backdrop-blur-md">
-      <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
+      <div className="container mx-auto grid h-16 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-4">
         <div
-          className="flex min-w-0 flex-1 flex-row items-center justify-end gap-2 sm:gap-3 md:max-w-none md:flex-none"
+          className={cn(
+            "relative z-[1] flex min-w-0 flex-row items-center justify-self-start gap-2 sm:gap-3",
+            // LTR (e.g. English): hamburger visually left of the logo on narrow screens only
+            !isRTL(lang) && "max-md:flex-row-reverse max-md:gap-1 sm:max-md:gap-2",
+          )}
           dir="ltr"
         >
           <Link
             to="/"
             dir={isRTL(lang) ? "rtl" : "ltr"}
-            className="flex min-w-0 max-w-[min(100%,16rem)] items-center gap-2 sm:max-w-none sm:gap-3 md:max-w-none md:gap-3"
+            className={cn(
+              "flex min-w-0 max-w-full flex-1 items-center gap-2.5 sm:gap-3 md:max-w-full md:flex-initial md:gap-3",
+              // EN mobile: pull brand block toward hamburger; keep gap between scaled logo and long name
+              !isRTL(lang) &&
+                "max-md:justify-between max-md:gap-4 max-md:-translate-x-[1.85rem] sm:max-md:-translate-x-[2.15rem] md:translate-x-0 md:justify-start",
+            )}
           >
-            <img
-              src={brandLogo}
-              alt=""
-              width={160}
-              height={80}
-              className="h-9 w-auto shrink-0 object-contain object-left md:h-11"
-            />
-            <span className="font-display text-sm font-bold leading-tight text-primary sm:text-base md:text-lg">
+            <span className="relative z-[1] inline-flex h-8 shrink-0 items-center max-md:overflow-visible sm:h-9 md:h-11">
+              <img
+                src={brandLogo}
+                alt=""
+                width={160}
+                height={80}
+                className={cn(
+                  "h-8 w-auto object-contain sm:h-9",
+                  // Small screens: same scale; RTL uses smaller +x so scaled logo sits left of the menu (positive = screen-right; less = away from hamburger)
+                  isRTL(lang)
+                    ? "max-md:translate-x-[1.1rem] max-md:translate-y-[0.18rem] max-md:scale-[2.45] max-md:origin-right"
+                    : "max-md:translate-x-0 max-md:translate-y-[0.18rem] max-md:scale-[2.45] max-md:origin-left",
+                  "md:h-11 md:origin-left md:translate-x-[1.65rem] md:translate-y-[0.3125rem] md:scale-[1.9] rtl:origin-right",
+                )}
+              />
+            </span>
+            <span
+              className={cn(
+                "font-display min-w-0 flex-1 font-bold leading-snug text-primary max-md:line-clamp-2 max-md:break-words md:translate-x-0 md:flex-initial md:truncate md:leading-tight md:text-lg",
+                isRTL(lang) &&
+                  "max-md:-translate-x-3 text-sm max-md:text-base max-md:leading-snug sm:text-base",
+                !isRTL(lang) &&
+                  "text-sm max-md:text-end max-md:translate-x-6 sm:max-md:translate-x-8 md:text-end md:translate-x-10 lg:translate-x-12 sm:text-base",
+              )}
+            >
               {t("brand")}
             </span>
           </Link>
           <Button
             variant="ghost"
             size="icon"
-            className={cn("shrink-0 md:hidden", headerIconGhost)}
+            className={cn(
+              "shrink-0 md:hidden",
+              headerIconGhost,
+              // Mobile: scaled logo can bleed — keep menu above for taps (LTR + RTL)
+              "relative z-[5] md:relative md:z-auto",
+            )}
             onClick={() => setOpen((o) => !o)}
             aria-controls="mobile-nav-menu"
             aria-expanded={open}
@@ -134,9 +165,11 @@ export function Header() {
           </Button>
         </div>
 
-        <nav className="hidden md:flex items-center gap-6 text-sm">{links}</nav>
+        <nav aria-label={t("menu")} className="hidden justify-self-center md:flex">
+          <div className="flex items-center gap-6 text-sm">{links}</div>
+        </nav>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="relative z-[1] flex min-w-0 items-center justify-end justify-self-end gap-2">
           <DropdownMenu dir={isRTL(lang) ? "rtl" : "ltr"}>
             <DropdownMenuTrigger asChild>
               <Button

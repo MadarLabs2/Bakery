@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { useI18n, pickName, pickDesc } from "@/frontend/lib/i18n";
+import { useI18n, pickName, pickDesc, pickIngredients, pickAllergens } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
 import { useCart } from "@/frontend/lib/cart";
 import { Button } from "@/frontend/components/ui/button";
@@ -12,8 +12,17 @@ export type ProductDetailModel = {
   id: string;
   name: string;
   description: string | null;
+  description_en?: string | null;
+  description_he?: string | null;
+  description_ar?: string | null;
   ingredients: string | null;
+  ingredients_en?: string | null;
+  ingredients_he?: string | null;
+  ingredients_ar?: string | null;
   allergens: string | null;
+  allergens_en?: string | null;
+  allergens_he?: string | null;
+  allergens_ar?: string | null;
   price: number;
   image_url: string | null;
   is_best_seller: boolean;
@@ -95,8 +104,8 @@ export function ProductDetailView({
   }
 
   const description = pickDesc(product, lang);
-  const ingredients = product.ingredients ? String(product.ingredients).trim() : "";
-  const allergens = product.allergens ? String(product.allergens).trim() : "";
+  const ingredients = pickIngredients(product, lang);
+  const allergens = pickAllergens(product, lang);
   const available = product.is_available !== false;
 
   const shell = (

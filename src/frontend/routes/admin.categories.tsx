@@ -282,7 +282,7 @@ function AdminCategories() {
             </DialogTitle>
             <DialogDescription className="sr-only">{t("adminDialogCategoryFormSr")}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-3 [&_label]:text-sm [&_label]:!font-semibold [&_label]:text-foreground">
             <div className="space-y-2">
               <Label htmlFor="cat-name-en">{t("adminCategoryLangEn")}</Label>
               <Input

@@ -308,9 +308,9 @@ export const dict: Dict = {
     ar: "قسيمة جديدة",
   },
   adminDialogProductFormSr: {
-    en: "Form to add or edit a catalog product: category, texts, price, image, and availability.",
-    he: "טופס להוספה או עריכת מוצר בקטלוג: קטגוריה, תיאור, מחיר, תמונה וזמינות.",
-    ar: "نموذج لإضافة منتج أو تعديله في الكتالوج: الفئة والنصوص والسعر والصورة والتوفر.",
+    en: "Form to add or edit a catalog product: category, name, descriptions, ingredients, and allergens in English, Hebrew, Arabic, plus price, image, and availability.",
+    he: "טופס להוספה או עריכת מוצר בקטלוג: קטגוריה, שם, תיאור, מרכיבים ואלרגנים בשלוש שפות, מחיר, תמונה וזמינות.",
+    ar: "نموذج لإضافة منتج أو تعديله في الكتالوج: الفئة والاسم والوصف والمكونات ومسببات الحساسية بثلاث لغات والسعر والصورة والتوفر.",
   },
   adminDialogCategoryFormSr: {
     en: "Form to add or edit a category: names in English, Hebrew, Arabic, optional description and image.",
@@ -711,6 +711,65 @@ export function pickName(
 
   return en || he || ar || legacy;
 }
-export function pickDesc(p: { description?: string | null }, _lang: Lang) {
-  return p.description ?? "";
+export function pickDesc(
+  p: {
+    description?: string | null;
+    description_en?: string | null;
+    description_he?: string | null;
+    description_ar?: string | null;
+  },
+  lang: Lang,
+) {
+  const en = (p.description_en ?? "").trim();
+  const he = (p.description_he ?? "").trim();
+  const ar = (p.description_ar ?? "").trim();
+  const legacy = (p.description ?? "").trim();
+
+  if (lang === "he" && he) return he;
+  if (lang === "ar" && ar) return ar;
+  if (lang === "en" && en) return en;
+
+  return en || he || ar || legacy;
+}
+
+export function pickAllergens(
+  p: {
+    allergens?: string | null;
+    allergens_en?: string | null;
+    allergens_he?: string | null;
+    allergens_ar?: string | null;
+  },
+  lang: Lang,
+) {
+  const en = (p.allergens_en ?? "").trim();
+  const he = (p.allergens_he ?? "").trim();
+  const ar = (p.allergens_ar ?? "").trim();
+  const legacy = (p.allergens ?? "").trim();
+
+  if (lang === "he" && he) return he;
+  if (lang === "ar" && ar) return ar;
+  if (lang === "en" && en) return en;
+
+  return en || he || ar || legacy;
+}
+
+export function pickIngredients(
+  p: {
+    ingredients?: string | null;
+    ingredients_en?: string | null;
+    ingredients_he?: string | null;
+    ingredients_ar?: string | null;
+  },
+  lang: Lang,
+) {
+  const en = (p.ingredients_en ?? "").trim();
+  const he = (p.ingredients_he ?? "").trim();
+  const ar = (p.ingredients_ar ?? "").trim();
+  const legacy = (p.ingredients ?? "").trim();
+
+  if (lang === "he" && he) return he;
+  if (lang === "ar" && ar) return ar;
+  if (lang === "en" && en) return en;
+
+  return en || he || ar || legacy;
 }

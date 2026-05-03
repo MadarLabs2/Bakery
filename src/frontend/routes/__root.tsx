@@ -7,7 +7,7 @@ import {
   useRouterState,
 } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
-import faviconPng from "@/frontend/assets/brand-logo.png?url";
+import faviconPng from "@/images/alnoor_bakery_profesional/BakeryLogo.png?url";
 import { I18nProvider } from "@/frontend/lib/i18n";
 import { AuthProvider } from "@/frontend/lib/auth";
 import { CartProvider } from "@/frontend/lib/cart";

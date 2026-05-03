@@ -41,14 +41,39 @@ export const Route = createFileRoute("/admin/products")({ component: AdminProduc
 const empty = {
   category_id: "",
   name: "",
-  description: "",
-  ingredients: "",
-  allergens: "",
+  description_en: "",
+  description_he: "",
+  description_ar: "",
+  ingredients_en: "",
+  ingredients_he: "",
+  ingredients_ar: "",
+  allergens_en: "",
+  allergens_he: "",
+  allergens_ar: "",
   price: 0,
   image_url: "",
   is_best_seller: false,
   is_available: true,
 };
+
+function productToForm(p: Record<string, unknown>) {
+  const legacyDesc = typeof p.description === "string" ? p.description : "";
+  const legacyIngredients = typeof p.ingredients === "string" ? p.ingredients : "";
+  const legacyAllergens = typeof p.allergens === "string" ? p.allergens : "";
+  return {
+    ...empty,
+    ...p,
+    description_en: (p.description_en as string | undefined) ?? legacyDesc,
+    description_he: (p.description_he as string | undefined) ?? legacyDesc,
+    description_ar: (p.description_ar as string | undefined) ?? legacyDesc,
+    ingredients_en: (p.ingredients_en as string | undefined) ?? legacyIngredients,
+    ingredients_he: (p.ingredients_he as string | undefined) ?? legacyIngredients,
+    ingredients_ar: (p.ingredients_ar as string | undefined) ?? legacyIngredients,
+    allergens_en: (p.allergens_en as string | undefined) ?? legacyAllergens,
+    allergens_he: (p.allergens_he as string | undefined) ?? legacyAllergens,
+    allergens_ar: (p.allergens_ar as string | undefined) ?? legacyAllergens,
+  };
+}
 
 function AdminProducts() {
   const { t, lang } = useI18n();
@@ -87,11 +112,32 @@ function AdminProducts() {
   }, []);
 
   const save = async () => {
+    const dEn = String(editing.description_en ?? "").trim();
+    const dHe = String(editing.description_he ?? "").trim();
+    const dAr = String(editing.description_ar ?? "").trim();
+    const descriptionLegacy = dHe || dEn || dAr || null;
+    const iEn = String(editing.ingredients_en ?? "").trim();
+    const iHe = String(editing.ingredients_he ?? "").trim();
+    const iAr = String(editing.ingredients_ar ?? "").trim();
+    const ingredientsLegacy = iHe || iEn || iAr || null;
+    const aEn = String(editing.allergens_en ?? "").trim();
+    const aHe = String(editing.allergens_he ?? "").trim();
+    const aAr = String(editing.allergens_ar ?? "").trim();
+    const allergensLegacy = aHe || aEn || aAr || null;
     const payload = {
       name: editing.name,
-      description: editing.description || null,
-      ingredients: editing.ingredients || null,
-      allergens: editing.allergens || null,
+      description: descriptionLegacy,
+      description_en: dEn || null,
+      description_he: dHe || null,
+      description_ar: dAr || null,
+      ingredients: ingredientsLegacy,
+      ingredients_en: iEn || null,
+      ingredients_he: iHe || null,
+      ingredients_ar: iAr || null,
+      allergens: allergensLegacy,
+      allergens_en: aEn || null,
+      allergens_he: aHe || null,
+      allergens_ar: aAr || null,
       price: Number(editing.price),
       image_url: editing.image_url || null,
       category_id: editing.category_id || null,
@@ -111,7 +157,7 @@ function AdminProducts() {
     }
     toast.success(t("saved"));
     setOpen(false);
-    setEditing(empty);
+    setEditing({ ...empty });
     load();
   };
 
@@ -141,9 +187,27 @@ function AdminProducts() {
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
+      const descBlob = [
+        p.description,
+        p.description_en,
+        p.description_he,
+        p.description_ar,
+        p.ingredients,
+        p.ingredients_en,
+        p.ingredients_he,
+        p.ingredients_ar,
+        p.allergens,
+        p.allergens_en,
+        p.allergens_he,
+        p.allergens_ar,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
       return (
         String(p.name).toLowerCase().includes(q) ||
         cat.includes(q) ||
+        descBlob.includes(q) ||
         String(p.id).toLowerCase().includes(q) ||
         String(p.price).includes(q)
       );
@@ -195,7 +259,7 @@ function AdminProducts() {
         <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(11rem,15rem)] lg:items-start lg:gap-8">
           <aside className="shrink-0 space-y-3 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1 lg:self-start">
             <DialogTrigger asChild>
-              <Button className="w-full" onClick={() => setEditing(empty)}>
+              <Button className="w-full" onClick={() => setEditing({ ...empty })}>
                 <Plus className="h-4 w-4" /> {t("adminBtnNewProduct")}
               </Button>
             </DialogTrigger>
@@ -316,7 +380,7 @@ function AdminProducts() {
                           variant="outline"
                           className="flex-1 gap-2 border-primary/40 sm:flex-initial sm:min-w-[7rem]"
                           onClick={() => {
-                            setEditing(p);
+                            setEditing(productToForm(p));
                             setOpen(true);
                           }}
                         >
@@ -347,7 +411,7 @@ function AdminProducts() {
               </DialogTitle>
               <DialogDescription className="sr-only">{t("adminDialogProductFormSr")}</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-4 [&_label]:text-sm [&_label]:!font-semibold [&_label]:text-foreground">
               <div>
                 <Label>{t("adminLabelCategory")}</Label>
                 <Select
@@ -373,26 +437,83 @@ function AdminProducts() {
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                 />
               </div>
-              <div>
-                <Label>{t("adminThDescription")}</Label>
-                <Textarea
-                  value={editing.description ?? ""}
-                  onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-                />
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="pd-he">{t("adminThDescription")} ({t("adminCategoryLangHe")})</Label>
+                  <Textarea
+                    id="pd-he"
+                    value={editing.description_he ?? ""}
+                    onChange={(e) => setEditing({ ...editing, description_he: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pd-en">{t("adminThDescription")} ({t("adminCategoryLangEn")})</Label>
+                  <Textarea
+                    id="pd-en"
+                    value={editing.description_en ?? ""}
+                    onChange={(e) => setEditing({ ...editing, description_en: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pd-ar">{t("adminThDescription")} ({t("adminCategoryLangAr")})</Label>
+                  <Textarea
+                    id="pd-ar"
+                    value={editing.description_ar ?? ""}
+                    onChange={(e) => setEditing({ ...editing, description_ar: e.target.value })}
+                  />
+                </div>
               </div>
-              <div>
-                <Label>{t("ingredients")}</Label>
-                <Textarea
-                  value={editing.ingredients ?? ""}
-                  onChange={(e) => setEditing({ ...editing, ingredients: e.target.value })}
-                />
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="in-he">{t("ingredients")} ({t("adminCategoryLangHe")})</Label>
+                  <Textarea
+                    id="in-he"
+                    value={editing.ingredients_he ?? ""}
+                    onChange={(e) => setEditing({ ...editing, ingredients_he: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="in-en">{t("ingredients")} ({t("adminCategoryLangEn")})</Label>
+                  <Textarea
+                    id="in-en"
+                    value={editing.ingredients_en ?? ""}
+                    onChange={(e) => setEditing({ ...editing, ingredients_en: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="in-ar">{t("ingredients")} ({t("adminCategoryLangAr")})</Label>
+                  <Textarea
+                    id="in-ar"
+                    value={editing.ingredients_ar ?? ""}
+                    onChange={(e) => setEditing({ ...editing, ingredients_ar: e.target.value })}
+                  />
+                </div>
               </div>
-              <div>
-                <Label>{t("allergens")}</Label>
-                <Textarea
-                  value={editing.allergens ?? ""}
-                  onChange={(e) => setEditing({ ...editing, allergens: e.target.value })}
-                />
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="ag-he">{t("allergens")} ({t("adminCategoryLangHe")})</Label>
+                  <Textarea
+                    id="ag-he"
+                    value={editing.allergens_he ?? ""}
+                    onChange={(e) => setEditing({ ...editing, allergens_he: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ag-en">{t("allergens")} ({t("adminCategoryLangEn")})</Label>
+                  <Textarea
+                    id="ag-en"
+                    value={editing.allergens_en ?? ""}
+                    onChange={(e) => setEditing({ ...editing, allergens_en: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ag-ar">{t("allergens")} ({t("adminCategoryLangAr")})</Label>
+                  <Textarea
+                    id="ag-ar"
+                    value={editing.allergens_ar ?? ""}
+                    onChange={(e) => setEditing({ ...editing, allergens_ar: e.target.value })}
+                  />
+                </div>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>

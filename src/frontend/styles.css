@@ -92,6 +92,84 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /** Home feature pills: green hover + brief flash on press (touch / mouse down) */
+  .home-feature-card {
+    transition:
+      background-color 0.35s ease,
+      border-color 0.35s ease,
+      box-shadow 0.35s ease,
+      transform 0.2s ease;
+  }
+  .home-feature-card:hover {
+    border-color: color-mix(in oklch, var(--primary) 42%, var(--border));
+    background-color: color-mix(in oklch, var(--primary) 10%, var(--card));
+    box-shadow: 0 12px 32px -12px color-mix(in oklch, var(--primary) 30%, transparent);
+  }
+}
+
+@keyframes home-feature-green-flash {
+  0% {
+    background-color: var(--card);
+    box-shadow: none;
+  }
+  42% {
+    background-color: color-mix(in oklch, var(--primary) 26%, var(--card));
+    box-shadow: 0 0 28px -4px color-mix(in oklch, var(--primary) 40%, transparent);
+  }
+  100% {
+    background-color: var(--card);
+    box-shadow: none;
+  }
+}
+
+/* Touch / tap: green flash. Mouse: short press tint only (avoid fighting :hover background). */
+@media (hover: none) and (prefers-reduced-motion: no-preference) {
+  .home-feature-card:active {
+    animation: home-feature-green-flash 0.52s ease-out;
+    transform: scale(0.985);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .home-feature-card:active {
+    transform: scale(0.985);
+    background-color: color-mix(in oklch, var(--primary) 18%, var(--card));
+    box-shadow: 0 0 22px -4px color-mix(in oklch, var(--primary) 28%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-feature-card:hover {
+    box-shadow: none;
+  }
+  .home-feature-card:active {
+    transform: none;
+    animation: none;
+    background-color: color-mix(in oklch, var(--primary) 14%, var(--card));
+  }
+}
+
+/* Hero image carousel — slow zoom on the visible slide (respects motion-safe) */
+@keyframes hero-ken-burns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.045);
+  }
+}
+
+@layer utilities {
+  .hero-ken-burns {
+    animation: hero-ken-burns 9s ease-out forwards;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ken-burns {
+    animation: none;
+  }
 }
 
 /* ScrollReveal3D: disable 3D motion for accessibility */
