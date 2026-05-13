@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import { useAuth } from "@/frontend/lib/auth";
 import { useI18n } from "@/frontend/lib/i18n";
 
+import { AdminShell } from "@/frontend/components/admin/AdminShell";
+
 export const Route = createFileRoute("/admin")({ component: AdminLayout });
 
 function AdminLayout() {
@@ -19,7 +21,7 @@ function AdminLayout() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
+      <div className="flex min-h-[50vh] items-center justify-center bg-[#F9F9F7] px-4 text-muted-foreground dark:bg-background">
         {t("adminLoading")}
       </div>
     );
@@ -27,15 +29,15 @@ function AdminLayout() {
 
   if (!user || !isAdmin) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-muted-foreground">
+      <div className="flex min-h-[50vh] items-center justify-center bg-[#F9F9F7] px-4 text-muted-foreground dark:bg-background">
         {t("adminRedirecting")}
       </div>
     );
   }
 
   return (
-    <div className="min-h-full bg-background">
+    <AdminShell>
       <Outlet />
-    </div>
+    </AdminShell>
   );
 }

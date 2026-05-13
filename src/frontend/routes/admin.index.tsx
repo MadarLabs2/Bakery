@@ -1,98 +1,444 @@
 import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, FolderTree, Mail, Package, ShoppingCart, Tag } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart3,
+  FolderTree,
+  Mail,
+  Package,
+  Search,
+  ShoppingCart,
+  Tag,
+} from "lucide-react";
+import { format } from "date-fns";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/backend/db/client";
+import { Input } from "@/frontend/components/ui/input";
 import { cn } from "@/frontend/lib/utils";
+import { adminOrderStatusLabel, adminOrderStatusPillClass } from "@/frontend/lib/adminLabels";
 import { useI18n } from "@/frontend/lib/i18n";
 
 export const Route = createFileRoute("/admin/")({ component: AdminDashboard });
 
-type TileKeyPair = {
-  titleKey:
-    | "adminDashReportsTitle"
-    | "products"
-    | "categories"
-    | "adminDashOrdersTitle"
-    | "adminDashCouponsTitle"
-    | "adminDashEmailOffersTitle";
-  descKey:
-    | "adminDashReportsDesc"
-    | "adminDashProductsDesc"
-    | "adminDashCategoriesDesc"
-    | "adminDashOrdersDesc"
-    | "adminDashCouponsDesc"
-    | "adminDashEmailOffersDesc";
-};
+type TileTitleKey =
+  | "adminDashReportsTitle"
+  | "products"
+  | "categories"
+  | "adminDashOrdersTitle"
+  | "adminDashCouponsTitle"
+  | "adminDashEmailOffersTitle";
 
-type LaunchTile = {
+type TileDescKey =
+  | "adminDashReportsDesc"
+  | "adminDashProductsDesc"
+  | "adminDashCategoriesDesc"
+  | "adminDashOrdersDesc"
+  | "adminDashCouponsDesc"
+  | "adminDashEmailOffersDesc";
+
+type TileLinkKey =
+  | "adminResourceLinkProducts"
+  | "adminResourceLinkCategories"
+  | "adminResourceLinkOrders"
+  | "adminResourceLinkCoupons"
+  | "adminResourceLinkOffers"
+  | "adminResourceLinkReports";
+
+type ResourceTile = {
   to: string;
   icon: LucideIcon;
-} & TileKeyPair;
+  titleKey: TileTitleKey;
+  descKey: TileDescKey;
+  linkKey: TileLinkKey;
+  iconClass: string;
+  glowClass: string;
+  linkClass: string;
+};
+
+const resourceTiles: ResourceTile[] = [
+  {
+    to: "/admin/products",
+    icon: Package,
+    titleKey: "products",
+    descKey: "adminDashProductsDesc",
+    linkKey: "adminResourceLinkProducts",
+    iconClass: "bg-[#2d4a3e] text-white shadow-sm ring-1 ring-white/15",
+    glowClass: "bg-[#2d4a3e]",
+    linkClass: "text-[#2d4a3e]",
+  },
+  {
+    to: "/admin/categories",
+    icon: FolderTree,
+    titleKey: "categories",
+    descKey: "adminDashCategoriesDesc",
+    linkKey: "adminResourceLinkCategories",
+    iconClass: "bg-[#6b5344] text-white shadow-sm ring-1 ring-white/15",
+    glowClass: "bg-[#6b5344]",
+    linkClass: "text-[#6b5344]",
+  },
+  {
+    to: "/admin/orders",
+    icon: ShoppingCart,
+    titleKey: "adminDashOrdersTitle",
+    descKey: "adminDashOrdersDesc",
+    linkKey: "adminResourceLinkOrders",
+    iconClass: "bg-[#1f6f3e] text-white shadow-sm ring-1 ring-white/15",
+    glowClass: "bg-[#1f6f3e]",
+    linkClass: "text-[#1f6f3e]",
+  },
+  {
+    to: "/admin/coupons",
+    icon: Tag,
+    titleKey: "adminDashCouponsTitle",
+    descKey: "adminDashCouponsDesc",
+    linkKey: "adminResourceLinkCoupons",
+    iconClass: "bg-[#b45309] text-white shadow-sm ring-1 ring-white/15",
+    glowClass: "bg-[#b45309]",
+    linkClass: "text-[#b45309]",
+  },
+  {
+    to: "/admin/offers",
+    icon: Mail,
+    titleKey: "adminDashEmailOffersTitle",
+    descKey: "adminDashEmailOffersDesc",
+    linkKey: "adminResourceLinkOffers",
+    iconClass: "bg-[#2b5cad] text-white shadow-sm ring-1 ring-white/15",
+    glowClass: "bg-[#2b5cad]",
+    linkClass: "text-[#2b5cad]",
+  },
+  {
+    to: "/admin/reports",
+    icon: BarChart3,
+    titleKey: "adminDashReportsTitle",
+    descKey: "adminDashReportsDesc",
+    linkKey: "adminResourceLinkReports",
+    iconClass: "bg-[#45454a] text-white shadow-sm ring-1 ring-white/15",
+    glowClass: "bg-[#45454a]",
+    linkClass: "text-[#45454a]",
+  },
+];
+
+type OrderRow = {
+  id: string;
+  customer_name: string | null;
+  order_status: string;
+  created_at: string;
+  total_amount: number | string | null;
+};
 
 function AdminDashboard() {
   const { t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [search, setSearch] = useState("");
+  const [stats, setStats] = useState({
+    revenue: 0,
+    orders: 0,
+    products: 0,
+    subscribers: 0,
+  });
+  const [recent, setRecent] = useState<OrderRow[]>([]);
 
-  const launchTiles: LaunchTile[] = [
-    { to: "/admin/products", icon: Package, titleKey: "products", descKey: "adminDashProductsDesc" },
-    { to: "/admin/categories", icon: FolderTree, titleKey: "categories", descKey: "adminDashCategoriesDesc" },
-    {
-      to: "/admin/orders",
-      icon: ShoppingCart,
-      titleKey: "adminDashOrdersTitle",
-      descKey: "adminDashOrdersDesc",
-    },
-    { to: "/admin/coupons", icon: Tag, titleKey: "adminDashCouponsTitle", descKey: "adminDashCouponsDesc" },
-    {
-      to: "/admin/offers",
-      icon: Mail,
-      titleKey: "adminDashEmailOffersTitle",
-      descKey: "adminDashEmailOffersDesc",
-    },
-    { to: "/admin/reports", icon: BarChart3, titleKey: "adminDashReportsTitle", descKey: "adminDashReportsDesc" },
-  ];
+  useEffect(() => {
+    void Promise.all([
+      supabase.from("orders").select("*", { count: "exact", head: true }),
+      supabase.from("products").select("*", { count: "exact", head: true }),
+      supabase.from("orders").select("total_amount"),
+      supabase.from("email_subscribers").select("*", { count: "exact", head: true }),
+      supabase
+        .from("orders")
+        .select("id, customer_name, order_status, created_at, total_amount")
+        .order("created_at", { ascending: false })
+        .limit(6),
+    ]).then(([o, p, totals, subAll, recentRes]) => {
+      const revenue = (totals.data ?? []).reduce((s, x) => s + Number(x.total_amount ?? 0), 0);
+      setStats({
+        revenue,
+        orders: o.count ?? 0,
+        products: p.count ?? 0,
+        subscribers: subAll.count ?? 0,
+      });
+      setRecent((recentRes.data as OrderRow[]) ?? []);
+    });
+  }, []);
+
+  const q = search.trim().toLowerCase();
+  const filteredTiles = useMemo(() => {
+    if (!q) return resourceTiles;
+    return resourceTiles.filter((tile) => {
+      const title = t(tile.titleKey).toLowerCase();
+      const desc = t(tile.descKey).toLowerCase();
+      return title.includes(q) || desc.includes(q);
+    });
+  }, [q, t]);
 
   const isTileActive = (to: string) => pathname === to || pathname.startsWith(`${to}/`);
 
-  return (
-    <div className="space-y-10 p-6 md:p-8">
-      <header>
-        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-          {t("adminPanelTitle")}
-        </h1>
-      </header>
+  const kpis = [
+    {
+      labelKey: "adminMetricRevenue" as const,
+      value: `₪${stats.revenue.toFixed(2)}`,
+      badge: t("adminKpiBadgeAllTime"),
+      badgeClass: "bg-[#e8f0eb] text-[#2d5544] ring-1 ring-[#2d5544]/12",
+    },
+    {
+      labelKey: "adminMetricTotalOrders" as const,
+      value: stats.orders,
+      badge: t("adminKpiBadgeLive"),
+      badgeClass: "bg-[#f7efe6] text-[#8b5a2b] ring-1 ring-[#8b5a2b]/15",
+    },
+    {
+      labelKey: "adminMetricTotalProducts" as const,
+      value: stats.products,
+      badge: t("adminKpiBadgeInStock"),
+      badgeClass: "bg-stone-100/90 text-stone-600 ring-1 ring-stone-300/40",
+    },
+    {
+      labelKey: "adminMetricSubscribers" as const,
+      value: stats.subscribers,
+      badge: t("adminKpiBadgeActive"),
+      badgeClass: "bg-[#e8f0eb] text-[#2d5544] ring-1 ring-[#2d5544]/12",
+    },
+  ];
 
-      <section aria-label={t("adminPanelTitle")}>
-        <h2 className="sr-only">{t("adminPanelTitle")}</h2>
-        <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,13.5rem),1fr))]">
-          {launchTiles.map((tile) => (
-            <Link
-              key={tile.to}
-              to={tile.to}
-              className={cn(
-                "group flex min-h-[7.75rem] flex-col rounded-xl border border-border bg-muted/35 p-4 text-start shadow-sm transition-all",
-                "hover:-translate-y-0.5 hover:border-primary/45 hover:bg-muted/55 hover:shadow-md",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                isTileActive(tile.to) &&
-                  "border-primary/60 bg-primary/[0.08] shadow-md ring-1 ring-primary/15",
-              )}
-            >
-              <div className="flex flex-1 flex-col gap-0.5">
-                <div className="flex items-start justify-between gap-2">
-                  <span className="min-w-0 font-display text-[15px] font-semibold leading-snug text-foreground">
-                    {t(tile.titleKey)}
+  return (
+    <div className="mx-auto max-w-6xl px-3 py-3 sm:px-4 sm:py-5 md:px-6 md:py-6 lg:max-w-[min(100%,80rem)]">
+      <div className="space-y-5 rounded-2xl border border-stone-200/45 bg-gradient-to-b from-[#fffdfb] via-[#faf7f2] to-[#f3efe8] p-4 shadow-[0_1px_3px_rgba(60,42,33,0.06)] sm:space-y-7 sm:rounded-3xl sm:p-6 md:space-y-10 md:p-8">
+        <header className="flex flex-col gap-3 sm:gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+          <div className="min-w-0 max-w-2xl">
+            <h1 className="font-display text-2xl font-medium tracking-[0.02em] text-[#2c3d34] sm:text-[1.65rem] md:text-[2.1rem] md:leading-[1.15]">
+              {t("adminPanelTitle")}
+            </h1>
+            <p className="mt-2 max-w-xl font-sans text-sm leading-relaxed text-stone-600 sm:mt-3 sm:text-[0.95rem] md:mt-4 md:text-base">
+              {t("adminPanelSubtitle")}
+            </p>
+          </div>
+          <div className="relative w-full shrink-0 lg:max-w-sm">
+            <Search
+              className="pointer-events-none absolute start-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400 sm:start-3 sm:h-4 sm:w-4"
+              aria-hidden
+            />
+            <Input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("adminSearchPlaceholder")}
+              className="h-9 rounded-full border-stone-200/90 bg-white/85 ps-9 text-sm text-stone-800 shadow-sm transition-colors placeholder:text-stone-400 focus-visible:border-stone-300 focus-visible:ring-2 focus-visible:ring-[#1B4332]/12 sm:h-10 sm:ps-10 sm:text-base"
+              aria-label={t("adminSearchPlaceholder")}
+            />
+          </div>
+        </header>
+
+        <section aria-label={t("adminMetricsOverviewSr")}>
+          <h2 className="sr-only">{t("adminMetricsOverviewSr")}</h2>
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
+            {kpis.map((k) => (
+              <div
+                key={k.labelKey}
+                className="relative overflow-hidden rounded-2xl border border-stone-200/50 bg-gradient-to-b from-[#fefdfb] to-[#f5f1ea] p-3.5 shadow-[0_1px_2px_rgba(60,42,33,0.05)] sm:p-5"
+              >
+                <div className="flex items-start justify-between gap-1.5">
+                  <p className="min-w-0 font-sans text-[9px] font-medium uppercase leading-tight tracking-[0.12em] text-stone-500 sm:text-[10px] sm:tracking-[0.14em]">
+                    {t(k.labelKey)}
+                  </p>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-1.5 py-px text-[8px] font-medium sm:px-2 sm:py-0.5 sm:text-[10px]",
+                      k.badgeClass,
+                    )}
+                  >
+                    {k.badge}
                   </span>
-                  <tile.icon
-                    className="h-[1.125rem] w-[1.125rem] shrink-0 text-primary opacity-85 transition-opacity group-hover:opacity-100"
-                    strokeWidth={2}
-                    aria-hidden
-                  />
                 </div>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{t(tile.descKey)}</p>
+                <p className="mt-2.5 font-display text-lg font-medium tabular-nums tracking-tight text-[#4a4238] sm:mt-4 sm:text-2xl md:text-[1.65rem]">
+                  {k.value}
+                </p>
               </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3 sm:space-y-4" aria-labelledby="resource-mgmt-heading">
+          <h2
+            id="resource-mgmt-heading"
+            className="border-b border-stone-200/50 pb-2 font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-stone-500 sm:pb-2.5 sm:text-[11px] sm:tracking-[0.22em]"
+          >
+            {t("adminDashResourceSection")}
+          </h2>
+          <ul className="grid list-none auto-rows-[1fr] grid-cols-2 gap-2.5 p-0 sm:gap-3 xl:grid-cols-3">
+            {filteredTiles.map((tile) => {
+              const Icon = tile.icon;
+              const active = isTileActive(tile.to);
+              return (
+                <li key={tile.to} className="flex min-h-0 min-w-0">
+                  <Link
+                    to={tile.to}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "group relative flex h-full min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-stone-200/50 bg-gradient-to-b from-[#fefdfb] to-[#f8f4ed] p-3.5 shadow-sm outline-none transition-[box-shadow,border-color,transform] duration-300 sm:p-5 md:p-6",
+                      "hover:border-stone-300/70 hover:shadow-md hover:shadow-stone-300/25 sm:motion-safe:hover:-translate-y-px",
+                      "focus-visible:ring-2 focus-visible:ring-[#1B4332]/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[#faf7f2]",
+                      active && "border-stone-300/80 ring-1 ring-[#1B4332]/15 shadow-md shadow-stone-200/30",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "pointer-events-none absolute -end-4 -top-6 h-20 w-20 rounded-full opacity-[0.07] transition-opacity group-hover:opacity-[0.1] sm:-end-6 sm:-top-10 sm:h-32 sm:w-32",
+                        tile.glowClass,
+                      )}
+                      aria-hidden
+                    />
+                    <div className="relative flex min-h-0 flex-1 flex-col">
+                      <div className="min-h-0 flex-1">
+                        <div className="flex items-start gap-2 sm:gap-4">
+                          <span
+                            className={cn(
+                              "flex shrink-0 rounded-xl p-2 shadow-inner sm:p-3",
+                              tile.iconClass,
+                            )}
+                          >
+                            <Icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.85} aria-hidden />
+                          </span>
+                          <div className="min-w-0 flex-1 pt-0 sm:pt-0.5">
+                            <h3 className="font-display text-[15px] font-medium leading-snug text-[#3d342c] sm:text-lg md:text-xl">
+                              {t(tile.titleKey)}
+                            </h3>
+                            <p className="mt-1 min-h-[2lh] line-clamp-2 font-sans text-[10px] leading-relaxed text-stone-600 sm:mt-1.5 sm:text-sm">
+                              {t(tile.descKey)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className={cn(
+                          "mt-auto inline-flex shrink-0 items-center gap-1 pt-2.5 font-sans text-[10px] font-medium tracking-wide transition-transform motion-safe:group-hover:translate-x-0.5 sm:gap-1.5 sm:pt-4 sm:text-sm md:pt-5 rtl:motion-safe:group-hover:-translate-x-0.5",
+                          tile.linkClass,
+                        )}
+                      >
+                        <span className="line-clamp-1">{t(tile.linkKey)}</span>
+                        <ArrowRight className="h-3 w-3 shrink-0 opacity-80 sm:h-4 sm:w-4 rtl:rotate-180" aria-hidden />
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          {filteredTiles.length === 0 && (
+            <p className="rounded-2xl border border-dashed border-stone-300/60 bg-white/50 px-4 py-6 text-center text-sm text-stone-500">
+              {t("adminNoMatchingSections")}
+            </p>
+          )}
+        </section>
+
+        <section className="space-y-3 sm:space-y-4" aria-labelledby="recent-orders-heading">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2
+              id="recent-orders-heading"
+              className="font-display text-lg font-medium tracking-tight text-[#2c3d34] sm:text-xl md:text-2xl"
+            >
+              {t("adminRecentOrders")}
+            </h2>
+            <Link
+              to="/admin/orders"
+              className="inline-flex items-center gap-0.5 font-sans text-xs font-medium text-stone-600 underline-offset-[5px] transition-colors hover:text-[#2d4a3e] hover:underline sm:gap-1 sm:text-sm"
+            >
+              {t("adminViewAllOrders")}
+              <ArrowRight className="h-3.5 w-3.5 shrink-0 opacity-70 sm:h-4 sm:w-4 rtl:rotate-180" aria-hidden />
             </Link>
-          ))}
-        </div>
-      </section>
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-stone-200/50 bg-[#fefdfb] shadow-sm sm:rounded-2xl">
+            {recent.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-stone-500 sm:px-6 sm:py-10">
+                {t("adminNoOrdersYet")}
+              </p>
+            ) : (
+              <>
+                <ul className="divide-y divide-stone-200/55 md:hidden" aria-label={t("adminRecentOrders")}>
+                  {recent.map((o) => (
+                    <li key={o.id} className="px-3 py-3 sm:px-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-sans text-xs font-medium text-[#3d342c]">
+                            {o.customer_name?.trim() || "—"}
+                          </p>
+                          <p className="font-mono text-[10px] text-stone-500">#{o.id.slice(0, 8)}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-2 py-px text-[10px] font-medium capitalize",
+                            adminOrderStatusPillClass(o.order_status),
+                          )}
+                        >
+                          {adminOrderStatusLabel(o.order_status, t)}
+                        </span>
+                      </div>
+                      <div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] text-stone-500">
+                        <time dateTime={o.created_at}>{format(new Date(o.created_at), "MMM d, h:mm a")}</time>
+                        <span className="shrink-0 font-sans font-medium tabular-nums text-[#4a4238]">
+                          ₪{Number(o.total_amount ?? 0).toFixed(2)}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full min-w-[36rem] border-collapse text-start">
+                    <thead>
+                      <tr className="border-b border-stone-200/60 bg-stone-100/40">
+                        <th className="px-5 py-3 font-sans text-[11px] font-medium uppercase tracking-wider text-stone-500">
+                          {t("adminOrdersColRef")}
+                        </th>
+                        <th className="px-5 py-3 font-sans text-[11px] font-medium uppercase tracking-wider text-stone-500">
+                          {t("adminOrdersColCustomer")}
+                        </th>
+                        <th className="px-5 py-3 font-sans text-[11px] font-medium uppercase tracking-wider text-stone-500">
+                          {t("adminOrdersColStatus")}
+                        </th>
+                        <th className="px-5 py-3 font-sans text-[11px] font-medium uppercase tracking-wider text-stone-500">
+                          {t("adminOrdersColDate")}
+                        </th>
+                        <th className="px-5 py-3 text-end font-sans text-[11px] font-medium uppercase tracking-wider text-stone-500">
+                          {t("adminOrdersColTotal")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recent.map((o) => (
+                        <tr
+                          key={o.id}
+                          className="border-b border-stone-200/45 transition-colors last:border-0 even:bg-stone-50/35 hover:bg-stone-50/60"
+                        >
+                          <td className="px-5 py-3.5 font-mono text-xs text-stone-500">#{o.id.slice(0, 8)}</td>
+                          <td className="px-5 py-3.5 font-sans text-sm font-medium text-[#3d342c]">
+                            {o.customer_name?.trim() || "—"}
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span
+                              className={cn(
+                                "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize",
+                                adminOrderStatusPillClass(o.order_status),
+                              )}
+                            >
+                              {adminOrderStatusLabel(o.order_status, t)}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5 font-sans text-sm text-stone-600">
+                            {format(new Date(o.created_at), "MMM d, h:mm a")}
+                          </td>
+                          <td className="px-5 py-3.5 text-end font-sans text-sm font-medium tabular-nums text-[#4a4238]">
+                            ₪{Number(o.total_amount ?? 0).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

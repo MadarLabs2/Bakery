@@ -21,7 +21,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/frontend/components/ui/dialog";
-import { AdminBackNav } from "@/frontend/components/admin/AdminBackNav";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -249,8 +248,7 @@ function AdminProducts() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-8">
-      <AdminBackNav />
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
       <h1 id="admin-products-top" tabIndex={-1} className="scroll-mt-24 font-display text-2xl font-bold outline-none md:text-3xl">
         {t("products")}
       </h1>

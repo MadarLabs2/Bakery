@@ -5,7 +5,6 @@ import { format } from "date-fns";
 import { supabase } from "@/backend/db/client";
 import { useI18n } from "@/frontend/lib/i18n";
 import { adminOrderStatusLabel } from "@/frontend/lib/adminLabels";
-import { AdminBackNav } from "@/frontend/components/admin/AdminBackNav";
 
 export const Route = createFileRoute("/admin/reports")({ component: AdminReports });
 
@@ -48,9 +47,8 @@ function AdminReports() {
   ];
 
   return (
-    <div className="space-y-10 p-6 md:p-8">
-      <AdminBackNav />
-      <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+    <div className="mx-auto max-w-6xl space-y-10 px-4 py-8 md:px-8">
+      <h1 className="font-display text-2xl font-bold tracking-tight text-[#1B4332] sm:text-3xl">
         {t("adminDashReportsTitle")}
       </h1>
 

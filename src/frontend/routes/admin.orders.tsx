@@ -15,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/frontend/components/ui/dialog";
-import { AdminBackNav } from "@/frontend/components/admin/AdminBackNav";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useI18n } from "@/frontend/lib/i18n";
@@ -61,9 +60,8 @@ function AdminOrders() {
   };
 
   return (
-    <div className="space-y-6 p-6 md:p-8">
-      <AdminBackNav />
-      <h1 className="font-display text-3xl font-bold">{t("adminDashOrdersTitle")}</h1>
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
+      <h1 className="font-display text-3xl font-bold text-[#1B4332]">{t("adminDashOrdersTitle")}</h1>
       <div className="overflow-x-auto rounded-2xl border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left">

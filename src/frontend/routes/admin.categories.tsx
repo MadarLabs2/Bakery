@@ -23,7 +23,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/frontend/components/ui/alert-dialog";
-import { AdminBackNav } from "@/frontend/components/admin/AdminBackNav";
 import { resolveImage } from "@/frontend/lib/images";
 import { toast } from "sonner";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
@@ -164,8 +163,7 @@ function AdminCategories() {
   }, [cats, search]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6 md:p-8">
-      <AdminBackNav />
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
       <h1 id="admin-categories-top" className="scroll-mt-24 font-display text-2xl font-bold md:text-3xl">
         {t("categories")}
       </h1>

@@ -10,7 +10,6 @@ import { Textarea } from "@/frontend/components/ui/textarea";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useI18n } from "@/frontend/lib/i18n";
-import { AdminBackNav } from "@/frontend/components/admin/AdminBackNav";
 
 export const Route = createFileRoute("/admin/offers")({ component: AdminOffers });
 
@@ -64,9 +63,8 @@ function AdminOffers() {
   };
 
   return (
-    <div className="space-y-6 p-6 md:p-8">
-      <AdminBackNav />
-      <h1 className="font-display text-3xl font-bold">{t("adminDashEmailOffersTitle")}</h1>
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
+      <h1 className="font-display text-3xl font-bold text-[#1B4332]">{t("adminDashEmailOffersTitle")}</h1>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 rounded-2xl border bg-card p-6 lg:col-span-2">

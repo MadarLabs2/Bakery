@@ -76,12 +76,8 @@ function RootComponent() {
     <I18nProvider>
       <AuthProvider>
         <CartProvider>
-          <Header />
-          <main
-            className={
-              isAdmin ? "min-h-[calc(100dvh-4rem)]" : "min-h-[60vh] pb-28 sm:pb-24"
-            }
-          >
+          {!isAdmin && <Header />}
+          <main className={isAdmin ? "min-h-screen" : "min-h-[60vh] pb-28 sm:pb-24"}>
             <Outlet />
           </main>
           {!isAdmin && <Footer />}

@@ -223,6 +223,146 @@ export const dict: Dict = {
     he: "לוח ניהול",
     ar: "لوحة الإدارة",
   },
+  adminPanelSubtitle: {
+    en: "Welcome back — here's what's happening at the bakery today.",
+    he: "ברוכים השבים — הנה מה שקורה היום במאפייה.",
+    ar: "مرحبًا بعودتك — إليك ما يحدث في المخبز اليوم.",
+  },
+  adminAppName: {
+    en: "Al-nour Admin",
+    he: "ניהול אלנור",
+    ar: "إدارة النور",
+  },
+  adminNavDashboard: {
+    en: "Dashboard",
+    he: "לוח בקרה",
+    ar: "لوحة التحكم",
+  },
+  adminNavInventory: {
+    en: "Inventory",
+    he: "מלאי וקטלוג",
+    ar: "المخزون",
+  },
+  adminNavOrders: {
+    en: "Shop orders",
+    he: "הזמנות מהחנות",
+    ar: "طلبات المتجر",
+  },
+  adminNavCustomers: {
+    en: "Customers",
+    he: "לקוחות ומייל",
+    ar: "العملاء والبريد",
+  },
+  adminRoleShopManager: {
+    en: "Shop manager",
+    he: "מנהל/ת החנות",
+    ar: "مدير المتجر",
+  },
+  adminBackToShop: {
+    en: "View storefront",
+    he: "מעבר לאתר החנות",
+    ar: "عرض واجهة المتجر",
+  },
+  adminDashResourceSection: {
+    en: "Resource management",
+    he: "ניהול משאבים",
+    ar: "إدارة الموارد",
+  },
+  adminSearchPlaceholder: {
+    en: "Search sections…",
+    he: "חיפוש במקטעים…",
+    ar: "البحث في الأقسام…",
+  },
+  adminKpiBadgeLive: {
+    en: "Live",
+    he: "חי",
+    ar: "مباشر",
+  },
+  adminKpiBadgeInStock: {
+    en: "In stock",
+    he: "במלאי",
+    ar: "متوفر",
+  },
+  adminKpiBadgeActive: {
+    en: "Active",
+    he: "פעיל",
+    ar: "نشط",
+  },
+  adminKpiBadgeAllTime: {
+    en: "All time",
+    he: "מצטבר",
+    ar: "كل الفترات",
+  },
+  adminResourceLinkProducts: {
+    en: "Explore catalog",
+    he: "לקטלוג",
+    ar: "استكشف الكتالوج",
+  },
+  adminResourceLinkCategories: {
+    en: "Manage tags",
+    he: "ניהול קטגוריות",
+    ar: "إدارة الوسوم",
+  },
+  adminResourceLinkOrders: {
+    en: "Recent orders",
+    he: "הזמנות אחרונות",
+    ar: "أحدث الطلبات",
+  },
+  adminResourceLinkCoupons: {
+    en: "Active promos",
+    he: "מבצעים פעילים",
+    ar: "العروض النشطة",
+  },
+  adminResourceLinkOffers: {
+    en: "Audience list",
+    he: "רשימת קהל",
+    ar: "قائمة الجمهور",
+  },
+  adminResourceLinkReports: {
+    en: "Export data",
+    he: "נתונים ודוחות",
+    ar: "البيانات والتصدير",
+  },
+  adminViewAllOrders: {
+    en: "View all orders",
+    he: "כל ההזמנות",
+    ar: "عرض كل الطلبات",
+  },
+  adminOrdersColRef: {
+    en: "Order ref",
+    he: "מזהה",
+    ar: "مرجع الطلب",
+  },
+  adminOrdersColCustomer: {
+    en: "Customer",
+    he: "לקוח",
+    ar: "العميل",
+  },
+  adminOrdersColStatus: {
+    en: "Status",
+    he: "סטטוס",
+    ar: "الحالة",
+  },
+  adminOrdersColDate: {
+    en: "Date",
+    he: "תאריך",
+    ar: "التاريخ",
+  },
+  adminOrdersColTotal: {
+    en: "Total",
+    he: "סה״כ",
+    ar: "الإجمالي",
+  },
+  adminOpenMenu: {
+    en: "Open admin menu",
+    he: "פתיחת תפריט ניהול",
+    ar: "فتح قائمة الإدارة",
+  },
+  adminNoMatchingSections: {
+    en: "No sections match your search.",
+    he: "אין מקטעים התואמים לחיפוש.",
+    ar: "لا توجد أقسام مطابقة للبحث.",
+  },
   adminRecentOrders: {
     en: "Recent orders",
     he: "הזמנות אחרונות",
@@ -611,7 +751,7 @@ export const dict: Dict = {
     he: "שלום! השבוע…",
     ar: "مرحبًا! هذا الأسبوع…",
   },
-  adminMetricRevenue: { en: "Revenue", he: "הכנסות", ar: "الإيرادات" },
+  adminMetricRevenue: { en: "Total revenue", he: "סה״כ הכנסות", ar: "إجمالي الإيرادات" },
   adminMetricBestSellers: {
     en: "Best sellers",
     he: "רב מכר",
@@ -626,6 +766,11 @@ export const dict: Dict = {
     en: "Total orders",
     he: "סה״כ הזמנות",
     ar: "إجمالي الطلبات",
+  },
+  adminMetricSubscribers: {
+    en: "Subscribers",
+    he: "מנויים למייל",
+    ar: "المشتركون",
   },
   commandPaletteTitle: {
     en: "Command palette",
