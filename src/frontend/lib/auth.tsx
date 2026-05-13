@@ -1,12 +1,15 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/backend/db/client";
+import { resolveIsAdmin } from "@/frontend/lib/resolveIsAdmin";
 
 interface AuthCtx {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
   loading: boolean;
+  /** Re-read admin flag from the server (call after sign-in before navigating to /admin). */
+  refreshIsAdmin: () => Promise<boolean>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (
     email: string,
@@ -33,18 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setIsAdmin(false);
         return;
       }
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", userId)
-        .maybeSingle();
+      const admin = await resolveIsAdmin(supabase, userId);
       if (cancelled) return;
-      if (error) {
-        console.error("profiles role:", error);
-        setIsAdmin(false);
-        return;
-      }
-      setIsAdmin(data?.role === "admin");
+      setIsAdmin(admin);
     }
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
@@ -113,8 +107,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const refreshIsAdmin = useCallback(async (): Promise<boolean> => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("getSession:", error);
+      setIsAdmin(false);
+      return false;
+    }
+    const uid = data.session?.user?.id;
+    if (!uid) {
+      setIsAdmin(false);
+      return false;
+    }
+    const admin = await resolveIsAdmin(supabase, uid);
+    setIsAdmin(admin);
+    return admin;
+  }, []);
+
   return (
-    <Ctx.Provider value={{ user, session, isAdmin, loading, signIn, signUp, signOut }}>
+    <Ctx.Provider
+      value={{ user, session, isAdmin, loading, refreshIsAdmin, signIn, signUp, signOut }}
+    >
       {children}
     </Ctx.Provider>
   );

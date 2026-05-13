@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Send, Mail } from "lucide-react";
 import { supabase } from "@/backend/db/client";
+import { sendCampaignEmail } from "@/backend/server/sendCampaign.functions";
 import { useAuth } from "@/frontend/lib/auth";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
@@ -15,7 +17,8 @@ export const Route = createFileRoute("/admin/offers")({ component: AdminOffers }
 
 function AdminOffers() {
   const { t } = useI18n();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  const sendCampaignFn = useServerFn(sendCampaignEmail);
   const [subscribers, setSubscribers] = useState<{ id: string; email: string }[]>([]);
   const [past, setPast] = useState<
     { id: string; subject: string; message: string; discount_code: string | null; sent_at: string }[]
@@ -44,22 +47,57 @@ function AdminOffers() {
   const send = async () => {
     if (!subject || !body) return toast.error(t("subjectBodyRequired"));
     if (!user?.id) return toast.error(t("mustSignIn"));
+    if (!session?.access_token) return toast.error(t("mustSignIn"));
     setSending(true);
-    const { error } = await supabase.from("email_campaigns").insert({
-      admin_id: user.id,
-      subject,
-      message: body,
-      discount_code: discountCode.trim() || null,
-    });
+    try {
+      const result = await sendCampaignFn({
+        data: {
+          subject,
+          message: body,
+          discount_code: discountCode.trim() || null,
+        },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!result.ok) {
+        const msg =
+          result.error === "forbidden"
+            ? t("adminOffersForbidden")
+            : result.error === "invalid_resend_from"
+              ? t("emailCampaignInvalidFromEnv")
+              : result.error ?? t("emailCampaignSendError");
+        toast.error(msg);
+        setSending(false);
+        return;
+      }
+      if (result.noMailProvider) {
+        toast.message(t("emailCampaignSavedTitle"), {
+          description: t("emailCampaignResendHint"),
+        });
+      } else if (result.subscriberCount === 0) {
+        toast.success(t("emailCampaignSentTitle"), {
+          description: t("emailCampaignNoSubscribersToEmail"),
+        });
+      } else if (result.failed > 0) {
+        const base = t("emailCampaignPartialDesc")
+          .replace("{{sent}}", String(result.sent))
+          .replace("{{failed}}", String(result.failed));
+        const detail = result.resendLastError ? ` — ${result.resendLastError}` : "";
+        toast.message(t("emailCampaignPartialTitle"), {
+          description: `${base}${detail}`,
+        });
+      } else {
+        toast.success(t("emailCampaignSentTitle"), {
+          description: t("emailCampaignSentDesc").replace("{{n}}", String(result.sent)),
+        });
+      }
+      setSubject("");
+      setBody("");
+      setDiscountCode("");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("emailCampaignSendError"));
+    }
     setSending(false);
-    if (error) return toast.error(error.message);
-    toast.success(t("emailCampaignSavedTitle"), {
-      description: `${subscribers.length} ${t("activeSubscribersShort")}`,
-    });
-    setSubject("");
-    setBody("");
-    setDiscountCode("");
-    load();
   };
 
   return (

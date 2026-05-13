@@ -209,9 +209,54 @@ export const dict: Dict = {
   },
   mustSignIn: { en: "You must be signed in", he: "יש להתחבר", ar: "يجب تسجيل الدخول" },
   emailCampaignSavedTitle: {
-    en: "Campaign saved — connect an email provider to send.",
-    he: "הקמפיין נשמר — חברו ספק מייל כדי לשלוח.",
-    ar: "تم حفظ الحملة — صِل مزود بريد لإرسالها.",
+    en: "Campaign saved (no emails sent yet).",
+    he: "הקמפיין נשמר (עדיין לא נשלחו מיילים).",
+    ar: "تم حفظ الحملة (لم يُرسل بريد بعد).",
+  },
+  emailCampaignResendHint: {
+    en: "Add RESEND_API_KEY and RESEND_FROM_EMAIL to the server environment (see .env.example), then redeploy.",
+    he: "הוסיפו RESEND_API_KEY ו-RESEND_FROM_EMAIL לסביבת השרת (ראו .env.example) ופרסמו מחדש.",
+    ar: "أضف RESEND_API_KEY و RESEND_FROM_EMAIL إلى بيئة الخادم (راجع .env.example) ثم أعد النشر.",
+  },
+  emailCampaignSentTitle: {
+    en: "Campaign sent",
+    he: "הקמפיין נשלח",
+    ar: "تم إرسال الحملة",
+  },
+  emailCampaignSentDesc: {
+    en: "Delivered to {{n}} inbox(es).",
+    he: "נשלח ל-{{n}} כתובות.",
+    ar: "تم التسليم إلى {{n}} بريد.",
+  },
+  emailCampaignPartialTitle: {
+    en: "Campaign saved — some emails failed",
+    he: "הקמפיין נשמר — חלק מהמיילים נכשלו",
+    ar: "تم حفظ الحملة — فشل إرسال بعض الرسائل",
+  },
+  emailCampaignPartialDesc: {
+    en: "Sent: {{sent}}, failed: {{failed}}. Check Resend dashboard and domain verification.",
+    he: "נשלחו: {{sent}}, נכשלו: {{failed}}. בדקו ב-Resend אימות דומיין.",
+    ar: "أُرسل: {{sent}}، فشل: {{failed}}. راجع لوحة Resend والتحقق من النطاق.",
+  },
+  emailCampaignSendError: {
+    en: "Could not send the campaign.",
+    he: "לא ניתן לשלוח את הקמפיין.",
+    ar: "تعذر إرسال الحملة.",
+  },
+  adminOffersForbidden: {
+    en: "You do not have permission to send campaigns.",
+    he: "אין לך הרשאה לשלוח קמפיינים.",
+    ar: "ليس لديك صلاحية لإرسال الحملات.",
+  },
+  emailCampaignInvalidFromEnv: {
+    en: "RESEND_FROM_EMAIL must be a real sender address (e.g. Al-Nour Bakery <onboarding@resend.dev>), not your website URL.",
+    he: "RESEND_FROM_EMAIL חייב להיות כתובת שולח אמיתית (למשל Al-Nour Bakery <onboarding@resend.dev>), לא כתובת האתר.",
+    ar: "يجب أن يكون RESEND_FROM_EMAIL بريد مرسل حقيقي (مثل Al-Nour Bakery <onboarding@resend.dev>) وليس رابط الموقع.",
+  },
+  emailCampaignNoSubscribersToEmail: {
+    en: "Campaign saved. There are no active subscribers to email yet.",
+    he: "הקמפיין נשמר. אין עדיין מנויים פעילים לשליחה.",
+    ar: "تم حفظ الحملة. لا يوجد مشتركون نشطون لإرسال البريد إليهم بعد.",
   },
   activeSubscribersShort: {
     en: "active subscribers",
@@ -850,9 +895,9 @@ export const dict: Dict = {
     ar: "حملات سابقة",
   },
   adminOffersLogCampaign: {
-    en: "Log campaign",
-    he: "רישום קמפיין",
-    ar: "تسجيل الحملة",
+    en: "Send campaign",
+    he: "שליחת קמפיין",
+    ar: "إرسال الحملة",
   },
   adminOffersNoSubscribers: {
     en: "No subscribers yet.",
