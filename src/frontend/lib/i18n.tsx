@@ -162,6 +162,26 @@ export const dict: Dict = {
     ar: "حدث خطأ ما",
   },
   invalidCoupon: { en: "Invalid coupon", he: "קופון לא תקין", ar: "قسيمة غير صالحة" },
+  checkoutOneCoupon: {
+    en: "Only one coupon per order. Change the code to replace it, or remove it.",
+    he: "קופון אחד בלבד להזמנה. שינוי הקוד יחליף את הקופון, או הסירו אותו.",
+    ar: "قسيمة واحدة فقط لكل طلب. غيّر الرمز لاستبدالها أو أزلها.",
+  },
+  couponRemoved: {
+    en: "Coupon removed",
+    he: "הקופון הוסר",
+    ar: "تمت إزالة القسيمة",
+  },
+  couponRemoveAria: {
+    en: "Remove coupon",
+    he: "הסרת קופון",
+    ar: "إزالة القسيمة",
+  },
+  checkoutCouponMissing: {
+    en: "Please apply your coupon again.",
+    he: "יש להחיל את הקופון מחדש.",
+    ar: "يرجى تطبيق القسيمة مرة أخرى.",
+  },
   couponExpired: {
     en: "This coupon has expired",
     he: "תוקף הקופון פג",
@@ -923,6 +943,225 @@ export const dict: Dict = {
     en: "Hello! This week…",
     he: "שלום! השבוע…",
     ar: "مرحبًا! هذا الأسبوع…",
+  },
+  adminOffersPageSubtitle: {
+    en: "Create and send beautiful offers to your subscribers.",
+    he: "צרו ושלחו הצעות יפות למנויים שלכם.",
+    ar: "أنشئوا وأرسلوا عروضًا جميلة للمشتركين.",
+  },
+  adminOffersTemplatesBtn: {
+    en: "Templates",
+    he: "תבניות",
+    ar: "قوالب",
+  },
+  adminOffersChooseTemplate: {
+    en: "Choose a template",
+    he: "בחרו תבנית",
+    ar: "اختر قالبًا",
+  },
+  adminOffersViewAllTemplates: {
+    en: "View all",
+    he: "הצג הכול",
+    ar: "عرض الكل",
+  },
+  adminOffersTagDiscount: {
+    en: "Discount",
+    he: "הנחה",
+    ar: "خصم",
+  },
+  adminOffersTagSeasonal: {
+    en: "Seasonal",
+    he: "עונתי",
+    ar: "موسمي",
+  },
+  adminOffersTagAnnouncement: {
+    en: "Announcement",
+    he: "הכרזה",
+    ar: "إعلان",
+  },
+  adminOffersTplWeekendTitle: {
+    en: "Weekend 20% OFF",
+    he: "סוף שבוע 20% הנחה",
+    ar: "خصم 20% لعطلة نهاية الأسبوع",
+  },
+  adminOffersTplRamadanTitle: {
+    en: "Ramadan offer 15% OFF",
+    he: "מבצע רמדאן 15% הנחה",
+    ar: "عرض رمضان خصم 15٪",
+  },
+  adminOffersTplLaunchTitle: {
+    en: "New product launch",
+    he: "השקת מוצר חדש",
+    ar: "إطلاق منتج جديد",
+  },
+  adminOffersTplWeekendSubject: {
+    en: "Enjoy 20% off this weekend!",
+    he: "תיהנו מ-20% הנחה בסוף השבוע!",
+    ar: "استمتعوا بخصم 20٪ هذا الأسبوع!",
+  },
+  adminOffersTplRamadanSubject: {
+    en: "Ramadan blessings — 15% off bakery favorites",
+    he: "ברכות רמדאן — 15% הנחה על מועדפי המאפייה",
+    ar: "رمضان كريم — خصم 15٪ على مفضلات المخبز",
+  },
+  adminOffersTplLaunchSubject: {
+    en: "Just dropped: new gluten-free treats",
+    he: "חדש על המדף: פינוקים ללא גלוטן",
+    ar: "وصل حديثًا: حلويات خالية من الجلوتين",
+  },
+  adminOffersTplWeekendBody: {
+    en: "Hello! This weekend only, take 20% off your order with the coupon below. Fresh gluten-free breads and pastries are waiting for you.",
+    he: "שלום! בסוף השבוע הזה בלבד — 20% הנחה על ההזמנה עם הקופון למטה. לחמים ומאפים טריים ללא גלוטן מחכים לכם.",
+    ar: "مرحبًا! خصم 20٪ على طلبك هذا الأسبوع فقط باستخدام القسيمة أدناه. أخبز ومخبوزات خالية من الجلوتين في انتظاركم.",
+  },
+  adminOffersTplRamadanBody: {
+    en: "Warm wishes for Ramadan. Enjoy 15% off selected items this month — use the code at checkout.",
+    he: "ברכות חמות לרמדאן. 15% הנחה על פריטים נבחרים החודש — השתמשו בקוד בתשלום.",
+    ar: "أطيب التمنيات بمناسبة رمضان. خصم 15٪ على أصناف مختارة هذا الشهر — استخدموا الرمز عند الدفع.",
+  },
+  adminOffersTplLaunchBody: {
+    en: "We are excited to introduce our newest gluten-free brownies and cakes. Order this week and taste the difference!",
+    he: "אנחנו מתרגשים להציג את הבראוניז והעוגות החדשות ללא גלוטן. הזמינו השבוע וטעמו את ההבדל!",
+    ar: "يسرنا تقديم أحدث براونيز وكيك خالية من الجلوتين. اطلبوا هذا الأسبوع وذوقوا الفرق!",
+  },
+  adminOffersAudience: {
+    en: "Audience",
+    he: "קהל",
+    ar: "الجمهور",
+  },
+  adminOffersAllSubscribersCount: {
+    en: "All subscribers ({{n}})",
+    he: "כל המנויים ({{n}})",
+    ar: "كل المشتركين ({{n}})",
+  },
+  adminOffersScheduleTitle: {
+    en: "Schedule",
+    he: "תזמון",
+    ar: "الجدولة",
+  },
+  adminOffersSendNow: {
+    en: "Send now",
+    he: "שליחה עכשיו",
+    ar: "إرسال الآن",
+  },
+  adminOffersScheduleLater: {
+    en: "Schedule for later",
+    he: "תזמון לימים הבאים",
+    ar: "جدولة لاحقًا",
+  },
+  adminOffersSchedulePickTime: {
+    en: "Date & time",
+    he: "תאריך ושעה",
+    ar: "التاريخ والوقت",
+  },
+  adminOffersScheduleComingToast: {
+    en: "Scheduled sending is not available yet. Choose “Send now” to deliver this campaign.",
+    he: "שליחה מתוזמנת עדיין לא זמינה. בחרו \"שליחה עכשיו\" כדי לשלוח את הקמפיין.",
+    ar: "الإرسال المجدول غير متاح بعد. اختروا «إرسال الآن» لإرسال هذه الحملة.",
+  },
+  adminOffersPreviewTitle: {
+    en: "Email preview",
+    he: "תצוגת מייל",
+    ar: "معاينة البريد",
+  },
+  adminOffersViewFullPreview: {
+    en: "View full preview",
+    he: "תצוגה מלאה",
+    ar: "معاينة كاملة",
+  },
+  adminOffersPreviewDialogTitle: {
+    en: "Campaign preview",
+    he: "תצוגת קמפיין",
+    ar: "معاينة الحملة",
+  },
+  adminOffersSendEmailOffer: {
+    en: "Send email offer",
+    he: "שליחת הצעה במייל",
+    ar: "إرسال عرض البريد",
+  },
+  adminOffersAllTemplatesTitle: {
+    en: "All templates",
+    he: "כל התבניות",
+    ar: "كل القوالب",
+  },
+  adminOffersAudienceIncludes: {
+    en: "Includes all active subscribers.",
+    he: "כולל את כל המנויים הפעילים.",
+    ar: "يشمل كل المشتركين النشطين.",
+  },
+  adminOffersSubjectLine: {
+    en: "Subject line",
+    he: "שורת נושא",
+    ar: "سطر الموضوع",
+  },
+  adminOffersAddTemplate: {
+    en: "Add template",
+    he: "הוספת תבנית",
+    ar: "إضافة قالب",
+  },
+  adminOffersNewTemplateDialogTitle: {
+    en: "New email template",
+    he: "תבנית מייל חדשה",
+    ar: "قالب بريد جديد",
+  },
+  adminOffersTemplateTitleField: {
+    en: "Card title",
+    he: "כותרת כרטיס",
+    ar: "عنوان البطاقة",
+  },
+  adminOffersTemplateTagField: {
+    en: "Tag (e.g. Discount)",
+    he: "תג (למשל הנחה)",
+    ar: "وسم (مثل خصم)",
+  },
+  adminOffersTemplateImageUrlField: {
+    en: "Image URL (optional)",
+    he: "כתובת תמונה (אופציונלי)",
+    ar: "رابط صورة (اختياري)",
+  },
+  adminOffersTemplateTintField: {
+    en: "Card style",
+    he: "סגנון כרטיס",
+    ar: "نمط البطاقة",
+  },
+  adminOffersTintGreen: { en: "Forest green", he: "ירוק יער", ar: "أخضر غامق" },
+  adminOffersTintAmber: { en: "Warm gold", he: "זהב חם", ar: "ذهبي دافئ" },
+  adminOffersTintBrown: { en: "Chocolate", he: "שוקולד", ar: "شوكولاتي" },
+  adminOffersTintSlate: { en: "Soft slate", he: "אפור רך", ar: "رمادي ناعم" },
+  adminOffersSaveTemplate: {
+    en: "Save template",
+    he: "שמירת תבנית",
+    ar: "حفظ القالب",
+  },
+  adminOffersDeleteTemplate: {
+    en: "Remove",
+    he: "הסרה",
+    ar: "إزالة",
+  },
+  adminOffersTemplateSaved: {
+    en: "Template saved on this device.",
+    he: "התבנית נשמרה במכשיר זה.",
+    ar: "تم حفظ القالب على هذا الجهاز.",
+  },
+  adminOffersTemplatesStorageNote: {
+    en: "Custom templates are stored in this browser only. Clearing site data removes them.",
+    he: "תבניות מותאמות נשמרות בדפדפן זה בלבד. מחיקת נתוני האתר תסיר אותן.",
+    ar: "القوالب المخصصة تُحفظ في هذا المتصفح فقط. مسح بيانات الموقع يزيلها.",
+  },
+  adminOffersImageUrlHttpsOnly: {
+    en: "Image URL must start with https://",
+    he: "כתובת התמונה חייבת להתחיל ב-https://",
+    ar: "يجب أن يبدأ رابط الصورة بـ https://",
+  },
+  adminOffersTemplateRemoved: {
+    en: "Template removed.",
+    he: "התבנית הוסרה.",
+    ar: "تمت إزالة القالب.",
+  },
+  adminOffersImmediateSendHint: {
+    en: "Sends immediately when you tap the button below.",
+    he: "נשלח מיד בלחיצה על הכפתור למטה.",
+    ar: "يُرسل فورًا عند الضغط على الزر أدناه.",
   },
   adminMetricRevenue: { en: "Total revenue", he: "סה״כ הכנסות", ar: "إجمالي الإيرادات" },
   adminMetricBestSellers: {

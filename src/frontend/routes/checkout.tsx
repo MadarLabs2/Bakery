@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useI18n } from "@/frontend/lib/i18n";
+import { useEffect, useState, useCallback } from "react";
+import { useI18n, dict } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
 import { rotateCartAfterOrder, useCart } from "@/frontend/lib/cart";
 import { supabase } from "@/backend/db/client";
@@ -10,8 +10,47 @@ import { Label } from "@/frontend/components/ui/label";
 import { Textarea } from "@/frontend/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/frontend/components/ui/radio-group";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 
 export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
+
+type CouponRow = {
+  id: string;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  min_order_amount: number;
+  max_uses: number | null;
+  used_count: number;
+  expires_at: string | null;
+  is_active: boolean;
+};
+
+const COUPON_SELECT = "id, code, discount_type, discount_value, min_order_amount, max_uses, used_count, expires_at, is_active" as const;
+
+function validateCouponForSubtotal(
+  data: CouponRow,
+  subtotal: number,
+  t: (key: keyof typeof dict) => string,
+): { ok: true; discount: number } | { ok: false; message: string } {
+  if (!data.is_active) return { ok: false, message: t("invalidCoupon") };
+  if (data.expires_at && new Date(data.expires_at) < new Date()) {
+    return { ok: false, message: t("couponExpired") };
+  }
+  if (data.max_uses != null && data.used_count >= data.max_uses) {
+    return { ok: false, message: t("couponExhausted") };
+  }
+  const minAmt = Number(data.min_order_amount ?? 0);
+  if (subtotal < minAmt) {
+    return { ok: false, message: `${t("couponMinOrderLabel")}: ₪${minAmt}` };
+  }
+  const raw =
+    data.discount_type === "percentage"
+      ? (subtotal * Number(data.discount_value)) / 100
+      : Number(data.discount_value);
+  const capped = Math.min(Math.max(0, raw), subtotal);
+  return { ok: true, discount: capped };
+}
 
 function CheckoutPage() {
   const { t } = useI18n();
@@ -28,6 +67,8 @@ function CheckoutPage() {
   const [recv, setRecv] = useState<"pickup" | "delivery">("pickup");
   const [code, setCode] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [appliedCouponId, setAppliedCouponId] = useState<string | null>(null);
+  const [lockedCode, setLockedCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -49,40 +90,81 @@ function CheckoutPage() {
       });
   }, [user, nav]);
 
+  const resetAppliedCoupon = useCallback(() => {
+    setDiscount(0);
+    setAppliedCouponId(null);
+    setLockedCode("");
+  }, []);
+
+  const removeCoupon = () => {
+    resetAppliedCoupon();
+    setCode("");
+    toast.success(t("couponRemoved"));
+  };
+
+  const onCodeInputChange = (value: string) => {
+    setCode(value);
+    const normalized = value.trim().toUpperCase();
+    if (appliedCouponId && normalized !== lockedCode) {
+      resetAppliedCoupon();
+    }
+  };
+
+  useEffect(() => {
+    if (!appliedCouponId) return;
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .from("coupons")
+        .select(COUPON_SELECT)
+        .eq("id", appliedCouponId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!data) {
+        resetAppliedCoupon();
+        return;
+      }
+      const v = validateCouponForSubtotal(data as CouponRow, subtotal, t);
+      if (!v.ok) {
+        resetAppliedCoupon();
+        return;
+      }
+      setDiscount(v.discount);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [subtotal, appliedCouponId, t, resetAppliedCoupon]);
+
   const deliveryFee = recv === "delivery" ? 20 : 0;
   const total = Math.max(0, subtotal - discount) + deliveryFee;
 
   const applyCoupon = async () => {
-    if (!code) return;
+    const trimmed = code.trim();
+    if (!trimmed) return;
     const { data, error } = await supabase
       .from("coupons")
-      .select("id, code, discount_type, discount_value, min_order_amount, max_uses, used_count, expires_at, is_active")
-      .eq("code", code.toUpperCase())
+      .select(COUPON_SELECT)
+      .eq("code", trimmed.toUpperCase())
       .eq("is_active", true)
       .maybeSingle();
     if (error || !data) {
       toast.error(t("invalidCoupon"));
-      setDiscount(0);
+      resetAppliedCoupon();
       return;
     }
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      toast.error(t("couponExpired"));
+    const row = data as CouponRow;
+    const v = validateCouponForSubtotal(row, subtotal, t);
+    if (!v.ok) {
+      toast.error(v.message);
+      resetAppliedCoupon();
       return;
     }
-    if (data.max_uses != null && data.used_count >= data.max_uses) {
-      toast.error(t("couponExhausted"));
-      return;
-    }
-    if (subtotal < Number(data.min_order_amount ?? 0)) {
-      toast.error(`${t("couponMinOrderLabel")}: ₪${data.min_order_amount}`);
-      return;
-    }
-    const d =
-      data.discount_type === "percentage"
-        ? (subtotal * Number(data.discount_value)) / 100
-        : Number(data.discount_value);
-    setDiscount(d);
-    toast.success(`${t("discountAppliedShort")} · −₪${d.toFixed(2)}`);
+    setAppliedCouponId(row.id);
+    setLockedCode(row.code.trim().toUpperCase());
+    setCode(row.code);
+    setDiscount(v.discount);
+    toast.success(`${t("discountAppliedShort")} · −₪${v.discount.toFixed(2)}`);
   };
 
   const placeOrder = async () => {
@@ -90,14 +172,35 @@ function CheckoutPage() {
     setSubmitting(true);
 
     let couponId: string | null = null;
-    if (discount > 0 && code) {
-      const { data: cpn } = await supabase
+    let orderDiscount = 0;
+
+    if (discount > 0) {
+      if (!appliedCouponId) {
+        toast.error(t("checkoutCouponMissing"));
+        setSubmitting(false);
+        return;
+      }
+      const { data: cpn, error: cErr } = await supabase
         .from("coupons")
-        .select("id")
-        .eq("code", code.toUpperCase())
+        .select(COUPON_SELECT)
+        .eq("id", appliedCouponId)
         .maybeSingle();
-      couponId = cpn?.id ?? null;
+      if (cErr || !cpn) {
+        toast.error(t("invalidCoupon"));
+        setSubmitting(false);
+        return;
+      }
+      const v = validateCouponForSubtotal(cpn as CouponRow, subtotal, t);
+      if (!v.ok) {
+        toast.error(v.message);
+        setSubmitting(false);
+        return;
+      }
+      orderDiscount = v.discount;
+      couponId = appliedCouponId;
     }
+
+    const orderTotal = Math.max(0, subtotal - orderDiscount) + deliveryFee;
 
     const { data: order, error } = await supabase
       .from("orders")
@@ -114,9 +217,9 @@ function CheckoutPage() {
         payment_status: "pending",
         order_status: "pending",
         subtotal,
-        discount_amount: discount,
+        discount_amount: orderDiscount,
         delivery_fee: deliveryFee,
-        total_amount: total,
+        total_amount: orderTotal,
       })
       .select()
       .single();
@@ -233,15 +336,30 @@ function CheckoutPage() {
             </div>
           ))}
         </div>
-        <div className="border-t pt-3 flex gap-2">
-          <Input
-            placeholder={t("couponCode")}
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-          />
-          <Button variant="outline" onClick={applyCoupon}>
-            {t("applyCoupon")}
-          </Button>
+        <div className="border-t pt-3 space-y-2">
+          <div className="flex gap-2">
+            <Input
+              placeholder={t("couponCode")}
+              value={code}
+              onChange={(e) => onCodeInputChange(e.target.value)}
+            />
+            <Button type="button" variant="outline" onClick={applyCoupon} disabled={!code.trim()}>
+              {t("applyCoupon")}
+            </Button>
+          </div>
+          {appliedCouponId ? (
+            <div className="flex items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-xs">
+              <span className="truncate font-medium text-[#1B4332]">
+                {t("couponCode")}: {lockedCode}
+              </span>
+              <Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 px-2" onClick={removeCoupon}>
+                <X className="h-4 w-4" aria-hidden />
+                <span className="sr-only">{t("couponRemoveAria")}</span>
+              </Button>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">{t("checkoutOneCoupon")}</p>
+          )}
         </div>
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
