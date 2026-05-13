@@ -8,6 +8,7 @@ import { Button } from "@/frontend/components/ui/button";
 import { resolveImage } from "@/frontend/lib/images";
 import { cn } from "@/frontend/lib/utils";
 import { toast } from "sonner";
+import { ProductPriceRow } from "@/frontend/components/ProductPriceRow";
 
 interface Product {
   id: string;
@@ -17,6 +18,7 @@ interface Product {
   description_he?: string | null;
   description_ar?: string | null;
   price: number;
+  compare_at_price?: number | null;
   image_url: string | null;
   is_best_seller: boolean;
 }
@@ -305,14 +307,12 @@ export function ProductCard({
               : "items-center justify-between pt-2",
           )}
         >
-          <span
-            className={cn(
-              "font-display font-bold text-primary",
-              compact ? "text-sm sm:text-base md:text-xl" : "text-xl",
-            )}
-          >
-            ₪{Number(product.price).toFixed(2)}
-          </span>
+          <ProductPriceRow
+            price={Number(product.price)}
+            compareAtPrice={product.compare_at_price}
+            variant={compact ? "compact" : "default"}
+            className={cn(compact ? "min-w-0" : undefined)}
+          />
           <Button
             size="sm"
             className={cn(

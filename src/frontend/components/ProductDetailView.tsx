@@ -7,6 +7,7 @@ import { Button } from "@/frontend/components/ui/button";
 import { Skeleton } from "@/frontend/components/ui/skeleton";
 import { resolveImage } from "@/frontend/lib/images";
 import { toast } from "sonner";
+import { ProductPriceRow } from "@/frontend/components/ProductPriceRow";
 
 export type ProductDetailModel = {
   id: string;
@@ -24,6 +25,7 @@ export type ProductDetailModel = {
   allergens_he?: string | null;
   allergens_ar?: string | null;
   price: number;
+  compare_at_price?: number | null;
   image_url: string | null;
   is_best_seller: boolean;
   is_available?: boolean | null;
@@ -150,9 +152,7 @@ export function ProductDetailView({
               {t("unavailableProduct")}
             </p>
           ) : null}
-          <div className="font-display text-3xl font-bold text-primary md:text-4xl">
-            ₪{Number(product.price).toFixed(2)}
-          </div>
+          <ProductPriceRow price={Number(product.price)} compareAtPrice={product.compare_at_price} variant="hero" />
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <div
               className="flex items-center overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"

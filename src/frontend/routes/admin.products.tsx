@@ -34,6 +34,7 @@ import { resolveImage } from "@/frontend/lib/images";
 import { toast } from "sonner";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { cn } from "@/frontend/lib/utils";
+import { ProductPriceRow } from "@/frontend/components/ProductPriceRow";
 
 export const Route = createFileRoute("/admin/products")({ component: AdminProducts });
 
@@ -50,6 +51,7 @@ const empty = {
   allergens_he: "",
   allergens_ar: "",
   price: 0,
+  compare_at_price: "",
   image_url: "",
   is_best_seller: false,
   is_available: true,
@@ -71,6 +73,10 @@ function productToForm(p: Record<string, unknown>) {
     allergens_en: (p.allergens_en as string | undefined) ?? legacyAllergens,
     allergens_he: (p.allergens_he as string | undefined) ?? legacyAllergens,
     allergens_ar: (p.allergens_ar as string | undefined) ?? legacyAllergens,
+    compare_at_price:
+      p.compare_at_price != null && Number(p.compare_at_price) > 0
+        ? String(Number(p.compare_at_price as number))
+        : "",
   };
 }
 
@@ -123,6 +129,25 @@ function AdminProducts() {
     const aHe = String(editing.allergens_he ?? "").trim();
     const aAr = String(editing.allergens_ar ?? "").trim();
     const allergensLegacy = aHe || aEn || aAr || null;
+    const sell = Number(editing.price);
+    if (!Number.isFinite(sell) || sell < 0) {
+      toast.error(t("genericError"));
+      return;
+    }
+    const cmpRaw = String(editing.compare_at_price ?? "").trim();
+    let compare_at_price: number | null = null;
+    if (cmpRaw !== "") {
+      const c = Number(cmpRaw);
+      if (!Number.isFinite(c) || c < 0) {
+        toast.error(t("genericError"));
+        return;
+      }
+      if (c <= sell) {
+        toast.error(t("adminCompareAtMustExceedSelling"));
+        return;
+      }
+      compare_at_price = c;
+    }
     const payload = {
       name: editing.name,
       description: descriptionLegacy,
@@ -137,7 +162,8 @@ function AdminProducts() {
       allergens_en: aEn || null,
       allergens_he: aHe || null,
       allergens_ar: aAr || null,
-      price: Number(editing.price),
+      price: sell,
+      compare_at_price,
       image_url: editing.image_url || null,
       category_id: editing.category_id || null,
       is_best_seller: !!editing.is_best_seller,
@@ -337,9 +363,12 @@ function AdminProducts() {
                             {p.name}
                           </p>
                           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                            <p className="text-lg font-bold text-primary sm:text-xl">
-                              ₪{Number(p.price).toFixed(2)}
-                            </p>
+                            <ProductPriceRow
+                              price={Number(p.price)}
+                              compareAtPrice={p.compare_at_price}
+                              variant="compact"
+                              className="text-start"
+                            />
                             {p.stock_quantity != null && p.stock_quantity !== "" && (
                               <p className="text-sm text-muted-foreground">
                                 {t("adminStockShort")}: {p.stock_quantity}
@@ -519,11 +548,25 @@ function AdminProducts() {
                   <Input
                     type="number"
                     step="0.01"
+                    min={0}
                     value={editing.price}
                     onChange={(e) => setEditing({ ...editing, price: e.target.value })}
                   />
                 </div>
                 <div>
+                  <Label htmlFor="product-compare-at">{t("adminLabelCompareAtPriceNis")}</Label>
+                  <Input
+                    id="product-compare-at"
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={editing.compare_at_price}
+                    placeholder={t("adminOptionalPlaceholder")}
+                    onChange={(e) => setEditing({ ...editing, compare_at_price: e.target.value })}
+                  />
+                  <p className="mt-1.5 text-xs text-muted-foreground">{t("adminCompareAtPriceHint")}</p>
+                </div>
+                <div className="sm:col-span-2">
                   <Label>{t("adminLabelImage")}</Label>
                   <Input
                     type="file"

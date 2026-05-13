@@ -161,6 +161,7 @@ CREATE TABLE public.products (
   ingredients TEXT,
   allergens TEXT,
   price NUMERIC(12, 2) NOT NULL CHECK (price >= 0),
+  compare_at_price NUMERIC(12, 2) NULL,
   image_url TEXT,
   stock_quantity INTEGER CHECK (stock_quantity IS NULL OR stock_quantity >= 0),
   is_best_seller BOOLEAN NOT NULL DEFAULT false,

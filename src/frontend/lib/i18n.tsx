@@ -504,9 +504,34 @@ export const dict: Dict = {
     ar: "اختر الفئة",
   },
   adminLabelPriceNis: {
-    en: "Price (₪)",
-    he: "מחיר (₪)",
-    ar: "السعر (₪)",
+    en: "Selling price (₪)",
+    he: "מחיר מכירה (₪)",
+    ar: "سعر البيع (₪)",
+  },
+  adminLabelCompareAtPriceNis: {
+    en: "Original price before discount (₪, optional)",
+    he: "מחיר לפני הנחה (₪, אופציונלי)",
+    ar: "السعر قبل الخصم (₪، اختياري)",
+  },
+  adminCompareAtPriceHint: {
+    en: "If higher than the selling price, the shop shows it crossed out next to the current price.",
+    he: "אם גבוה ממחיר המכירה, החנות תציג אותו עם קו חוצה ליד המחיר הנוכחי.",
+    ar: "إذا كان أعلى من سعر البيع، يظهر في المتجر مشطوبًا بجانب السعر الحالي.",
+  },
+  adminCompareAtMustExceedSelling: {
+    en: "Original price must be higher than the selling price (or leave it empty).",
+    he: "מחיר לפני הנחה חייב להיות גבוה ממחיר המכירה (או השאר ריק).",
+    ar: "يجب أن يكون السعر قبل الخصم أعلى من سعر البيع (أو اتركه فارغًا).",
+  },
+  priceAccessibleWas: {
+    en: "Former price",
+    he: "מחיר קודם",
+    ar: "السعر السابق",
+  },
+  priceAccessibleNow: {
+    en: "now",
+    he: "עכשיו",
+    ar: "الآن",
   },
   adminLabelStockInternal: {
     en: "Stock (internal — not shown to customers)",

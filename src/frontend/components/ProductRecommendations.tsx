@@ -12,6 +12,7 @@ type Row = {
   description_he?: string | null;
   description_ar?: string | null;
   price: number;
+  compare_at_price?: number | null;
   image_url: string | null;
   is_best_seller: boolean;
   is_available: boolean;
@@ -19,7 +20,7 @@ type Row = {
 };
 
 const SELECT =
-  "id, name, description, description_en, description_he, description_ar, price, image_url, is_best_seller, is_available, category_id" as const;
+  "id, name, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, category_id" as const;
 
 function pickRelated(rows: Row[], categoryId: string | null | undefined, limit: number): Row[] {
   if (!categoryId) return rows.slice(0, limit);
@@ -93,6 +94,7 @@ export function ProductRecommendations({
                 name: p.name,
                 description: p.description,
                 price: p.price,
+                compare_at_price: p.compare_at_price,
                 image_url: p.image_url,
                 is_best_seller: p.is_best_seller,
               }}

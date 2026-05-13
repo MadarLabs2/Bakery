@@ -1,7 +1,19 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Check, Globe, ShoppingBag, User as UserIcon, Menu } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Check,
+  FolderOpen,
+  Globe,
+  Home,
+  Info,
+  Mail,
+  Menu,
+  ShoppingBag,
+  ShoppingBasket,
+  User as UserIcon,
+  X,
+} from "lucide-react";
 import brandLogo from "@/images/alnoor_bakery_profesional/BakeryLogo.png";
-import { useEffect, useState } from "react";
 import { useI18n, type Lang, isRTL } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
 import { useCart } from "@/frontend/lib/cart";
@@ -13,6 +25,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/frontend/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/frontend/components/ui/sheet";
 import { cn } from "@/frontend/lib/utils";
 
 /** No tan accent square on tap; icon uses brand green on hover / active / open (Radix). */
@@ -29,6 +49,14 @@ const profileMenuItemCream =
   "w-full justify-start text-start focus:bg-[#FDF6EC] data-[highlighted]:bg-[#FDF6EC] hover:bg-[#FDF6EC] active:bg-[#FDF6EC] " +
   "focus:text-foreground data-[highlighted]:text-foreground hover:text-foreground";
 
+const MOBILE_NAV: { to: "/" | "/products" | "/categories" | "/about" | "/contact"; labelKey: "home" | "products" | "categories" | "about" | "contact"; Icon: LucideIcon }[] = [
+  { to: "/", labelKey: "home", Icon: Home },
+  { to: "/products", labelKey: "products", Icon: ShoppingBasket },
+  { to: "/categories", labelKey: "categories", Icon: FolderOpen },
+  { to: "/about", labelKey: "about", Icon: Info },
+  { to: "/contact", labelKey: "contact", Icon: Mail },
+];
+
 export function Header() {
   const { t, lang, setLang } = useI18n();
   /** Popper משתמש ב־Floating UI עם יישור פיזי: `end` = קצה ימין של ההפעלה מוצמד לקצה ימין של הכפתור (גם בתפריט RTL). */
@@ -36,21 +64,6 @@ export function Header() {
   const { user, isAdmin, signOut } = useAuth();
   const { count } = useCart();
   const nav = useNavigate();
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prevOverflow;
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
 
   const langs: { code: Lang; label: string }[] = [
     { code: "en", label: "English" },
@@ -147,22 +160,82 @@ export function Header() {
               {t("brand")}
             </span>
           </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "shrink-0 md:hidden",
-              headerIconGhost,
-              // Mobile: scaled logo can bleed — keep menu above for taps (LTR + RTL)
-              "relative z-[5] md:relative md:z-auto",
-            )}
-            onClick={() => setOpen((o) => !o)}
-            aria-controls="mobile-nav-menu"
-            aria-expanded={open}
-            aria-label={t("menu")}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "shrink-0 md:hidden",
+                  headerIconGhost,
+                  "relative z-[5] md:relative md:z-auto",
+                )}
+                aria-label={t("menu")}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side={lang === "en" ? "left" : "right"}
+              dir={isRTL(lang) ? "rtl" : "ltr"}
+              hideClose
+              className={cn(
+                "flex h-full max-h-[100dvh] w-[min(100%,20rem)] max-w-[20rem] flex-col gap-0 overflow-y-auto overscroll-contain border-border/80 p-0 md:hidden",
+                "data-[state=open]:shadow-2xl",
+              )}
+            >
+              <SheetHeader className="sr-only border-0 p-0">
+                <SheetTitle>{t("menu")}</SheetTitle>
+              </SheetHeader>
+              <div
+                className={cn(
+                  "flex shrink-0 items-center justify-between gap-2 border-b border-border/80 px-3 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]",
+                  lang === "en" && "flex-row-reverse",
+                )}
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-muted/25">
+                    <img
+                      src={brandLogo}
+                      alt=""
+                      width={80}
+                      height={80}
+                      className="h-8 w-auto max-w-[2.5rem] object-contain"
+                    />
+                  </span>
+                  <span className="min-w-0 flex-1 font-display text-sm font-bold leading-snug text-primary sm:text-[0.95rem]">
+                    {t("brand")}
+                  </span>
+                </div>
+                <SheetClose asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn("shrink-0", headerIconGhost)}
+                    aria-label={t("close")}
+                  >
+                    <X className="h-5 w-5" strokeWidth={1.85} aria-hidden />
+                  </Button>
+                </SheetClose>
+              </div>
+              <nav aria-label={t("menu")} className="flex flex-col gap-1 px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3">
+                {MOBILE_NAV.map(({ to, labelKey, Icon }) => (
+                  <SheetClose key={to} asChild>
+                    <Link
+                      to={to}
+                      activeOptions={to === "/" ? { exact: true } : undefined}
+                      className="flex w-full flex-row flex-nowrap items-center gap-3 rounded-xl px-3 py-3 text-base text-foreground transition-colors hover:bg-muted/80"
+                      activeProps={{ className: "font-semibold text-primary" }}
+                    >
+                      <Icon className="size-5 shrink-0 opacity-90" strokeWidth={1.85} aria-hidden />
+                      <span className="min-w-0 flex-1 truncate">{t(labelKey)}</span>
+                    </Link>
+                  </SheetClose>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
 
         <nav aria-label={t("menu")} className="hidden justify-self-center md:flex">
@@ -294,25 +367,6 @@ export function Header() {
           </DropdownMenu>
         </div>
       </div>
-      {open && (
-        <>
-          <button
-            type="button"
-            className="fixed inset-x-0 bottom-0 top-16 z-[60] bg-black/40 backdrop-blur-[2px] animate-in fade-in duration-200 md:hidden"
-            aria-label={t("close")}
-            onClick={() => setOpen(false)}
-          />
-          <nav
-            id="mobile-nav-menu"
-            role="navigation"
-            aria-label={t("menu")}
-            className="fixed left-0 right-0 top-16 z-[61] flex max-h-[min(75dvh,520px)] flex-col gap-3 overflow-y-auto border-b border-border/80 bg-background/98 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-sm shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-3 zoom-in-[0.99] duration-300 ease-out md:hidden"
-            onClick={() => setOpen(false)}
-          >
-            {links}
-          </nav>
-        </>
-      )}
     </header>
   );
 }

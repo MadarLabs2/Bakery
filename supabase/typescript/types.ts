@@ -362,6 +362,7 @@ export type Database = {
           allergens_he: string | null;
           allergens_ar: string | null;
           price: number;
+          compare_at_price: number | null;
           image_url: string | null;
           stock_quantity: number | null;
           is_best_seller: boolean;
@@ -386,6 +387,7 @@ export type Database = {
           allergens_he?: string | null;
           allergens_ar?: string | null;
           price: number;
+          compare_at_price?: number | null;
           image_url?: string | null;
           stock_quantity?: number | null;
           is_best_seller?: boolean;
@@ -410,6 +412,7 @@ export type Database = {
           allergens_he?: string | null;
           allergens_ar?: string | null;
           price?: number;
+          compare_at_price?: number | null;
           image_url?: string | null;
           stock_quantity?: number | null;
           is_best_seller?: boolean;
