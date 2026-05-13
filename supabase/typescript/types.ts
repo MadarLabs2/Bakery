@@ -364,6 +364,7 @@ export type Database = {
           price: number;
           compare_at_price: number | null;
           image_url: string | null;
+          gallery_urls: string[];
           stock_quantity: number | null;
           is_best_seller: boolean;
           is_available: boolean;
@@ -389,6 +390,7 @@ export type Database = {
           price: number;
           compare_at_price?: number | null;
           image_url?: string | null;
+          gallery_urls?: string[];
           stock_quantity?: number | null;
           is_best_seller?: boolean;
           is_available?: boolean;
@@ -414,6 +416,7 @@ export type Database = {
           price?: number;
           compare_at_price?: number | null;
           image_url?: string | null;
+          gallery_urls?: string[];
           stock_quantity?: number | null;
           is_best_seller?: boolean;
           is_available?: boolean;

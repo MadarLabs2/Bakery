@@ -163,6 +163,7 @@ CREATE TABLE public.products (
   price NUMERIC(12, 2) NOT NULL CHECK (price >= 0),
   compare_at_price NUMERIC(12, 2) NULL,
   image_url TEXT,
+  gallery_urls TEXT[] NOT NULL DEFAULT '{}',
   stock_quantity INTEGER CHECK (stock_quantity IS NULL OR stock_quantity >= 0),
   is_best_seller BOOLEAN NOT NULL DEFAULT false,
   is_available BOOLEAN NOT NULL DEFAULT true,

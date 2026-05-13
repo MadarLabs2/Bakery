@@ -477,6 +477,46 @@ export const dict: Dict = {
     he: "עריכת מוצר",
     ar: "تعديل منتج",
   },
+  adminProductSaveChanges: {
+    en: "Save changes",
+    he: "שמור שינויים",
+    ar: "حفظ التغييرات",
+  },
+  adminGalleryColumnMissingWarning: {
+    en: "Product saved, but extra gallery photos were not stored. In Supabase: open SQL Editor and run: ALTER TABLE public.products ADD COLUMN IF NOT EXISTS gallery_urls text[] NOT NULL DEFAULT '{}'; then NOTIFY pgrst, 'reload schema';",
+    he: "המוצר נשמר, אך תמונות הגלריה הנוספות לא נשמרו. בסופאבייס: SQL Editor והרצת ALTER TABLE public.products ADD COLUMN IF NOT EXISTS gallery_urls text[] NOT NULL DEFAULT '{}'; ואז NOTIFY pgrst, 'reload schema';",
+    ar: "تم حفظ المنتج دون صور المعرض الإضافية. في Supabase نفّذ في محرر SQL: ALTER TABLE public.products ADD COLUMN IF NOT EXISTS gallery_urls text[] NOT NULL DEFAULT '{}'; ثم NOTIFY pgrst, 'reload schema';",
+  },
+  adminProductAddImage: {
+    en: "Add image",
+    he: "הוסף תמונה",
+    ar: "إضافة صورة",
+  },
+  adminProductImagesSection: {
+    en: "Product images",
+    he: "תמונות מוצר",
+    ar: "صور المنتج",
+  },
+  adminProductAvailability: {
+    en: "Availability",
+    he: "זמינות",
+    ar: "التوفر",
+  },
+  adminProductChangeCover: {
+    en: "Change main photo",
+    he: "החלפת תמונה ראשית",
+    ar: "تغيير الصورة الرئيسية",
+  },
+  adminProductBackForm: {
+    en: "Close form",
+    he: "סגירת הטופס",
+    ar: "إغلاق النموذج",
+  },
+  adminProductSaveForm: {
+    en: "Save product",
+    he: "שמירת מוצר",
+    ar: "حفظ المنتج",
+  },
   adminDialogCategoryNewTitle: {
     en: "New category",
     he: "קטגוריה חדשה",

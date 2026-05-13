@@ -1,6 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Star, StarOff, Pencil, ChevronUp } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Camera,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Croissant,
+  Pencil,
+  Plus,
+  Save,
+  Star,
+  StarOff,
+  Trash2,
+  ChevronUp,
+  X,
+} from "lucide-react";
 import { supabase } from "@/backend/db/client";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
@@ -19,7 +33,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/frontend/components/ui/dialog";
 import {
   AlertDialog,
@@ -30,6 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/frontend/components/ui/alert-dialog";
+import { Switch } from "@/frontend/components/ui/switch";
 import { resolveImage } from "@/frontend/lib/images";
 import { toast } from "sonner";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
@@ -37,6 +51,8 @@ import { cn } from "@/frontend/lib/utils";
 import { ProductPriceRow } from "@/frontend/components/ProductPriceRow";
 
 export const Route = createFileRoute("/admin/products")({ component: AdminProducts });
+
+const CREAM = "#F8F4E9";
 
 const empty = {
   category_id: "",
@@ -53,17 +69,34 @@ const empty = {
   price: 0,
   compare_at_price: "",
   image_url: "",
+  gallery_urls: [] as string[],
   is_best_seller: false,
   is_available: true,
+  stock_quantity: null as number | null | "",
 };
+
+function dedupeImageUrls(image_url: string, gallery_urls: string[] | undefined): string[] {
+  const out: string[] = [];
+  const g = gallery_urls ?? [];
+  if (image_url) out.push(image_url);
+  for (const u of g) {
+    if (u && !out.includes(u)) out.push(u);
+  }
+  return out;
+}
 
 function productToForm(p: Record<string, unknown>) {
   const legacyDesc = typeof p.description === "string" ? p.description : "";
   const legacyIngredients = typeof p.ingredients === "string" ? p.ingredients : "";
   const legacyAllergens = typeof p.allergens === "string" ? p.allergens : "";
+  const rawGallery = p.gallery_urls;
+  const gallery_urls = Array.isArray(rawGallery)
+    ? (rawGallery as unknown[]).filter((x): x is string => typeof x === "string")
+    : [];
   return {
     ...empty,
     ...p,
+    gallery_urls,
     description_en: (p.description_en as string | undefined) ?? legacyDesc,
     description_he: (p.description_he as string | undefined) ?? legacyDesc,
     description_ar: (p.description_ar as string | undefined) ?? legacyDesc,
@@ -80,8 +113,26 @@ function productToForm(p: Record<string, unknown>) {
   };
 }
 
+function CategoryThumb({ cat, className }: { cat: { image_url?: string | null }; className?: string }) {
+  const src = cat.image_url ? resolveImage(cat.image_url) : null;
+  return (
+    <span
+      className={cn(
+        "flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-stone-200/90 bg-white",
+        className,
+      )}
+    >
+      {src ? (
+        <img src={src} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <Croissant className="h-4 w-4 text-[#B19470]" strokeWidth={1.75} aria-hidden />
+      )}
+    </span>
+  );
+}
+
 function AdminProducts() {
-  const { t, lang } = useI18n();
+  const { t, lang, dir } = useI18n();
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
@@ -92,6 +143,20 @@ function AdminProducts() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<any>(null);
+  const heroFileRef = useRef<HTMLInputElement>(null);
+  const galleryFileRef = useRef<HTMLInputElement>(null);
+
+  const BackChevron = dir === "rtl" ? ChevronRight : ChevronLeft;
+
+  const selectedCategory = useMemo(
+    () => categories.find((c) => c.id === editing.category_id),
+    [categories, editing.category_id],
+  );
+
+  const imageList = useMemo(
+    () => dedupeImageUrls(String(editing.image_url ?? ""), editing.gallery_urls),
+    [editing.image_url, editing.gallery_urls],
+  );
 
   const load = () => {
     supabase
@@ -115,6 +180,11 @@ function AdminProducts() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const closeForm = () => {
+    setOpen(false);
+    setEditing({ ...empty });
+  };
 
   const save = async () => {
     const dEn = String(editing.description_en ?? "").trim();
@@ -148,7 +218,8 @@ function AdminProducts() {
       }
       compare_at_price = c;
     }
-    const payload = {
+    const gallery_urls = (editing.gallery_urls ?? []).filter((u: string) => typeof u === "string" && u.length > 0);
+    const payloadBase = {
       name: editing.name,
       description: descriptionLegacy,
       description_en: dEn || null,
@@ -173,16 +244,30 @@ function AdminProducts() {
           ? null
           : Number(editing.stock_quantity),
     };
-    if (editing.id) {
-      const { error } = await supabase.from("products").update(payload).eq("id", editing.id);
-      if (error) return toast.error(error.message);
-    } else {
-      const { error } = await supabase.from("products").insert(payload);
-      if (error) return toast.error(error.message);
+    const payloadWithGallery = { ...payloadBase, gallery_urls };
+
+    const isGalleryColumnError = (msg: string) => {
+      const m = msg.toLowerCase();
+      return m.includes("gallery_urls") && (m.includes("schema cache") || m.includes("column"));
+    };
+
+    const runSave = async (payload: typeof payloadWithGallery | typeof payloadBase) =>
+      editing.id
+        ? supabase.from("products").update(payload).eq("id", editing.id)
+        : supabase.from("products").insert(payload as typeof payloadWithGallery);
+
+    let { error } = await runSave(payloadWithGallery);
+    if (error && isGalleryColumnError(error.message)) {
+      const { error: err2 } = await runSave(payloadBase);
+      if (err2) return toast.error(err2.message);
+      if (gallery_urls.length > 0) {
+        toast.warning(t("adminGalleryColumnMissingWarning"), { duration: 16_000 });
+      }
+    } else if (error) {
+      return toast.error(error.message);
     }
     toast.success(t("saved"));
-    setOpen(false);
-    setEditing({ ...empty });
+    closeForm();
     load();
   };
 
@@ -258,7 +343,7 @@ function AdminProducts() {
     load();
   };
 
-  const upload = async (file: File) => {
+  const uploadImage = async (file: File, target: "cover" | "gallery") => {
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${crypto.randomUUID()}.${ext}`;
@@ -269,9 +354,32 @@ function AdminProducts() {
       return;
     }
     const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-    setEditing({ ...editing, image_url: data.publicUrl });
+    const url = data.publicUrl;
+    setEditing((prev: any) => {
+      if (target === "cover") return { ...prev, image_url: url };
+      if (!prev.image_url) return { ...prev, image_url: url };
+      const g = [...(prev.gallery_urls ?? [])];
+      if (!g.includes(url)) g.push(url);
+      return { ...prev, gallery_urls: g };
+    });
     setUploading(false);
   };
+
+  const removeImageAtIndex = (index: number) => {
+    const urls = dedupeImageUrls(String(editing.image_url ?? ""), editing.gallery_urls);
+    const next = urls.filter((_, i) => i !== index);
+    const [first, ...rest] = next;
+    setEditing({
+      ...editing,
+      image_url: first || "",
+      gallery_urls: rest,
+    });
+  };
+
+  const formTitle = editing.id ? t("adminDialogProductEditTitle") : t("adminDialogProductNewTitle");
+
+  const fieldClass =
+    "rounded-xl border border-stone-200/90 bg-white shadow-sm focus-visible:border-[#1B4332]/35 focus-visible:ring-[#1B4332]/20";
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
@@ -279,14 +387,24 @@ function AdminProducts() {
         {t("products")}
       </h1>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) setEditing({ ...empty });
+        }}
+      >
         <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(11rem,15rem)] lg:items-start lg:gap-8">
           <aside className="shrink-0 space-y-3 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1 lg:self-start">
-            <DialogTrigger asChild>
-              <Button className="w-full" onClick={() => setEditing({ ...empty })}>
-                <Plus className="h-4 w-4" /> {t("adminBtnNewProduct")}
-              </Button>
-            </DialogTrigger>
+            <Button
+              className="w-full bg-[#1B4332] text-white hover:bg-[#163d2f]"
+              onClick={() => {
+                setEditing({ ...empty });
+                setOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" /> {t("adminBtnNewProduct")}
+            </Button>
           </aside>
 
           <section className="min-w-0 space-y-4 lg:col-start-1 lg:row-start-1">
@@ -405,7 +523,7 @@ function AdminProducts() {
                       <div className="flex w-full shrink-0 flex-row gap-2 sm:w-auto sm:justify-end">
                         <Button
                           variant="outline"
-                          className="flex-1 gap-2 border-primary/40 sm:flex-initial sm:min-w-[7rem]"
+                          className="flex-1 gap-2 border-[#1B4332]/25 sm:flex-initial sm:min-w-[7rem]"
                           onClick={() => {
                             setEditing(productToForm(p));
                             setOpen(true);
@@ -431,196 +549,404 @@ function AdminProducts() {
           </section>
         </div>
 
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editing.id ? t("adminDialogProductEditTitle") : t("adminDialogProductNewTitle")}
-              </DialogTitle>
-              <DialogDescription className="sr-only">{t("adminDialogProductFormSr")}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 [&_label]:text-sm [&_label]:!font-semibold [&_label]:text-foreground">
-              <div>
-                <Label>{t("adminLabelCategory")}</Label>
-                <Select
-                  value={editing.category_id ?? ""}
-                  onValueChange={(v) => setEditing({ ...editing, category_id: v })}
+        <DialogContent
+          className={cn(
+            "flex max-h-[100dvh] w-full max-w-full flex-col gap-0 overflow-hidden border-stone-200/90 p-0 shadow-xl",
+            "fixed inset-0 left-0 top-0 h-[100dvh] max-h-[100dvh] translate-x-0 translate-y-0 rounded-none",
+            "sm:inset-auto sm:left-[50%] sm:top-[50%] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-xl",
+            "[&>button.absolute]:hidden",
+          )}
+          style={{ backgroundColor: CREAM }}
+        >
+          <DialogHeader className="sr-only">
+            <DialogTitle>{formTitle}</DialogTitle>
+            <DialogDescription>{t("adminDialogProductFormSr")}</DialogDescription>
+          </DialogHeader>
+
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <header
+              className="flex shrink-0 items-center justify-between gap-3 border-b border-stone-200/80 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))]"
+              style={{ backgroundColor: CREAM }}
+            >
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 shrink-0 rounded-full text-[#B19470] hover:bg-black/[0.04] hover:text-[#9a7d5c]"
+                onClick={() => closeForm()}
+                aria-label={t("adminProductBackForm")}
+              >
+                <BackChevron className="h-5 w-5" strokeWidth={2} />
+              </Button>
+              <h2 className="font-display text-lg font-bold tracking-tight text-[#1B4332] sm:text-xl">{formTitle}</h2>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 shrink-0 rounded-full text-[#B19470] hover:bg-black/[0.04] hover:text-[#9a7d5c] disabled:opacity-40"
+                disabled={uploading}
+                onClick={() => void save()}
+                aria-label={t("adminProductSaveForm")}
+              >
+                <Check className="h-5 w-5" strokeWidth={2.5} />
+              </Button>
+            </header>
+
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-4">
+              <input
+                ref={heroFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) void uploadImage(f, "cover");
+                }}
+              />
+              <input
+                ref={galleryFileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) void uploadImage(f, "gallery");
+                }}
+              />
+
+              <div className="relative mx-auto max-w-lg">
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => heroFileRef.current?.click()}
+                  className={cn(
+                    "relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-stone-200/90 bg-white shadow-sm outline-none transition-opacity",
+                    "focus-visible:ring-2 focus-visible:ring-[#1B4332]/25 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F8F4E9]",
+                    uploading && "pointer-events-none opacity-60",
+                  )}
+                  aria-label={t("adminProductChangeCover")}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("adminSelectCategoryPlaceholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {pickName(c, lang)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>{t("adminThName")}</Label>
-                <Input
-                  value={editing.name}
-                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="pd-he">{t("adminThDescription")} ({t("adminCategoryLangHe")})</Label>
-                  <Textarea
-                    id="pd-he"
-                    value={editing.description_he ?? ""}
-                    onChange={(e) => setEditing({ ...editing, description_he: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pd-en">{t("adminThDescription")} ({t("adminCategoryLangEn")})</Label>
-                  <Textarea
-                    id="pd-en"
-                    value={editing.description_en ?? ""}
-                    onChange={(e) => setEditing({ ...editing, description_en: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pd-ar">{t("adminThDescription")} ({t("adminCategoryLangAr")})</Label>
-                  <Textarea
-                    id="pd-ar"
-                    value={editing.description_ar ?? ""}
-                    onChange={(e) => setEditing({ ...editing, description_ar: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="in-he">{t("ingredients")} ({t("adminCategoryLangHe")})</Label>
-                  <Textarea
-                    id="in-he"
-                    value={editing.ingredients_he ?? ""}
-                    onChange={(e) => setEditing({ ...editing, ingredients_he: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="in-en">{t("ingredients")} ({t("adminCategoryLangEn")})</Label>
-                  <Textarea
-                    id="in-en"
-                    value={editing.ingredients_en ?? ""}
-                    onChange={(e) => setEditing({ ...editing, ingredients_en: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="in-ar">{t("ingredients")} ({t("adminCategoryLangAr")})</Label>
-                  <Textarea
-                    id="in-ar"
-                    value={editing.ingredients_ar ?? ""}
-                    onChange={(e) => setEditing({ ...editing, ingredients_ar: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="ag-he">{t("allergens")} ({t("adminCategoryLangHe")})</Label>
-                  <Textarea
-                    id="ag-he"
-                    value={editing.allergens_he ?? ""}
-                    onChange={(e) => setEditing({ ...editing, allergens_he: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ag-en">{t("allergens")} ({t("adminCategoryLangEn")})</Label>
-                  <Textarea
-                    id="ag-en"
-                    value={editing.allergens_en ?? ""}
-                    onChange={(e) => setEditing({ ...editing, allergens_en: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="ag-ar">{t("allergens")} ({t("adminCategoryLangAr")})</Label>
-                  <Textarea
-                    id="ag-ar"
-                    value={editing.allergens_ar ?? ""}
-                    onChange={(e) => setEditing({ ...editing, allergens_ar: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label>{t("adminLabelPriceNis")}</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={editing.price}
-                    onChange={(e) => setEditing({ ...editing, price: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="product-compare-at">{t("adminLabelCompareAtPriceNis")}</Label>
-                  <Input
-                    id="product-compare-at"
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={editing.compare_at_price}
-                    placeholder={t("adminOptionalPlaceholder")}
-                    onChange={(e) => setEditing({ ...editing, compare_at_price: e.target.value })}
-                  />
-                  <p className="mt-1.5 text-xs text-muted-foreground">{t("adminCompareAtPriceHint")}</p>
-                </div>
-                <div className="sm:col-span-2">
-                  <Label>{t("adminLabelImage")}</Label>
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
-                    disabled={uploading}
-                  />
-                  {editing.image_url && (
+                  {editing.image_url ? (
                     <img
                       src={resolveImage(editing.image_url)!}
                       alt=""
-                      className="mt-2 h-20 w-20 rounded object-cover"
+                      className="h-full w-full object-cover"
                     />
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center gap-2 bg-stone-100/80 text-stone-500">
+                      <Camera className="h-10 w-10 opacity-50" strokeWidth={1.25} />
+                      <span className="text-xs font-medium">{t("adminLabelImage")}</span>
+                    </div>
                   )}
+                </button>
+                <Button
+                  type="button"
+                  size="icon"
+                  disabled={uploading}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    heroFileRef.current?.click();
+                  }}
+                  className="absolute bottom-3 end-3 h-11 w-11 rounded-full border-0 bg-[#1B4332] text-white shadow-md hover:bg-[#163d2f]"
+                  aria-label={t("adminProductChangeCover")}
+                >
+                  <Camera className="h-5 w-5" strokeWidth={2} />
+                </Button>
+              </div>
+
+              <div className="mx-auto mt-6 max-w-lg space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-[#2a2a2a]">{t("adminLabelCategory")}</Label>
+                  <Select
+                    value={editing.category_id ?? ""}
+                    onValueChange={(v) => setEditing({ ...editing, category_id: v })}
+                  >
+                    <SelectTrigger className={cn("h-12", fieldClass)}>
+                      <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                        {selectedCategory ? <CategoryThumb cat={selectedCategory} /> : <CategoryThumb cat={{}} />}
+                        <SelectValue placeholder={t("adminSelectCategoryPlaceholder")} />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id} textValue={pickName(c, lang)}>
+                          <span className="flex items-center gap-2">
+                            <CategoryThumb cat={c} className="h-7 w-7" />
+                            {pickName(c, lang)}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-              <div>
-                <Label>{t("adminLabelStockInternal")}</Label>
-                <Input
-                  type="number"
-                  value={editing.stock_quantity ?? ""}
-                  placeholder={t("adminOptionalPlaceholder")}
-                  onChange={(e) =>
-                    setEditing({
-                      ...editing,
-                      stock_quantity: e.target.value === "" ? null : Number(e.target.value),
-                    })
-                  }
-                />
-              </div>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2">
+
+                <div className="space-y-2">
+                  <Label htmlFor="pf-name" className="text-sm font-semibold text-[#2a2a2a]">
+                    {t("adminThName")}
+                  </Label>
+                  <Input
+                    id="pf-name"
+                    value={editing.name}
+                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                    className={cn("h-11", fieldClass)}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="pd-he" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("adminThDescription")} ({t("adminCategoryLangHe")})
+                    </Label>
+                    <Textarea
+                      id="pd-he"
+                      value={editing.description_he ?? ""}
+                      onChange={(e) => setEditing({ ...editing, description_he: e.target.value })}
+                      rows={4}
+                      className={cn("min-h-[6rem] resize-y", fieldClass)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pd-en" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("adminThDescription")} ({t("adminCategoryLangEn")})
+                    </Label>
+                    <Textarea
+                      id="pd-en"
+                      value={editing.description_en ?? ""}
+                      onChange={(e) => setEditing({ ...editing, description_en: e.target.value })}
+                      rows={4}
+                      className={cn("min-h-[6rem] resize-y", fieldClass)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pd-ar" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("adminThDescription")} ({t("adminCategoryLangAr")})
+                    </Label>
+                    <Textarea
+                      id="pd-ar"
+                      value={editing.description_ar ?? ""}
+                      onChange={(e) => setEditing({ ...editing, description_ar: e.target.value })}
+                      rows={4}
+                      className={cn("min-h-[6rem] resize-y", fieldClass)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="in-he" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("ingredients")} ({t("adminCategoryLangHe")})
+                    </Label>
+                    <Textarea
+                      id="in-he"
+                      value={editing.ingredients_he ?? ""}
+                      onChange={(e) => setEditing({ ...editing, ingredients_he: e.target.value })}
+                      rows={3}
+                      className={cn("min-h-[5rem] resize-y", fieldClass)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="in-en" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("ingredients")} ({t("adminCategoryLangEn")})
+                    </Label>
+                    <Textarea
+                      id="in-en"
+                      value={editing.ingredients_en ?? ""}
+                      onChange={(e) => setEditing({ ...editing, ingredients_en: e.target.value })}
+                      rows={3}
+                      className={cn("min-h-[5rem] resize-y", fieldClass)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="in-ar" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("ingredients")} ({t("adminCategoryLangAr")})
+                    </Label>
+                    <Textarea
+                      id="in-ar"
+                      value={editing.ingredients_ar ?? ""}
+                      onChange={(e) => setEditing({ ...editing, ingredients_ar: e.target.value })}
+                      rows={3}
+                      className={cn("min-h-[5rem] resize-y", fieldClass)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="ag-he" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("allergens")} ({t("adminCategoryLangHe")})
+                    </Label>
+                    <Textarea
+                      id="ag-he"
+                      value={editing.allergens_he ?? ""}
+                      onChange={(e) => setEditing({ ...editing, allergens_he: e.target.value })}
+                      rows={3}
+                      className={cn("min-h-[5rem] resize-y", fieldClass)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ag-en" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("allergens")} ({t("adminCategoryLangEn")})
+                    </Label>
+                    <Textarea
+                      id="ag-en"
+                      value={editing.allergens_en ?? ""}
+                      onChange={(e) => setEditing({ ...editing, allergens_en: e.target.value })}
+                      rows={3}
+                      className={cn("min-h-[5rem] resize-y", fieldClass)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ag-ar" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("allergens")} ({t("adminCategoryLangAr")})
+                    </Label>
+                    <Textarea
+                      id="ag-ar"
+                      value={editing.allergens_ar ?? ""}
+                      onChange={(e) => setEditing({ ...editing, allergens_ar: e.target.value })}
+                      rows={3}
+                      className={cn("min-h-[5rem] resize-y", fieldClass)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="pf-price" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("adminLabelPriceNis")}
+                    </Label>
+                    <Input
+                      id="pf-price"
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={editing.price}
+                      onChange={(e) => setEditing({ ...editing, price: e.target.value })}
+                      className={cn("h-11 tabular-nums", fieldClass)}
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="product-compare-at" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("adminLabelCompareAtPriceNis")}
+                    </Label>
+                    <Input
+                      id="product-compare-at"
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={editing.compare_at_price}
+                      placeholder={t("adminOptionalPlaceholder")}
+                      onChange={(e) => setEditing({ ...editing, compare_at_price: e.target.value })}
+                      className={cn("h-11 tabular-nums", fieldClass)}
+                      dir="ltr"
+                    />
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground sm:col-span-2">
+                    {t("adminCompareAtPriceHint")}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pf-stock" className="text-sm font-semibold text-[#2a2a2a]">
+                    {t("adminLabelStockInternal")}
+                  </Label>
+                  <Input
+                    id="pf-stock"
+                    type="number"
+                    value={editing.stock_quantity ?? ""}
+                    placeholder={t("adminOptionalPlaceholder")}
+                    onChange={(e) =>
+                      setEditing({
+                        ...editing,
+                        stock_quantity: e.target.value === "" ? null : Number(e.target.value),
+                      })
+                    }
+                    className={cn("h-11 tabular-nums", fieldClass)}
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-[#2a2a2a]">{t("adminProductImagesSection")}</Label>
+                  <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {imageList.map((url, idx) => (
+                      <div key={`${url}-${idx}`} className="relative shrink-0">
+                        <div className="h-20 w-20 overflow-hidden rounded-xl border border-stone-200/90 bg-white shadow-sm">
+                          <img src={resolveImage(url)!} alt="" className="h-full w-full object-cover" />
+                        </div>
+                        <button
+                          type="button"
+                          className="absolute -end-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#1B4332] text-white shadow ring-2 ring-[#F8F4E9]"
+                          onClick={() => removeImageAtIndex(idx)}
+                          aria-label={t("adminDeleteAction")}
+                        >
+                          <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      disabled={uploading}
+                      onClick={() => galleryFileRef.current?.click()}
+                      className={cn(
+                        "flex h-20 w-20 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-dashed border-[#B19470]/55 bg-white/60 text-[#B19470] transition-colors",
+                        "hover:border-[#B19470] hover:bg-white",
+                        uploading && "pointer-events-none opacity-50",
+                      )}
+                    >
+                      <Plus className="h-6 w-6" strokeWidth={2} />
+                      <span className="px-1 text-center text-[10px] font-semibold leading-tight">
+                        {t("adminProductAddImage")}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 rounded-xl border border-stone-200/90 bg-white px-3 py-3 shadow-sm">
+                  <span className="text-sm font-semibold text-[#2a2a2a]">{t("adminProductAvailability")}</span>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={!!editing.is_available}
+                      onCheckedChange={(v) => setEditing({ ...editing, is_available: v })}
+                      className="data-[state=checked]:bg-[#1B4332]"
+                    />
+                    <span className="text-sm font-medium text-[#1B4332]">
+                      {editing.is_available ? t("adminStatusAvailable") : t("adminStatusHidden")}
+                    </span>
+                  </div>
+                </div>
+
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-stone-200/90 bg-white px-3 py-3 shadow-sm">
                   <input
                     type="checkbox"
-                    checked={editing.is_best_seller}
+                    className="h-4 w-4 rounded border-stone-300 text-[#1B4332] focus:ring-[#1B4332]"
+                    checked={!!editing.is_best_seller}
                     onChange={(e) => setEditing({ ...editing, is_best_seller: e.target.checked })}
-                  />{" "}
-                  {t("adminBestSellerLabel")}
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={editing.is_available}
-                    onChange={(e) => setEditing({ ...editing, is_available: e.target.checked })}
-                  />{" "}
-                  {t("adminAvailableLabel")}
+                  />
+                  <span className="text-sm font-semibold text-[#2a2a2a]">{t("adminBestSellerLabel")}</span>
                 </label>
               </div>
-              <Button onClick={save} className="w-full">
-                {t("adminSave")}
-              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
+
+            <footer
+              className="shrink-0 border-t border-stone-200/90 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+              style={{ backgroundColor: CREAM }}
+            >
+              <Button
+                type="button"
+                disabled={uploading}
+                onClick={() => void save()}
+                className="mx-auto flex h-12 w-full max-w-lg gap-2 rounded-xl bg-[#1B4332] text-[15px] font-semibold text-white hover:bg-[#163d2f]"
+              >
+                <Save className="h-5 w-5 shrink-0 opacity-95" strokeWidth={2} />
+                {t("adminProductSaveChanges")}
+              </Button>
+            </footer>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!lightboxUrl} onOpenChange={(o) => !o && setLightboxUrl(null)}>
         <DialogContent className="max-h-[90vh] max-w-[min(96vw,56rem)] border-0 bg-transparent p-0 shadow-none sm:rounded-lg">
@@ -629,11 +955,7 @@ function AdminProducts() {
             <DialogDescription>{t("adminExpandImageHint")}</DialogDescription>
           </DialogHeader>
           {lightboxUrl && (
-            <img
-              src={lightboxUrl}
-              alt=""
-              className="max-h-[85vh] w-full rounded-lg object-contain"
-            />
+            <img src={lightboxUrl} alt="" className="max-h-[85vh] w-full rounded-lg object-contain" />
           )}
         </DialogContent>
       </Dialog>
@@ -660,9 +982,7 @@ function AdminProducts() {
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-muted-foreground">
                 <p>{t("adminDeleteProductBody")}</p>
-                {pendingDelete && (
-                  <p className="font-medium text-foreground">{pendingDelete.name}</p>
-                )}
+                {pendingDelete && <p className="font-medium text-foreground">{pendingDelete.name}</p>}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
