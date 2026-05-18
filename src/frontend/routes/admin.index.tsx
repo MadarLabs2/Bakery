@@ -14,7 +14,9 @@ import { format } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/backend/db/client";
 import { Input } from "@/frontend/components/ui/input";
+import { Badge } from "@/frontend/components/ui/badge";
 import { cn } from "@/frontend/lib/utils";
+import { useAdminPendingOrderCount } from "@/frontend/hooks/useAdminPendingOrderCount";
 import { adminOrderStatusLabel, adminOrderStatusPillClass } from "@/frontend/lib/adminLabels";
 import { useI18n } from "@/frontend/lib/i18n";
 
@@ -129,6 +131,7 @@ type OrderRow = {
 function AdminDashboard() {
   const { t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pendingOrders = useAdminPendingOrderCount();
   const [search, setSearch] = useState("");
   const [stats, setStats] = useState({
     revenue: 0,
@@ -293,10 +296,19 @@ function AdminDashboard() {
                           <span
                             className={cn(
                               "flex shrink-0 rounded-xl p-2 shadow-inner sm:p-3",
+                              tile.to === "/admin/orders" && "relative",
                               tile.iconClass,
                             )}
                           >
                             <Icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.85} aria-hidden />
+                            {tile.to === "/admin/orders" && pendingOrders > 0 ? (
+                              <Badge
+                                variant="destructive"
+                                className="pointer-events-none absolute -end-1 -top-1 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full px-1 py-0 text-[10px] font-bold leading-none tabular-nums sm:h-5 sm:min-w-5 sm:text-[11px]"
+                              >
+                                {pendingOrders > 99 ? "99+" : pendingOrders}
+                              </Badge>
+                            ) : null}
                           </span>
                           <div className="min-w-0 flex-1 pt-0 sm:pt-0.5">
                             <h3 className="font-display text-[15px] font-medium leading-snug text-[#3d342c] sm:text-lg md:text-xl">

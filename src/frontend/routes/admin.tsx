@@ -4,6 +4,7 @@ import { useAuth } from "@/frontend/lib/auth";
 import { useI18n } from "@/frontend/lib/i18n";
 
 import { AdminShell } from "@/frontend/components/admin/AdminShell";
+import { AdminPendingOrdersProvider } from "@/frontend/lib/AdminPendingOrdersContext";
 
 export const Route = createFileRoute("/admin")({ component: AdminLayout });
 
@@ -36,8 +37,10 @@ function AdminLayout() {
   }
 
   return (
-    <AdminShell>
-      <Outlet />
-    </AdminShell>
+    <AdminPendingOrdersProvider>
+      <AdminShell>
+        <Outlet />
+      </AdminShell>
+    </AdminPendingOrdersProvider>
   );
 }

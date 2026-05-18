@@ -27,6 +27,21 @@ export const dict: Dict = {
   categories: { en: "Categories", he: "קטגוריות", ar: "الفئات" },
   cart: { en: "Cart", he: "סל", ar: "السلة" },
   myOrders: { en: "My Orders", he: "ההזמנות שלי", ar: "طلباتي" },
+  myOrdersEmpty: {
+    en: "No orders yet.",
+    he: "אין הזמנות עדיין.",
+    ar: "لا توجد طلبات بعد.",
+  },
+  myOrdersSeeMore: {
+    en: "See more orders",
+    he: "הצג הזמנות נוספות",
+    ar: "عرض المزيد من الطلبات",
+  },
+  loading: {
+    en: "Loading…",
+    he: "טוען…",
+    ar: "جارٍ التحميل…",
+  },
   about: { en: "About", he: "אודות", ar: "من نحن" },
   contact: { en: "Contact", he: "צור קשר", ar: "تواصل" },
   login: { en: "Login", he: "התחבר", ar: "دخول" },
@@ -327,6 +342,21 @@ export const dict: Dict = {
     en: "View storefront",
     he: "מעבר לאתר החנות",
     ar: "عرض واجهة المتجر",
+  },
+  adminOrdersBellOpen: {
+    en: "Shop orders",
+    he: "הזמנות מהחנות",
+    ar: "طلبات المتجر",
+  },
+  adminOrdersBellAriaWithPending: {
+    en: "{{n}} orders need attention — open orders",
+    he: "{{n}} הזמנות ממתינות — פתיחת הזמנות",
+    ar: "{{n}} طلبات تحتاج متابعة — افتح الطلبات",
+  },
+  adminOrdersBellAriaClear: {
+    en: "Orders — nothing waiting at checkout",
+    he: "הזמנות — אין הזמנות ממתינות כרגע",
+    ar: "الطلبات — لا يوجد طلبات قيد الانتظار",
   },
   adminDashResourceSection: {
     en: "Resource management",

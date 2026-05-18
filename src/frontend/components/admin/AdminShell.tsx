@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
+  Bell,
   Check,
   Globe,
   LayoutDashboard,
@@ -11,8 +12,9 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Button } from "@/frontend/components/ui/button";
+import { Badge } from "@/frontend/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,8 +23,10 @@ import {
 } from "@/frontend/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/frontend/components/ui/sheet";
 import brandLogo from "@/images/alnoor_bakery_profesional/BakeryLogo.png";
+import { useAdminPendingOrderCount } from "@/frontend/hooks/useAdminPendingOrderCount";
 import { useAuth } from "@/frontend/lib/auth";
 import { useI18n, isRTL, type Lang } from "@/frontend/lib/i18n";
+import { unlockOrderNotificationAudio } from "@/frontend/lib/orderNotificationSound";
 import { cn } from "@/frontend/lib/utils";
 
 type NavItem = {
@@ -145,11 +149,17 @@ function AdminSidebarBody({
 
 function AdminNavbarLangAndShop({ onShopNavigate }: { onShopNavigate?: () => void }) {
   const { t, lang, setLang, dir } = useI18n();
+  const pendingOrderCount = useAdminPendingOrderCount();
   const langs: { code: Lang; label: string }[] = [
     { code: "en", label: "English" },
     { code: "he", label: "עברית" },
     { code: "ar", label: "العربية" },
   ];
+
+  const bellLabel =
+    pendingOrderCount > 0
+      ? t("adminOrdersBellAriaWithPending").replace("{{n}}", String(pendingOrderCount))
+      : t("adminOrdersBellAriaClear");
 
   return (
     <div className="flex shrink-0 items-center gap-1.5 sm:gap-2" dir={dir}>
@@ -203,6 +213,30 @@ function AdminNavbarLangAndShop({ onShopNavigate }: { onShopNavigate?: () => voi
       <Button
         variant="outline"
         size="icon"
+        className="relative h-8 w-8 shrink-0 rounded-lg border-[#3C2A21]/15 text-[#1B4332] hover:bg-[#1B4332]/[0.06]"
+        asChild
+      >
+        <Link
+          to="/admin/orders"
+          onClick={onShopNavigate}
+          aria-label={bellLabel}
+          title={t("adminOrdersBellOpen")}
+        >
+          <Bell className="h-4 w-4" strokeWidth={2} aria-hidden />
+          {pendingOrderCount > 0 ? (
+            <Badge
+              variant="destructive"
+              className="pointer-events-none absolute -end-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 py-0 text-[10px] leading-none tabular-nums"
+            >
+              {pendingOrderCount > 99 ? "99+" : pendingOrderCount}
+            </Badge>
+          ) : null}
+        </Link>
+      </Button>
+
+      <Button
+        variant="outline"
+        size="icon"
         className="h-8 w-8 shrink-0 rounded-lg border-[#3C2A21]/15 text-[#1B4332] hover:bg-[#1B4332]/[0.06]"
         asChild
       >
@@ -220,6 +254,16 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   /** `sheet.tsx` only supports left/right/top/bottom — not "start", which broke the drawer. */
   const sheetSide = isRTL(lang) ? "right" : "left";
+
+  useEffect(() => {
+    const unlock = () => unlockOrderNotificationAudio();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-[#F9F9F7] text-foreground">
