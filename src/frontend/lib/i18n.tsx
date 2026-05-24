@@ -1,10 +1,16 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { legalSharedDict } from "@/frontend/lib/legalShared.i18n";
+import { privacyDict } from "@/frontend/lib/privacyPolicy.i18n";
+import { termsDict } from "@/frontend/lib/termsPolicy.i18n";
 
 export type Lang = "en" | "he" | "ar";
 
 type Dict = Record<string, { en: string; he: string; ar: string }>;
 
 export const dict: Dict = {
+  ...legalSharedDict,
+  ...privacyDict,
+  ...termsDict,
   brand: {
     en: "Al-nour Gluten-free Bakery",
     he: "מאפיית אלנור ללא גלוטן",

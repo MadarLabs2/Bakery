@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/frontend/lib/i18n";
 import { Wheat, Phone, Mail, MapPin } from "lucide-react";
 import { SocialLinks } from "@/frontend/components/SocialLinks";
@@ -47,6 +48,14 @@ export function Footer() {
       </div>
       <div className="border-t py-4 text-center text-xs text-muted-foreground">
         © <span suppressHydrationWarning>{new Date().getFullYear()}</span> {t("brand")}
+        <span className="mx-2 text-border">·</span>
+        <Link to="/terms" className="hover:text-primary hover:underline">
+          {t("termsAndConditions")}
+        </Link>
+        <span className="mx-2 text-border">·</span>
+        <Link to="/privacy" className="hover:text-primary hover:underline">
+          {t("privacyPolicy")}
+        </Link>
       </div>
     </footer>
   );
