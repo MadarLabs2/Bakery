@@ -1243,6 +1243,8 @@ export const dict: Dict = {
   },
 };
 
+export const DEFAULT_LANG: Lang = "he";
+
 export const isRTL = (lang: Lang) => lang === "he" || lang === "ar";
 
 interface I18nContext {
@@ -1255,7 +1257,7 @@ interface I18nContext {
 const I18nCtx = createContext<I18nContext | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("en");
+  const [lang, setLangState] = useState<Lang>(DEFAULT_LANG);
 
   useEffect(() => {
     const saved = (typeof window !== "undefined" && localStorage.getItem("lang")) as Lang | null;
