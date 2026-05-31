@@ -286,6 +286,118 @@ export const dict: Dict = {
   phone: { en: "Phone", he: "טלפון", ar: "الهاتف" },
   email: { en: "Email", he: "אימייל", ar: "البريد الإلكتروني" },
   password: { en: "Password", he: "סיסמה", ar: "كلمة المرور" },
+  forgotPasswordLink: {
+    en: "Forgot password?",
+    he: "שכחת סיסמה?",
+    ar: "نسيت كلمة المرور؟",
+  },
+  forgotPassword: {
+    en: "Forgot Password",
+    he: "שחזור סיסמה",
+    ar: "استعادة كلمة المرور",
+  },
+  forgotPasswordSubtitle: {
+    en: "Enter your email and we will send you a link to reset your password.",
+    he: "הזינו את האימייל ונשלח לכם קישור לאיפוס הסיסמה.",
+    ar: "أدخل بريدك الإلكتروني وسنرسل لك رابطًا لإعادة تعيين كلمة المرور.",
+  },
+  sendResetLink: {
+    en: "Send reset link",
+    he: "שלח קישור לאיפוס",
+    ar: "إرسال رابط إعادة التعيين",
+  },
+  sendingResetLink: {
+    en: "Sending…",
+    he: "שולח…",
+    ar: "جارٍ الإرسال…",
+  },
+  passwordResetLinkSent: {
+    en: "Password reset link sent. Please check your email.",
+    he: "קישור לאיפוס סיסמה נשלח. בדקו את תיבת הדואר.",
+    ar: "تم إرسال رابط إعادة تعيين كلمة المرور. تحقق من بريدك الإلكتروني.",
+  },
+  passwordResetRequestFailed: {
+    en: "Could not send the reset link. Please try again later.",
+    he: "לא ניתן לשלוח את קישור האיפוס. נסו שוב מאוחר יותר.",
+    ar: "تعذر إرسال رابط إعادة التعيين. حاول مرة أخرى لاحقًا.",
+  },
+  passwordResetRedirectNotConfigured: {
+    en: "Reset redirect URL is not configured. In Supabase add http://localhost:8080/reset-password under Authentication → URL Configuration → Redirect URLs.",
+    he: "כתובת ההפניה לא מוגדרת. ב-Supabase הוסיפו http://localhost:8080/reset-password תחת Authentication → URL Configuration → Redirect URLs.",
+    ar: "رابط إعادة التوجيه غير مُعد. في Supabase أضف http://localhost:8080/reset-password ضمن Authentication → URL Configuration → Redirect URLs.",
+  },
+  backToLogin: {
+    en: "Back to login",
+    he: "חזרה להתחברות",
+    ar: "العودة لتسجيل الدخول",
+  },
+  createNewPassword: {
+    en: "Create New Password",
+    he: "יצירת סיסמה חדשה",
+    ar: "إنشاء كلمة مرور جديدة",
+  },
+  newPassword: {
+    en: "New password",
+    he: "סיסמה חדשה",
+    ar: "كلمة مرور جديدة",
+  },
+  confirmPassword: {
+    en: "Confirm password",
+    he: "אימות סיסמה",
+    ar: "تأكيد كلمة المرور",
+  },
+  updatePassword: {
+    en: "Update Password",
+    he: "עדכן סיסמה",
+    ar: "تحديث كلمة المرور",
+  },
+  updatingPassword: {
+    en: "Updating…",
+    he: "מעדכן…",
+    ar: "جارٍ التحديث…",
+  },
+  passwordUpdatedSuccess: {
+    en: "Your password has been updated successfully.",
+    he: "הסיסמה עודכנה בהצלחה.",
+    ar: "تم تحديث كلمة المرور بنجاح.",
+  },
+  resetLinkInvalidOrExpired: {
+    en: "This reset link is invalid or expired. Please request a new one.",
+    he: "קישור האיפוס לא תקף או שפג תוקפו. בקשו קישור חדש.",
+    ar: "رابط إعادة التعيين غير صالح أو منتهي الصلاحية. اطلب رابطًا جديدًا.",
+  },
+  passwordHelp: {
+    en: "Use at least 8 characters with letters and numbers for a stronger password.",
+    he: "השתמשו לפחות ב-8 תווים, כולל אותיות ומספרים.",
+    ar: "استخدم 8 أحرف على الأقل، مع حروف وأرقام لكلمة مرور أقوى.",
+  },
+  showPassword: { en: "Show password", he: "הצג סיסמה", ar: "إظهار كلمة المرور" },
+  hidePassword: { en: "Hide password", he: "הסתר סיסמה", ar: "إخفاء كلمة المرور" },
+  emailRequired: {
+    en: "Please enter your email address.",
+    he: "נא להזין כתובת אימייל.",
+    ar: "يرجى إدخال بريدك الإلكتروني.",
+  },
+  passwordRequired: {
+    en: "Please enter a new password.",
+    he: "נא להזין סיסמה חדשה.",
+    ar: "يرجى إدخال كلمة مرور جديدة.",
+  },
+  confirmPasswordRequired: {
+    en: "Please confirm your password.",
+    he: "נא לאמת את הסיסמה.",
+    ar: "يرجى تأكيد كلمة المرور.",
+  },
+  passwordMinLength: {
+    en: "Password must be at least 8 characters.",
+    he: "הסיסמה חייבת להכיל לפחות 8 תווים.",
+    ar: "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
+  },
+  passwordsMustMatch: {
+    en: "Passwords do not match.",
+    he: "הסיסמאות אינן תואמות.",
+    ar: "كلمتا المرور غير متطابقتين.",
+  },
   address: { en: "Delivery address", he: "כתובת למשלוח", ar: "عنوان التوصيل" },
   notes: { en: "Notes", he: "הערות", ar: "ملاحظات" },
   orderConfirmed: { en: "Order placed!", he: "ההזמנה התקבלה!", ar: "تم تأكيد الطلب!" },
