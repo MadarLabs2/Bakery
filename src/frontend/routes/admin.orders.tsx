@@ -16,6 +16,7 @@ import {
   XCircle,
 } from "lucide-react";
 import brandLogo from "@/images/alnoor_bakery_profesional/BakeryLogo.png";
+import { BAKERY_PICKUP_ADDRESS } from "@/frontend/lib/checkoutDelivery";
 import { supabase } from "@/backend/db/client";
 import {
   Select,
@@ -84,9 +85,13 @@ function formatOrderDate(iso: string, lang: Lang, pattern: string) {
 
 function deliveryLabel(raw: string | null | undefined, t: Translate) {
   const k = String(raw ?? "").toLowerCase().replace(/\s+/g, "_");
-  if (k === "pickup") return t("pickup");
-  if (k === "delivery") return t("delivery");
+  if (k === "pickup") return t("adminOrderFulfillmentPickup");
+  if (k === "delivery") return t("adminOrderFulfillmentDelivery");
   return raw ? String(raw).replace(/_/g, " ") : "—";
+}
+
+function isPickupOrder(method: string | null | undefined) {
+  return String(method ?? "").toLowerCase() === "pickup";
 }
 
 function paymentLabel(raw: string | null | undefined, t: Translate) {
@@ -601,20 +606,44 @@ function AdminOrders() {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#6b8577]">
                     {t("adminThMethod")}
                   </p>
-                  <p className="mt-1 text-neutral-800">
-                    {deliveryLabel(selected.delivery_method, t)} · {paymentLabel(selected.payment_method, t)}
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
+                        isPickupOrder(selected.delivery_method)
+                          ? "bg-[#faf8f4] text-[#6b4e2e] ring-1 ring-[#c9a227]/40"
+                          : "bg-[#1B4332]/10 text-[#1B4332]",
+                      )}
+                    >
+                      {isPickupOrder(selected.delivery_method) ? (
+                        <Package className="h-3.5 w-3.5" aria-hidden />
+                      ) : (
+                        <Truck className="h-3.5 w-3.5" aria-hidden />
+                      )}
+                      {deliveryLabel(selected.delivery_method, t)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {paymentLabel(selected.payment_method, t)}
+                    </span>
+                  </div>
                   <p className="mt-2 text-xs text-muted-foreground">
                     <span className="font-medium text-neutral-700">{t("adminOrderDetailPaymentStatus")}:</span>{" "}
                     {String(selected.payment_status ?? "—")}
                   </p>
-                  {selected.delivery_address ? (
-                    <p className="mt-2 rounded-lg bg-stone-50 p-2 text-xs leading-relaxed text-neutral-700">
-                      📍 {selected.delivery_address}
-                    </p>
+                  {isPickupOrder(selected.delivery_method) ? (
+                    <div className="mt-3 rounded-lg border border-[#c9a227]/25 bg-gradient-to-br from-[#faf8f4] to-white p-2.5 text-xs leading-relaxed text-neutral-800">
+                      <p className="font-semibold text-[#1B4332]">{t("adminOrderPickupLocation")}</p>
+                      <p className="mt-1">{BAKERY_PICKUP_ADDRESS}</p>
+                    </div>
+                  ) : selected.delivery_address ? (
+                    <div className="mt-3 rounded-lg bg-stone-50 p-2.5 text-xs leading-relaxed text-neutral-700">
+                      <p className="mb-1 font-semibold text-[#1B4332]">{t("address")}</p>
+                      <p className="whitespace-pre-wrap">{selected.delivery_address}</p>
+                    </div>
                   ) : null}
                   {selected.notes ? (
                     <p className="mt-2 rounded-lg border border-dashed border-stone-200 bg-amber-50/40 p-2 text-xs text-neutral-800">
+                      <span className="font-medium">{t("notes")}: </span>
                       {selected.notes}
                     </p>
                   ) : null}
