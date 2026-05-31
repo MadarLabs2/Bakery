@@ -16,12 +16,10 @@ import { useI18n } from "@/frontend/lib/i18n";
 import heroBakeryLogo from "@/images/alnoor_bakery_profesional/BakeryLogo.png";
 import heroImg1 from "@/images/ChatGPT Image May 3, 2026, 06_00_08 PM.png";
 import heroImg2 from "@/images/C63D6C00-533B-4C81-A2E0-1E1E0962BA54_1_201_a.jpeg";
-import heroImg3 from "@/images/ChatGPT Image May 3, 2026, 06_15_44 PM.png";
 
 const SLIDES = [
   { src: heroImg1, alt: "" },
   { src: heroImg2, alt: "" },
-  { src: heroImg3, alt: "" },
 ] as const;
 
 /** Cream tile: emblem + compact CTAs (same widths as the former square tile). */
