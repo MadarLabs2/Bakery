@@ -7,6 +7,7 @@ import {
   Mail,
   Package,
   Search,
+  Settings,
   ShoppingCart,
   Tag,
 } from "lucide-react";
@@ -28,7 +29,8 @@ type TileTitleKey =
   | "categories"
   | "adminDashOrdersTitle"
   | "adminDashCouponsTitle"
-  | "adminDashEmailOffersTitle";
+  | "adminDashEmailOffersTitle"
+  | "adminDashSettingsTitle";
 
 type TileDescKey =
   | "adminDashReportsDesc"
@@ -36,7 +38,8 @@ type TileDescKey =
   | "adminDashCategoriesDesc"
   | "adminDashOrdersDesc"
   | "adminDashCouponsDesc"
-  | "adminDashEmailOffersDesc";
+  | "adminDashEmailOffersDesc"
+  | "adminDashSettingsDesc";
 
 type TileLinkKey =
   | "adminResourceLinkProducts"
@@ -44,7 +47,8 @@ type TileLinkKey =
   | "adminResourceLinkOrders"
   | "adminResourceLinkCoupons"
   | "adminResourceLinkOffers"
-  | "adminResourceLinkReports";
+  | "adminResourceLinkReports"
+  | "adminResourceLinkSettings";
 
 type ResourceTile = {
   to: string;
@@ -117,6 +121,16 @@ const resourceTiles: ResourceTile[] = [
     iconClass: "bg-[#45454a] text-white shadow-sm ring-1 ring-white/15",
     glowClass: "bg-[#45454a]",
     linkClass: "text-[#45454a]",
+  },
+  {
+    to: "/admin/settings",
+    icon: Settings,
+    titleKey: "adminDashSettingsTitle",
+    descKey: "adminDashSettingsDesc",
+    linkKey: "adminResourceLinkSettings",
+    iconClass: "bg-[#1B4332] text-white shadow-sm ring-1 ring-white/15",
+    glowClass: "bg-[#1B4332]",
+    linkClass: "text-[#1B4332]",
   },
 ];
 

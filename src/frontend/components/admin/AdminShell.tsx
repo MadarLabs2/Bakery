@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   Package,
+  SlidersHorizontal,
   ShoppingCart,
   Store,
   User,
@@ -32,7 +33,12 @@ import { cn } from "@/frontend/lib/utils";
 type NavItem = {
   to: string;
   match: (path: string) => boolean;
-  labelKey: "adminNavDashboard" | "adminNavInventory" | "adminNavOrders" | "adminNavCustomers";
+  labelKey:
+    | "adminNavDashboard"
+    | "adminNavInventory"
+    | "adminNavOrders"
+    | "adminNavCustomers"
+    | "adminNavSettings";
   icon: typeof LayoutDashboard;
 };
 
@@ -60,6 +66,12 @@ const navItems: NavItem[] = [
     match: (p) => p.startsWith("/admin/offers"),
     labelKey: "adminNavCustomers",
     icon: Users,
+  },
+  {
+    to: "/admin/settings",
+    match: (p) => p.startsWith("/admin/settings"),
+    labelKey: "adminNavSettings",
+    icon: SlidersHorizontal,
   },
 ];
 

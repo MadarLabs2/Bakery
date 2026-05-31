@@ -544,6 +544,86 @@ export const dict: Dict = {
     he: "לקוחות ומייל",
     ar: "العملاء والبريد",
   },
+  adminNavSettings: {
+    en: "Store settings",
+    he: "הגדרות חנות",
+    ar: "إعدادات المتجر",
+  },
+  adminSettingsTitle: {
+    en: "Store settings",
+    he: "הגדרות חנות",
+    ar: "إعدادات المتجر",
+  },
+  adminSettingsSubtitle: {
+    en: "Manage bakery-wide options for checkout and delivery.",
+    he: "ניהול אפשרויות כלליות לתשלום ולמשלוח.",
+    ar: "إدارة خيارات المخبز للدفع والتوصيل.",
+  },
+  adminDeliverySettingsTitle: {
+    en: "Delivery settings",
+    he: "הגדרות משלוח",
+    ar: "إعدادات التوصيل",
+  },
+  adminDeliverySettingsDesc: {
+    en: "Set the delivery price that customers will see during checkout.",
+    he: "קבעו את מחיר המשלוח שיוצג ללקוחות בתשלום.",
+    ar: "حدّد سعر التوصيل الذي يراه العملاء عند إتمام الطلب.",
+  },
+  adminDeliveryFeeLabel: {
+    en: "Delivery fee",
+    he: "דמי משלוח",
+    ar: "رسوم التوصيل",
+  },
+  adminDeliveryFeePlaceholder: {
+    en: "Enter delivery price",
+    he: "הזינו מחיר משלוח",
+    ar: "أدخل سعر التوصيل",
+  },
+  adminDeliveryFeeHint: {
+    en: "Must be 0 or greater. Pickup orders are always free.",
+    he: "חייב להיות 0 ומעלה. הזמנות איסוף עצמי ללא דמי משלוח.",
+    ar: "يجب أن يكون 0 أو أكثر. طلبات الاستلام من المخبز مجانية.",
+  },
+  adminDeliveryFeeSave: {
+    en: "Save delivery price",
+    he: "שמירת מחיר משלוח",
+    ar: "حفظ سعر التوصيل",
+  },
+  adminDeliveryFeeSaving: {
+    en: "Saving…",
+    he: "שומר…",
+    ar: "جارٍ الحفظ…",
+  },
+  adminDeliveryFeeSaved: {
+    en: "Delivery price saved successfully",
+    he: "מחיר המשלוח נשמר בהצלחה",
+    ar: "تم حفظ سعر التوصيل بنجاح",
+  },
+  adminDeliveryFeeInvalid: {
+    en: "Enter a valid number (0 or greater)",
+    he: "יש להזין מספר תקין (0 ומעלה)",
+    ar: "أدخل رقمًا صالحًا (0 أو أكثر)",
+  },
+  adminDeliverySettingsNote: {
+    en: "Changes apply to new checkouts immediately. Orders already placed keep the delivery fee from when they were created.",
+    he: "השינוי חל על הזמנות חדשות מיד. הזמנות קיימות שומרות את דמי המשלוח מרגע ביצוען.",
+    ar: "تُطبَّق التغييرات على الطلبات الجديدة فورًا. الطلبات السابقة تحتفظ برسوم التوصيل وقت إنشائها.",
+  },
+  adminDashSettingsTitle: {
+    en: "Store settings",
+    he: "הגדרות חנות",
+    ar: "إعدادات المتجر",
+  },
+  adminDashSettingsDesc: {
+    en: "Delivery fee and checkout options",
+    he: "דמי משלוח והגדרות תשלום",
+    ar: "رسوم التوصيل وخيارات الدفع",
+  },
+  adminResourceLinkSettings: {
+    en: "Open settings",
+    he: "פתיחת הגדרות",
+    ar: "فتح الإعدادات",
+  },
   adminRoleShopManager: {
     en: "Shop manager",
     he: "מנהל/ת החנות",

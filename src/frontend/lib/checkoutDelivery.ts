@@ -1,5 +1,5 @@
-/** Flat delivery fee (₪) applied when `delivery_method` is `delivery`. */
-export const CHECKOUT_DELIVERY_FEE = 20;
+/** @deprecated Use `useDeliveryFee()` / `fetchDeliveryFee()` — fee is stored in `store_settings`. */
+export { DEFAULT_DELIVERY_FEE as CHECKOUT_DELIVERY_FEE } from "@/frontend/lib/storeSettings";
 
 export const BAKERY_PICKUP_ADDRESS = "רהט, חארה 24, ליד מסגד אלנור";
 

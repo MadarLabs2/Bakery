@@ -14,12 +14,8 @@ import { CouponBox } from "@/frontend/components/checkout/CouponBox";
 import { OrderSummary } from "@/frontend/components/checkout/OrderSummary";
 import { CheckoutEmpty } from "@/frontend/components/checkout/CheckoutEmpty";
 import { CheckoutSection } from "@/frontend/components/checkout/CheckoutSection";
-import {
-  CHECKOUT_DELIVERY_FEE,
-  emptyDeliveryAddress,
-  formatDeliveryAddress,
-  type DeliveryMethod,
-} from "@/frontend/lib/checkoutDelivery";
+import { emptyDeliveryAddress, formatDeliveryAddress, type DeliveryMethod } from "@/frontend/lib/checkoutDelivery";
+import { useDeliveryFee } from "@/frontend/hooks/useDeliveryFee";
 import {
   COUPON_SELECT,
   validateCouponForSubtotal,
@@ -38,6 +34,7 @@ function CheckoutPage() {
   const { t } = useI18n();
   const { user } = useAuth();
   const { items, subtotal, refresh } = useCart();
+  const { deliveryFee: configuredDeliveryFee } = useDeliveryFee();
   const nav = useNavigate();
   const submitLock = useRef(false);
 
@@ -127,7 +124,7 @@ function CheckoutPage() {
     };
   }, [subtotal, appliedCouponId, t, resetAppliedCoupon]);
 
-  const deliveryFee = recv === "delivery" ? CHECKOUT_DELIVERY_FEE : 0;
+  const deliveryFee = recv === "delivery" ? configuredDeliveryFee : 0;
   const total = Math.max(0, subtotal - discount) + deliveryFee;
 
   const applyCoupon = async () => {
@@ -326,6 +323,7 @@ function CheckoutPage() {
                 });
               }}
               fieldErrors={deliveryErrors}
+              deliveryFee={configuredDeliveryFee}
             />
 
             <PaymentMethodSelector value={pay} onChange={setPay} />

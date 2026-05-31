@@ -116,14 +116,12 @@ export function OrderSummary({
             </span>
           </div>
         ) : null}
-        {deliveryFee > 0 ? (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">{t("deliveryFeeLabel")}</span>
-            <span className="tabular-nums font-medium" dir="ltr">
-              ₪{deliveryFee.toFixed(2)}
-            </span>
-          </div>
-        ) : null}
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">{t("deliveryFeeLabel")}</span>
+          <span className="tabular-nums font-medium" dir="ltr">
+            ₪{deliveryFee.toFixed(2)}
+          </span>
+        </div>
         <div className="flex justify-between border-t border-[#1B4332]/15 pt-3 font-display text-xl font-bold text-[#1B4332]">
           <span>{t("total")}</span>
           <span dir="ltr">₪{total.toFixed(2)}</span>

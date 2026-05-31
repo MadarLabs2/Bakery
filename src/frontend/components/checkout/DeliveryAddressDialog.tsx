@@ -1,11 +1,7 @@
 import { MapPin, Truck } from "lucide-react";
 import { useI18n } from "@/frontend/lib/i18n";
 import { cn } from "@/frontend/lib/utils";
-import {
-  CHECKOUT_DELIVERY_FEE,
-  isDeliveryAddressComplete,
-  type DeliveryAddressFields,
-} from "@/frontend/lib/checkoutDelivery";
+import { isDeliveryAddressComplete, type DeliveryAddressFields } from "@/frontend/lib/checkoutDelivery";
 import type { DeliveryFieldErrors } from "@/frontend/components/DeliveryMethodSelector";
 import {
   Dialog,
@@ -23,6 +19,7 @@ import { Button } from "@/frontend/components/ui/button";
 type DeliveryAddressDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  deliveryFee: number;
   address: DeliveryAddressFields;
   onAddressChange: (patch: Partial<DeliveryAddressFields>) => void;
   fieldErrors?: DeliveryFieldErrors;
@@ -130,6 +127,7 @@ export function DeliveryAddressFormFields({
 export function DeliveryAddressDialog({
   open,
   onOpenChange,
+  deliveryFee,
   address,
   onAddressChange,
   fieldErrors,
@@ -170,7 +168,7 @@ export function DeliveryAddressDialog({
               className="checkout-delivery-dialog-badge mt-2 inline-flex rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-medium sm:mt-2.5 sm:text-xs"
               dir="ltr"
             >
-              + ₪{CHECKOUT_DELIVERY_FEE} · {t("deliveryFeeShort")}
+              + ₪{deliveryFee.toFixed(0)} · {t("deliveryFeeShort")}
             </p>
           </div>
 

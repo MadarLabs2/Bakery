@@ -5,7 +5,6 @@ import { useI18n } from "@/frontend/lib/i18n";
 import {
   BAKERY_PICKUP_ADDRESS,
   BAKERY_PICKUP_PHONES,
-  CHECKOUT_DELIVERY_FEE,
   formatDeliveryAddressShort,
   isDeliveryAddressComplete,
   type DeliveryAddressFields,
@@ -25,6 +24,7 @@ type DeliveryMethodSelectorProps = {
   address: DeliveryAddressFields;
   onAddressChange: (patch: Partial<DeliveryAddressFields>) => void;
   fieldErrors?: DeliveryFieldErrors;
+  deliveryFee: number;
 };
 
 function OptionCard({
@@ -92,6 +92,7 @@ export function DeliveryMethodSelector({
   address,
   onAddressChange,
   fieldErrors,
+  deliveryFee,
 }: DeliveryMethodSelectorProps) {
   const { t } = useI18n();
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
@@ -161,7 +162,7 @@ export function DeliveryMethodSelector({
           icon={<Truck className="h-5 w-5" aria-hidden />}
           title={t("deliveryOptionTitle")}
           description={t("deliveryOptionDesc")}
-          badge={`+ ₪${CHECKOUT_DELIVERY_FEE} · ${t("deliveryFeeShort")}`}
+          badge={`+ ₪${deliveryFee.toFixed(0)} · ${t("deliveryFeeShort")}`}
         />
         <OptionCard
           selected={method === "pickup"}
@@ -269,6 +270,7 @@ export function DeliveryMethodSelector({
       <DeliveryAddressDialog
         open={deliveryDialogOpen}
         onOpenChange={handleDialogOpenChange}
+        deliveryFee={deliveryFee}
         address={address}
         onAddressChange={(patch) => {
           onAddressChange(patch);
