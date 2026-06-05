@@ -14,7 +14,9 @@ import { CartProvider } from "@/frontend/lib/cart";
 import { Header } from "@/frontend/components/Header";
 import { Footer } from "@/frontend/components/Footer";
 import { FloatingSocialLinks } from "@/frontend/components/FloatingSocialLinks";
+import { CookieConsentBanner } from "@/frontend/components/cookies/CookieConsentBanner";
 import { ResponsiveToaster } from "@/frontend/components/ui/sonner";
+import { CookieConsentProvider } from "@/frontend/lib/cookieConsentContext";
 
 function NotFoundComponent() {
   return (
@@ -74,17 +76,20 @@ function RootComponent() {
   const isAdmin = path.startsWith("/admin");
   return (
     <I18nProvider>
-      <AuthProvider>
-        <CartProvider>
-          {!isAdmin && <Header />}
-          <main className={isAdmin ? "min-h-screen" : "min-h-[60vh] pb-28 sm:pb-24"}>
-            <Outlet />
-          </main>
-          {!isAdmin && <Footer />}
-          {!isAdmin && <FloatingSocialLinks />}
-          <ResponsiveToaster />
-        </CartProvider>
-      </AuthProvider>
+      <CookieConsentProvider>
+        <AuthProvider>
+          <CartProvider>
+            {!isAdmin && <Header />}
+            <main className={isAdmin ? "min-h-screen" : "min-h-[60vh] pb-28 sm:pb-24"}>
+              <Outlet />
+            </main>
+            {!isAdmin && <Footer />}
+            {!isAdmin && <FloatingSocialLinks />}
+            {!isAdmin && <CookieConsentBanner />}
+            <ResponsiveToaster />
+          </CartProvider>
+        </AuthProvider>
+      </CookieConsentProvider>
     </I18nProvider>
   );
 }

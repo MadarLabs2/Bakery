@@ -30,7 +30,7 @@ export function FloatingSocialLinks() {
     <TooltipProvider delayDuration={200}>
       <div
         className={cn(
-          "pointer-events-none fixed bottom-5 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-8 sm:right-6",
+          "pointer-events-none fixed bottom-8 right-6 z-50 hidden flex-col items-end gap-3 md:flex",
         )}
         aria-label="Quick contact"
       >

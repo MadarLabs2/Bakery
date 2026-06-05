@@ -139,7 +139,9 @@ function PrivacyPolicyPage() {
 
       <PolicySection id="cookies" title={pt("privacySec4Title")}>
         <p>{pt("privacySec4P1")}</p>
-        <PolicyList items={pl("privacySec4C1", "privacySec4C2", "privacySec4C3")} />
+        <PolicyList
+          items={pl("privacySec4C1", "privacySec4C2", "privacySec4C3", "privacySec4C4")}
+        />
         <p>{pt("privacySec4P2")}</p>
       </PolicySection>
 

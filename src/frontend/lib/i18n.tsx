@@ -1,7 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { legalSharedDict } from "@/frontend/lib/legalShared.i18n";
+import { cookieConsentDict } from "@/frontend/lib/cookieConsent.i18n";
 import { privacyDict } from "@/frontend/lib/privacyPolicy.i18n";
 import { termsDict } from "@/frontend/lib/termsPolicy.i18n";
+import {
+  allowsPreferencesStorage,
+  PREFERENCES_REVOKED_EVENT,
+} from "@/frontend/lib/cookieConsent";
 
 export type Lang = "en" | "he" | "ar";
 
@@ -9,6 +14,7 @@ type Dict = Record<string, { en: string; he: string; ar: string }>;
 
 export const dict: Dict = {
   ...legalSharedDict,
+  ...cookieConsentDict,
   ...privacyDict,
   ...termsDict,
   brand: {
@@ -1672,8 +1678,15 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(DEFAULT_LANG);
 
   useEffect(() => {
-    const saved = (typeof window !== "undefined" && localStorage.getItem("lang")) as Lang | null;
+    if (typeof window === "undefined" || !allowsPreferencesStorage()) return;
+    const saved = localStorage.getItem("lang") as Lang | null;
     if (saved && ["en", "he", "ar"].includes(saved)) setLangState(saved);
+  }, []);
+
+  useEffect(() => {
+    const onPreferencesRevoked = () => setLangState(DEFAULT_LANG);
+    window.addEventListener(PREFERENCES_REVOKED_EVENT, onPreferencesRevoked);
+    return () => window.removeEventListener(PREFERENCES_REVOKED_EVENT, onPreferencesRevoked);
   }, []);
 
   useEffect(() => {
@@ -1685,7 +1698,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const setLang = (l: Lang) => {
     setLangState(l);
-    if (typeof window !== "undefined") localStorage.setItem("lang", l);
+    if (typeof window !== "undefined" && allowsPreferencesStorage()) {
+      localStorage.setItem("lang", l);
+    }
   };
 
   const t = (key: keyof typeof dict) => dict[key]?.[lang] ?? key;

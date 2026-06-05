@@ -3,9 +3,11 @@ import { useI18n } from "@/frontend/lib/i18n";
 import { Wheat, Phone, Mail, MapPin } from "lucide-react";
 import { SocialLinks } from "@/frontend/components/SocialLinks";
 import { getContactPhoneDisplay, hasAnySocialLink } from "@/config/socialLinks";
+import { useCookieConsent } from "@/frontend/lib/cookieConsentContext";
 
 export function Footer() {
   const { t } = useI18n();
+  const { openPreferences } = useCookieConsent();
   const phoneDisplay = getContactPhoneDisplay();
   return (
     <footer className="mt-20 border-t bg-secondary/40">
@@ -56,6 +58,14 @@ export function Footer() {
         <Link to="/privacy" className="hover:text-primary hover:underline">
           {t("privacyPolicy")}
         </Link>
+        <span className="mx-2 text-border">·</span>
+        <button
+          type="button"
+          onClick={openPreferences}
+          className="hover:text-primary hover:underline"
+        >
+          {t("cookieSettings")}
+        </button>
       </div>
     </footer>
   );
