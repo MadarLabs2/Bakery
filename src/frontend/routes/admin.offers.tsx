@@ -11,9 +11,10 @@ import {
   Send,
   Trash2,
   Users,
+  AlertTriangle,
 } from "lucide-react";
 import { supabase } from "@/backend/db/client";
-import { sendCampaignEmail } from "@/backend/server/sendCampaign.functions";
+import { sendCampaignEmail, getEmailCampaigns } from "@/backend/server/sendCampaign.functions";
 import { useAuth } from "@/frontend/lib/auth";
 import catBreads from "@/frontend/assets/cat-breads.jpg";
 import catPastries from "@/frontend/assets/cat-pastries.jpg";
@@ -110,13 +111,27 @@ function AdminOffers() {
   const { t, dir } = useI18n();
   const { user, session } = useAuth();
   const sendCampaignFn = useServerFn(sendCampaignEmail);
+  const getCampaignsFn = useServerFn(getEmailCampaigns);
   const [subscribers, setSubscribers] = useState<{ id: string; email: string }[]>([]);
   const [past, setPast] = useState<
-    { id: string; subject: string; message: string; discount_code: string | null; sent_at: string }[]
+    {
+      id: string;
+      subject: string;
+      message: string;
+      discount_code: string | null;
+      discount_percent: number | null;
+      recipients_type: string;
+      recipients_count: number;
+      status: string;
+      sent_at: string;
+      created_at: string;
+    }[]
   >([]);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [discountCode, setDiscountCode] = useState("");
+  const [discountPercent, setDiscountPercent] = useState("");
+  const [testRecipient, setTestRecipient] = useState("");
   const [sending, setSending] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [scheduleMode, setScheduleMode] = useState<"now" | "later">("now");
@@ -192,22 +207,35 @@ function AdminOffers() {
     [builtInTemplates, customRows],
   );
 
-  const load = () => {
-    supabase
+  const load = async () => {
+    const { data: subs } = await supabase
       .from("email_subscribers")
       .select("id, email")
-      .eq("is_active", true)
-      .then(({ data }) => setSubscribers(data ?? []));
-    supabase
+      .eq("is_active", true);
+    setSubscribers(subs ?? []);
+
+    if (session?.access_token) {
+      const campaignsResult = await getCampaignsFn({
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (campaignsResult.ok) {
+        setPast(campaignsResult.campaigns);
+        return;
+      }
+    }
+
+    const { data } = await supabase
       .from("email_campaigns")
-      .select("id, subject, message, discount_code, sent_at")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setPast(data ?? []));
+      .select(
+        "id, subject, message, discount_code, discount_percent, recipients_type, recipients_count, status, sent_at, created_at",
+      )
+      .order("created_at", { ascending: false });
+    setPast(data ?? []);
   };
 
   useEffect(() => {
-    load();
-  }, []);
+    if (session?.access_token) void load();
+  }, [session?.access_token]);
 
   const applyTemplate = (tpl: TemplateDef) => {
     setSubject(tpl.subject.slice(0, SUBJECT_MAX));
@@ -284,11 +312,14 @@ function AdminOffers() {
     if (!session?.access_token) return toast.error(t("mustSignIn"));
     setSending(true);
     try {
+      const pct = discountPercent.trim() ? Number(discountPercent) : null;
       const result = await sendCampaignFn({
         data: {
           subject: subject.slice(0, SUBJECT_MAX),
           message: body,
-          discount_code: discountCode.trim() || null,
+          coupon_code: discountCode.trim() || null,
+          discount_percent: pct != null && !Number.isNaN(pct) ? pct : null,
+          test_recipient: testRecipient.trim() || undefined,
         },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
@@ -327,6 +358,7 @@ function AdminOffers() {
       setSubject("");
       setBody("");
       setDiscountCode("");
+      setDiscountPercent("");
       setSelectedTemplateId(null);
       setPreviewImageSrc(null);
       load();
@@ -451,6 +483,17 @@ function AdminOffers() {
           </Button>
         </header>
 
+        <div
+          role="alert"
+          className="mb-6 flex gap-3 rounded-xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+        >
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+          <div>
+            <p className="font-semibold">{t("emailTestModeTitle")}</p>
+            <p className="mt-1 text-amber-900/90">{t("emailTestModeDesc")}</p>
+          </div>
+        </div>
+
         <section className="mb-8">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="font-display text-lg font-semibold text-[#1B3324] md:text-xl">
@@ -483,9 +526,11 @@ function AdminOffers() {
                       {t("adminOffersAudience")}
                     </p>
                     <p className="truncate font-medium text-[#2c2419]">
-                      {t("adminOffersAllSubscribersCount").replace("{{n}}", String(subscribers.length))}
+                      {t("adminOffersTestRecipientOnly")}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">{t("adminOffersAudienceIncludes")}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {t("adminOffersTestRecipientHint").replace("{{n}}", String(subscribers.length))}
+                    </p>
                   </div>
                   <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground/50" aria-hidden />
                 </div>
@@ -531,6 +576,23 @@ function AdminOffers() {
 
             <Card className="border-[#E8E4DC] bg-white shadow-sm">
               <CardContent className="space-y-2 p-4">
+                <Label htmlFor="offer-test-email" className="text-[#2c2419]">
+                  {t("adminOffersTestEmailLabel")}
+                </Label>
+                <Input
+                  id="offer-test-email"
+                  type="email"
+                  value={testRecipient}
+                  onChange={(e) => setTestRecipient(e.target.value)}
+                  placeholder={t("adminOffersTestEmailPlaceholder")}
+                  className="rounded-xl border-[#E8E4DC] bg-[#FDFBF7]/80"
+                />
+                <p className="text-xs text-muted-foreground">{t("adminOffersTestEmailHint")}</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-[#E8E4DC] bg-white shadow-sm">
+              <CardContent className="space-y-2 p-4">
                 <Label htmlFor="offer-discount" className="text-[#2c2419]">
                   {t("adminOffersDiscountHint")}
                 </Label>
@@ -539,6 +601,25 @@ function AdminOffers() {
                   value={discountCode}
                   onChange={(e) => setDiscountCode(e.target.value)}
                   placeholder="WELCOME10"
+                  className="rounded-xl border-[#E8E4DC] bg-[#FDFBF7]/80"
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="border-[#E8E4DC] bg-white shadow-sm">
+              <CardContent className="space-y-2 p-4">
+                <Label htmlFor="offer-discount-pct" className="text-[#2c2419]">
+                  {t("adminOffersDiscountPercentLabel")}
+                </Label>
+                <Input
+                  id="offer-discount-pct"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={discountPercent}
+                  onChange={(e) => setDiscountPercent(e.target.value)}
+                  placeholder="20"
                   className="rounded-xl border-[#E8E4DC] bg-[#FDFBF7]/80"
                 />
               </CardContent>
@@ -658,6 +739,11 @@ function AdminOffers() {
                         {t("adminThCode")}: {discountCode.trim()}
                       </p>
                     ) : null}
+                    {discountPercent.trim() ? (
+                      <p className="mt-1 text-xs font-medium text-[#7a6210]">
+                        {discountPercent.trim()}% {t("adminOffersDiscountOff")}
+                      </p>
+                    ) : null}
                     <p className="mt-3 line-clamp-4 whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
                       {previewSnippet}
                     </p>
@@ -689,12 +775,34 @@ function AdminOffers() {
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <b className="text-[#2c2419]">{o.subject}</b>
                         <span className="shrink-0 text-xs text-muted-foreground">
-                          {format(new Date(o.sent_at), "PP")}
+                          {format(new Date(o.sent_at || o.created_at), "PP")}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
+                            o.status === "sent"
+                              ? "bg-green-100 text-green-800"
+                              : o.status === "failed"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-stone-100 text-stone-600",
+                          )}
+                        >
+                          {o.status}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {t("adminOffersRecipientsCount").replace("{{n}}", String(o.recipients_count ?? 0))}
                         </span>
                       </div>
                       {o.discount_code ? (
                         <p className="mt-1 text-xs text-[#7a6210]">
                           {t("adminThCode")}: {o.discount_code}
+                        </p>
+                      ) : null}
+                      {o.discount_percent ? (
+                        <p className="mt-0.5 text-xs text-[#7a6210]">
+                          {o.discount_percent}% {t("adminOffersDiscountOff")}
                         </p>
                       ) : null}
                       <p className="mt-2 line-clamp-3 text-muted-foreground">{o.message}</p>
@@ -737,6 +845,11 @@ function AdminOffers() {
               {discountCode.trim() ? (
                 <p className="mb-4 rounded-lg bg-[#D4AF37]/15 px-3 py-2 text-sm font-medium text-[#5c4a12]">
                   {t("adminThCode")}: {discountCode.trim()}
+                </p>
+              ) : null}
+              {discountPercent.trim() ? (
+                <p className="mb-4 rounded-lg bg-[#D4AF37]/15 px-3 py-2 text-sm font-medium text-[#5c4a12]">
+                  {discountPercent.trim()}% {t("adminOffersDiscountOff")}
                 </p>
               ) : null}
               <div className="whitespace-pre-wrap text-sm leading-relaxed text-[#3C2A21]">

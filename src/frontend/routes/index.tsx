@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Wheat, Heart, Award, Truck } from "lucide-react";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { supabase } from "@/backend/db/client";
+import { subscribeEmail } from "@/backend/server/subscribeEmail.functions";
 import { Button } from "@/frontend/components/ui/button";
 import { Skeleton } from "@/frontend/components/ui/skeleton";
 import { ProductCard } from "@/frontend/components/ProductCard";
@@ -27,6 +29,7 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const { t, lang } = useI18n();
+  const subscribeFn = useServerFn(subscribeEmail);
   const [bestSellers, setBestSellers] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -84,15 +87,20 @@ function HomePage() {
   const subscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubbing(true);
-    const { error } = await supabase.from("email_subscribers").insert({ email });
-    setSubbing(false);
-    if (error) {
-      if (error.code === "23505") toast.info(t("alreadySub"));
-      else toast.error(error.message);
-    } else {
-      toast.success(t("thanks"));
-      setEmail("");
+    try {
+      const result = await subscribeFn({ data: { email: email.trim(), source: "homepage" } });
+      if (!result.ok) {
+        toast.error(result.message || t("genericError"));
+      } else if (result.alreadySubscribed) {
+        toast.info(t("alreadySub"));
+      } else {
+        toast.success(t("thanks"));
+        setEmail("");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("genericError"));
     }
+    setSubbing(false);
   };
 
   return (

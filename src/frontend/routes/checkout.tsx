@@ -1,8 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useI18n } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
+import { sendOrderConfirmation } from "@/backend/server/sendOrderConfirmation.functions";
 import { rotateCartAfterOrder, useCart } from "@/frontend/lib/cart";
 import { supabase } from "@/backend/db/client";
 import { Label } from "@/frontend/components/ui/label";
@@ -32,7 +34,8 @@ export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
 
 function CheckoutPage() {
   const { t } = useI18n();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  const sendConfirmationFn = useServerFn(sendOrderConfirmation);
   const { items, subtotal, refresh } = useCart();
   const { deliveryFee: configuredDeliveryFee } = useDeliveryFee();
   const nav = useNavigate();
@@ -266,7 +269,18 @@ function CheckoutPage() {
       }
 
       await refresh();
-      toast.success(t("orderConfirmed"));
+
+      // Fire-and-forget: order is saved; email failure must not block checkout.
+      if (session?.access_token) {
+        void sendConfirmationFn({
+          data: { orderId: order.id },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }).catch((e: unknown) => {
+          console.error("[checkout] Order confirmation email:", e);
+        });
+      }
+
+      toast.success(t("orderConfirmedWithEmail"));
       nav({ to: "/checkout/success", search: { orderId: order.id } });
     } finally {
       setSubmitting(false);

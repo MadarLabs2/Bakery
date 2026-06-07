@@ -407,6 +407,11 @@ export const dict: Dict = {
   address: { en: "Delivery address", he: "כתובת למשלוח", ar: "عنوان التوصيل" },
   notes: { en: "Notes", he: "הערות", ar: "ملاحظات" },
   orderConfirmed: { en: "Order placed!", he: "ההזמנה התקבלה!", ar: "تم تأكيد الطلب!" },
+  orderConfirmedWithEmail: {
+    en: "Order placed successfully. A confirmation email will be sent if email service is available.",
+    he: "ההזמנה התקבלה בהצלחה. מייל אישור יישלח אם שירות הדוא\"ל זמין.",
+    ar: "تم تأكيد الطلب بنجاح. سيتم إرسال بريد تأكيد إذا كانت خدمة البريد متاحة.",
+  },
   subscribeTitle: {
     en: "Get sweet offers in your inbox",
     he: "הצעות מתוקות במייל",
@@ -621,6 +626,56 @@ export const dict: Dict = {
     en: "Campaign saved. There are no active subscribers to email yet.",
     he: "הקמפיין נשמר. אין עדיין מנויים פעילים לשליחה.",
     ar: "تم حفظ الحملة. لا يوجد مشتركون نشطون لإرسال البريد إليهم بعد.",
+  },
+  emailTestModeTitle: {
+    en: "Email sending is in test mode",
+    he: "שליחת דוא\"ל במצב בדיקה",
+    ar: "إرسال البريد في وضع الاختبار",
+  },
+  emailTestModeDesc: {
+    en: "Without a verified domain, emails can only be sent to the Resend account email. Verify a custom domain in Resend and update RESEND_FROM_EMAIL for production (e.g. orders@alnourbakery.com).",
+    he: "ללא דומיין מאומת, ניתן לשלוח מיילים רק לכתובת חשבון Resend. לאימות דומיין ב-Resend עדכנו RESEND_FROM_EMAIL (למשל orders@alnourbakery.com).",
+    ar: "بدون نطاق موثّق، يمكن الإرسال فقط إلى بريد حساب Resend. بعد التحقق من النطاق في Resend، حدّث RESEND_FROM_EMAIL (مثل orders@alnourbakery.com).",
+  },
+  adminOffersTestRecipientOnly: {
+    en: "Test recipient only (development)",
+    he: "נמען בדיקה בלבד (פיתוח)",
+    ar: "مستلم اختبار فقط (تطوير)",
+  },
+  adminOffersTestRecipientHint: {
+    en: "{{n}} subscribers on file — emails will NOT be sent to them until domain is verified.",
+    he: "{{n}} מנויים רשומים — לא יישלח אליהם עד אימות דומיין.",
+    ar: "{{n}} مشتركين مسجلون — لن يُرسل إليهم حتى التحقق من النطاق.",
+  },
+  adminOffersTestEmailLabel: {
+    en: "Test / recipient email",
+    he: "מייל בדיקה / נמען",
+    ar: "بريد الاختبار / المستلم",
+  },
+  adminOffersTestEmailPlaceholder: {
+    en: "your-resend-account@gmail.com",
+    he: "your-resend-account@gmail.com",
+    ar: "your-resend-account@gmail.com",
+  },
+  adminOffersTestEmailHint: {
+    en: "Leave blank to use ADMIN_EMAIL from server env. Required for Resend sandbox.",
+    he: "השאירו ריק לשימוש ב-ADMIN_EMAIL מהשרת. נדרש ל-sandbox של Resend.",
+    ar: "اتركه فارغًا لاستخدام ADMIN_EMAIL من الخادم. مطلوب لبيئة Resend التجريبية.",
+  },
+  adminOffersDiscountPercentLabel: {
+    en: "Discount percentage (optional)",
+    he: "אחוז הנחה (אופציונלי)",
+    ar: "نسبة الخصم (اختياري)",
+  },
+  adminOffersDiscountOff: {
+    en: "off",
+    he: "הנחה",
+    ar: "خصم",
+  },
+  adminOffersRecipientsCount: {
+    en: "{{n}} recipient(s)",
+    he: "{{n}} נמענים",
+    ar: "{{n}} مستلم",
   },
   activeSubscribersShort: {
     en: "active subscribers",

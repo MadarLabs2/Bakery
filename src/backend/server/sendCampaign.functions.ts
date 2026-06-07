@@ -3,42 +3,39 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/backend/db/types";
 import { requireSupabaseAuth } from "@/backend/db/auth-middleware";
+import {
+  getEmailConfigStatus,
+  isEmailTestMode,
+  sendOfferEmail,
+} from "@/backend/services/emailService";
 import { resolveIsAdmin } from "@/frontend/lib/resolveIsAdmin";
 
-const sendCampaignInput = z.object({
+const sendOfferInput = z.object({
   subject: z.string().min(1).max(500),
   message: z.string().min(1).max(50_000),
-  discount_code: z.string().max(100).nullable(),
+  coupon_code: z.string().max(100).nullable(),
+  discount_percent: z.number().min(0).max(100).nullable().optional(),
+  /** Override test recipient; in test mode only this address receives mail. */
+  test_recipient: z.string().email().optional(),
 });
 
 export type SendCampaignResult = {
   ok: boolean;
   inserted: boolean;
+  campaignId?: string;
   sent: number;
   failed: number;
   subscriberCount: number;
+  recipientsType: "test" | "all_subscribers";
   noMailProvider: boolean;
+  testMode: boolean;
   error?: string;
-  /** Last Resend API error message (helps debug domain / from / key issues). */
   resendLastError?: string;
 };
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function plainTextToHtml(text: string): string {
-  return escapeHtml(text).replace(/\r\n|\r|\n/g, "<br />");
-}
-
 export const sendCampaignEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw) => sendCampaignInput.parse(raw))
+  .inputValidator((raw) => sendOfferInput.parse(raw))
   .handler(async ({ data, context }): Promise<SendCampaignResult> => {
     const ctx = context as {
       supabase: SupabaseClient<Database>;
@@ -47,132 +44,190 @@ export const sendCampaignEmail = createServerFn({ method: "POST" })
     const { supabase, userId } = ctx;
 
     if (!(await resolveIsAdmin(supabase, userId))) {
-      return { ok: false, inserted: false, sent: 0, failed: 0, subscriberCount: 0, noMailProvider: false, error: "forbidden" };
-    }
-
-    const { subject, message, discount_code } = data;
-
-    const { error: insertError } = await supabase.from("email_campaigns").insert({
-      admin_id: userId,
-      subject,
-      message,
-      discount_code,
-    });
-
-    if (insertError) {
       return {
         ok: false,
         inserted: false,
         sent: 0,
         failed: 0,
         subscriberCount: 0,
+        recipientsType: "test",
         noMailProvider: false,
-        error: insertError.message,
+        testMode: isEmailTestMode(),
+        error: "forbidden",
       };
     }
 
-    const { data: subscribers, error: subsError } = await supabase
-      .from("email_subscribers")
-      .select("email")
-      .eq("is_active", true);
+    const { subject, message, coupon_code, discount_percent, test_recipient } = data;
+    const testMode = isEmailTestMode();
+    const config = getEmailConfigStatus();
 
-    if (subsError) {
+    // In test mode: never blast all subscribers — only the Resend account / admin email.
+    let recipients: string[] = [];
+    let recipientsType: "test" | "all_subscribers" = "test";
+
+    if (testMode) {
+      const testEmail = (test_recipient || config.testRecipient).trim();
+      if (testEmail) recipients = [testEmail];
+    } else {
+      recipientsType = "all_subscribers";
+      const { data: subscribers, error: subsError } = await supabase
+        .from("email_subscribers")
+        .select("email")
+        .eq("is_active", true);
+
+      if (subsError) {
+        return {
+          ok: false,
+          inserted: false,
+          sent: 0,
+          failed: 0,
+          subscriberCount: 0,
+          recipientsType,
+          noMailProvider: false,
+          testMode,
+          error: subsError.message,
+        };
+      }
+
+      recipients = (subscribers ?? [])
+        .map((r) => r.email?.trim())
+        .filter((e): e is string => Boolean(e && e.includes("@")));
+    }
+
+    const { data: campaign, error: insertError } = await supabase
+      .from("email_campaigns")
+      .insert({
+        admin_id: userId,
+        subject,
+        message,
+        discount_code: coupon_code,
+        discount_percent: discount_percent ?? null,
+        recipients_type: recipientsType,
+        recipients_count: recipients.length,
+        status: "draft",
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !campaign) {
       return {
         ok: false,
-        inserted: true,
+        inserted: false,
         sent: 0,
         failed: 0,
-        subscriberCount: 0,
+        subscriberCount: recipients.length,
+        recipientsType,
         noMailProvider: false,
-        error: subsError.message,
+        testMode,
+        error: insertError?.message ?? "insert_failed",
       };
     }
 
-    const emails = (subscribers ?? [])
-      .map((r) => r.email?.trim())
-      .filter((e): e is string => Boolean(e && e.includes("@")));
+    const campaignId = campaign.id;
 
-    const apiKey = process.env.RESEND_API_KEY?.trim();
-    const from = process.env.RESEND_FROM_EMAIL?.trim();
-
-    if (!apiKey || !from) {
+    if (!config.hasApiKey || !config.hasFrom) {
+      await supabase.from("email_campaigns").update({ status: "draft" }).eq("id", campaignId);
       return {
         ok: true,
         inserted: true,
+        campaignId,
         sent: 0,
         failed: 0,
-        subscriberCount: emails.length,
+        subscriberCount: recipients.length,
+        recipientsType,
         noMailProvider: true,
+        testMode,
       };
     }
 
-    if (/https?:\/\//i.test(from) || !from.includes("@")) {
+    if (recipients.length === 0) {
+      await supabase
+        .from("email_campaigns")
+        .update({ status: "sent", sent_at: new Date().toISOString(), recipients_count: 0 })
+        .eq("id", campaignId);
       return {
-        ok: false,
+        ok: true,
         inserted: true,
+        campaignId,
         sent: 0,
         failed: 0,
-        subscriberCount: emails.length,
+        subscriberCount: 0,
+        recipientsType,
         noMailProvider: false,
-        error: "invalid_resend_from",
+        testMode,
       };
     }
-
-    const discountBlock = discount_code
-      ? `<p><strong>קוד קופון / Coupon:</strong> ${escapeHtml(discount_code)}</p>`
-      : "";
-
-    const html = `
-<!DOCTYPE html>
-<html>
-<body style="font-family: system-ui, sans-serif; line-height: 1.5;">
-  <h1 style="color: #1B4332;">${escapeHtml(subject)}</h1>
-  <div>${plainTextToHtml(message)}</div>
-  ${discountBlock}
-  <hr style="margin: 2rem 0; border: none; border-top: 1px solid #ddd;" />
-  <p style="font-size: 0.85rem; color: #666;">Al-nour Gluten-free Bakery</p>
-</body>
-</html>`;
 
     let sent = 0;
     let failed = 0;
     let resendLastError: string | undefined;
 
-    for (const to of emails) {
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from,
-          to: [to],
-          subject,
-          html,
-        }),
+    for (const to of recipients) {
+      const result = await sendOfferEmail(supabase, {
+        to,
+        subject,
+        message,
+        couponCode: coupon_code,
+        discountPercent: discount_percent ?? null,
+        campaignId,
+        testRecipient: test_recipient || config.testRecipient,
       });
 
-      if (!res.ok) {
+      if (result.ok) {
+        sent += 1;
+      } else {
         failed += 1;
-        try {
-          const j = (await res.json()) as { message?: string };
-          resendLastError = j.message ?? `${res.status} ${res.statusText}`;
-        } catch {
-          resendLastError = `${res.status} ${res.statusText}`;
-        }
-        continue;
+        resendLastError = result.error;
       }
-      sent += 1;
     }
+
+    const finalStatus = failed === recipients.length ? "failed" : "sent";
+    await supabase
+      .from("email_campaigns")
+      .update({
+        status: finalStatus,
+        sent_at: new Date().toISOString(),
+        recipients_count: sent,
+      })
+      .eq("id", campaignId);
 
     return {
       ok: true,
       inserted: true,
+      campaignId,
       sent,
       failed,
-      subscriberCount: emails.length,
+      subscriberCount: recipients.length,
+      recipientsType,
       noMailProvider: false,
+      testMode,
       resendLastError,
     };
+  });
+
+export const getEmailCampaigns = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = context as {
+      supabase: SupabaseClient<Database>;
+      userId: string;
+    };
+
+    if (!(await resolveIsAdmin(ctx.supabase, ctx.userId))) {
+      return { ok: false as const, error: "forbidden", campaigns: [] };
+    }
+
+    const { data, error } = await ctx.supabase
+      .from("email_campaigns")
+      .select(
+        "id, subject, message, discount_code, discount_percent, recipients_type, recipients_count, status, sent_at, created_at",
+      )
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      return { ok: false as const, error: error.message, campaigns: [] };
+    }
+
+    return { ok: true as const, campaigns: data ?? [] };
   });

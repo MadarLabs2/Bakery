@@ -216,33 +216,87 @@ export type Database = {
       email_campaigns: {
         Row: {
           id: string;
-          admin_id: string;
+          admin_id: string | null;
           subject: string;
           message: string;
           discount_code: string | null;
+          discount_percent: number | null;
+          recipients_type: string;
+          recipients_count: number;
+          status: string;
           sent_at: string;
           created_at: string;
         };
         Insert: {
           id?: string;
-          admin_id: string;
+          admin_id?: string | null;
           subject: string;
           message: string;
           discount_code?: string | null;
+          discount_percent?: number | null;
+          recipients_type?: string;
+          recipients_count?: number;
+          status?: string;
           sent_at?: string;
           created_at?: string;
         };
         Update: {
           id?: string;
-          admin_id?: string;
+          admin_id?: string | null;
           subject?: string;
           message?: string;
           discount_code?: string | null;
+          discount_percent?: number | null;
+          recipients_type?: string;
+          recipients_count?: number;
+          status?: string;
           sent_at?: string;
           created_at?: string;
         };
         Relationships: [
           { foreignKeyName: "email_campaigns_admin_id_fkey"; columns: ["admin_id"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ];
+      };
+      email_logs: {
+        Row: {
+          id: string;
+          campaign_id: string | null;
+          order_id: string | null;
+          recipient_email: string;
+          email_type: string;
+          subject: string;
+          status: string;
+          provider_message_id: string | null;
+          error_message: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id?: string | null;
+          order_id?: string | null;
+          recipient_email: string;
+          email_type: string;
+          subject: string;
+          status: string;
+          provider_message_id?: string | null;
+          error_message?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string | null;
+          order_id?: string | null;
+          recipient_email?: string;
+          email_type?: string;
+          subject?: string;
+          status?: string;
+          provider_message_id?: string | null;
+          error_message?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "email_logs_campaign_id_fkey"; columns: ["campaign_id"]; referencedRelation: "email_campaigns"; referencedColumns: ["id"] },
+          { foreignKeyName: "email_logs_order_id_fkey"; columns: ["order_id"]; referencedRelation: "orders"; referencedColumns: ["id"] },
         ];
       };
       email_subscribers: {
@@ -251,6 +305,7 @@ export type Database = {
           email: string;
           full_name: string | null;
           is_active: boolean;
+          source: string | null;
           created_at: string;
         };
         Insert: {
@@ -258,6 +313,7 @@ export type Database = {
           email: string;
           full_name?: string | null;
           is_active?: boolean;
+          source?: string | null;
           created_at?: string;
         };
         Update: {
@@ -265,6 +321,7 @@ export type Database = {
           email?: string;
           full_name?: string | null;
           is_active?: boolean;
+          source?: string | null;
           created_at?: string;
         };
         Relationships: [];
