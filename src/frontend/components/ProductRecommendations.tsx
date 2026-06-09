@@ -83,11 +83,17 @@ export function ProductRecommendations({
   if (items.length === 0) return null;
 
   return (
-    <section className="mt-10 border-t border-border/60 pt-10">
-      <h2 className="font-display text-2xl font-bold tracking-tight md:text-3xl">{t("youMayAlsoLike")}</h2>
+    <section className="pd-card-enter mt-10 border-t border-border/60 pt-10">
+      <h2 className="pd-content-enter font-display text-2xl font-bold tracking-tight md:text-3xl">
+        {t("youMayAlsoLike")}
+      </h2>
       <div className="mt-6 grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-        {items.map((p) => (
-          <div key={p.id} className="flex min-h-0 h-full min-w-0 w-full flex-col self-stretch">
+        {items.map((p, idx) => (
+          <div
+            key={p.id}
+            className="product-card-enter flex min-h-0 h-full min-w-0 w-full flex-col self-stretch"
+            style={{ animationDelay: `${60 + Math.min(idx * 50, 350)}ms` }}
+          >
             <ProductCard
               product={{
                 id: p.id,

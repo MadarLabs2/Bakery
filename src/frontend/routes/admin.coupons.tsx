@@ -76,9 +76,9 @@ function AdminCoupons() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
+    <div className="admin-page-enter mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="font-display text-3xl font-bold text-[#1B4332]">{t("adminDashCouponsTitle")}</h1>
+        <h1 className="admin-header-enter font-display text-3xl font-bold text-[#1B4332]">{t("adminDashCouponsTitle")}</h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -156,7 +156,7 @@ function AdminCoupons() {
           </DialogContent>
         </Dialog>
       </div>
-      <div className="rounded-2xl border bg-card overflow-hidden">
+      <div className="admin-section-enter rounded-2xl border bg-card overflow-hidden" style={{ animationDelay: "120ms" }}>
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left">
             <tr>

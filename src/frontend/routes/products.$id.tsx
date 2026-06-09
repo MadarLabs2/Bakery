@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/backend/db/client";
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/products/$id")({
 function ProductDetail() {
   const { id } = Route.useParams();
   const { t } = useI18n();
+  const nav = useNavigate();
   const [product, setProduct] = useState<ProductDetailModel | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,12 +56,19 @@ function ProductDetail() {
         loading={loading}
         error={error}
         topSlot={
-          <Link
-            to="/products"
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history.length > 1) {
+                window.history.back();
+              } else {
+                void nav({ to: "/products" });
+              }
+            }}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t("products")}
-          </Link>
+          </button>
         }
       />
       {!loading && !error && product ? (

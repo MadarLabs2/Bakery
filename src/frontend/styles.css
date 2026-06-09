@@ -172,6 +172,273 @@
   }
 }
 
+/* ——— Products page ——— */
+@keyframes products-header-in {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes products-filters-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes product-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes products-empty-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.products-header-enter {
+  animation: products-header-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.products-filters-enter {
+  animation: products-filters-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.product-card-enter {
+  animation: product-card-in 0.52s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.products-empty-enter {
+  animation: products-empty-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .products-header-enter,
+  .products-filters-enter,
+  .product-card-enter,
+  .products-empty-enter {
+    animation: none;
+  }
+}
+
+/* ——— Product detail page ——— */
+@keyframes pd-card-in {
+  from {
+    transform: translateY(16px) scale(0.99);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pd-image-in {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes pd-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pd-section-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pd-card-enter {
+  animation: pd-card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+}
+
+.pd-image-enter {
+  animation: pd-image-in 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+}
+
+.pd-content-enter {
+  animation: pd-content-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.pd-section-enter {
+  animation: pd-section-in 0.48s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Quantity +/− spring press */
+.pd-qty-btn {
+  transition:
+    background-color 0.15s ease,
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pd-qty-btn:active {
+  transform: scale(0.8);
+}
+
+/* Add to Cart — lift + glow on hover, press on tap */
+.pd-add-wrap {
+  transition:
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .pd-add-wrap:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px -8px color-mix(in oklch, var(--primary) 48%, transparent);
+  }
+}
+
+.pd-add-wrap:active {
+  transform: translateY(0) scale(0.96);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-card-enter,
+  .pd-image-enter,
+  .pd-content-enter,
+  .pd-section-enter {
+    animation: none;
+  }
+
+  .pd-qty-btn {
+    transition: background-color 0.15s ease;
+  }
+
+  .pd-qty-btn:active {
+    transform: none;
+  }
+
+  .pd-add-wrap {
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .pd-add-wrap:hover,
+  .pd-add-wrap:active {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* ——— Shared page entrance ——— */
+.page-title-enter {
+  animation: products-header-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.page-section-enter {
+  animation: products-filters-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ——— About page — feature cards ——— */
+@keyframes about-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.about-icon-card-enter {
+  animation: about-card-in 0.52s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.about-icon-card {
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s ease,
+    border-color 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.about-icon-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  border-color: color-mix(in oklch, var(--primary) 40%, var(--border));
+  background-color: color-mix(in oklch, var(--primary) 8%, var(--card));
+  box-shadow: 0 14px 32px -10px color-mix(in oklch, var(--primary) 28%, transparent);
+}
+
+/* ——— Contact / generic section card ——— */
+.section-card-enter {
+  animation: product-card-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* ——— Categories page — grid cards ——— */
+.category-card-enter {
+  animation: product-card-in 0.52s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.category-card-press {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.category-card-press:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-title-enter,
+  .page-section-enter,
+  .about-icon-card-enter,
+  .section-card-enter,
+  .category-card-enter {
+    animation: none;
+  }
+
+  .about-icon-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .category-card-press,
+  .category-card-press:active {
+    transform: none;
+    transition: none;
+  }
+}
+
 /* ScrollReveal3D: disable 3D motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   .scroll-reveal-3d {
@@ -457,5 +724,99 @@
   .checkout-confirm-btn:hover,
   .checkout-confirm-btn:active {
     transform: none;
+  }
+}
+
+/* ——— Sonner toast — spring entrance ——— */
+[data-sonner-toast] {
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.38s ease,
+    height 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s ease !important;
+}
+
+[data-sonner-toast][data-styled="true"] [data-close-button]:hover {
+  background: oklch(0.94 0.018 80) !important;
+  border-color: oklch(0.82 0.025 75) !important;
+  color: oklch(0.28 0.04 60) !important;
+}
+
+/* ——— Admin screens — entrance animations ——— */
+@keyframes admin-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes admin-header-in {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes admin-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes admin-section-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-page-enter {
+  animation: admin-page-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.admin-header-enter {
+  animation: admin-header-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.admin-section-enter {
+  animation: admin-section-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Auto-stagger: add to any container — each direct child gets a cascading delay */
+.admin-list-stagger > * {
+  animation: admin-card-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.admin-list-stagger > *:nth-child(1)   { animation-delay: 80ms; }
+.admin-list-stagger > *:nth-child(2)   { animation-delay: 120ms; }
+.admin-list-stagger > *:nth-child(3)   { animation-delay: 158ms; }
+.admin-list-stagger > *:nth-child(4)   { animation-delay: 194ms; }
+.admin-list-stagger > *:nth-child(5)   { animation-delay: 228ms; }
+.admin-list-stagger > *:nth-child(6)   { animation-delay: 260ms; }
+.admin-list-stagger > *:nth-child(7)   { animation-delay: 292ms; }
+.admin-list-stagger > *:nth-child(n+8) { animation-delay: 324ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-page-enter,
+  .admin-header-enter,
+  .admin-section-enter,
+  .admin-list-stagger > * {
+    animation: none !important;
   }
 }

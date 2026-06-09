@@ -63,13 +63,13 @@ function AdminSettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 px-4 py-8 md:px-8">
-      <div>
+    <div className="admin-page-enter mx-auto max-w-3xl space-y-8 px-4 py-8 md:px-8">
+      <div className="admin-header-enter">
         <h1 className="font-display text-3xl font-bold text-[#1B4332]">{t("adminSettingsTitle")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("adminSettingsSubtitle")}</p>
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-[#1B4332]/10 bg-white shadow-sm">
+      <section className="admin-section-enter overflow-hidden rounded-2xl border border-[#1B4332]/10 bg-white shadow-sm" style={{ animationDelay: "120ms" }}>
         <div className="border-b border-[#1B4332]/10 bg-gradient-to-br from-[#1B4332] to-[#2d5a45] px-5 py-5 text-[#faf8f4] sm:px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15">
@@ -148,7 +148,7 @@ function AdminSettingsPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-dashed border-[#1B4332]/20 bg-[#faf8f4]/60 p-5">
+      <section className="admin-section-enter rounded-2xl border border-dashed border-[#1B4332]/20 bg-[#faf8f4]/60 p-5" style={{ animationDelay: "220ms" }}>
         <div className="flex gap-3">
           <Settings className="mt-0.5 h-5 w-5 shrink-0 text-[#1B4332]" aria-hidden />
           <p className="text-sm leading-relaxed text-muted-foreground">{t("adminDeliverySettingsNote")}</p>

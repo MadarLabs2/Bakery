@@ -505,6 +505,26 @@ export const dict: Dict = {
     he: "החשבון נוצר — אפשר להתחבר!",
     ar: "تم إنشاء الحساب — يمكنك تسجيل الدخول!",
   },
+  invalidLoginCredentials: {
+    en: "The email or password you entered is incorrect.",
+    he: "האימייל או הסיסמה שהזנת שגויים.",
+    ar: "البريد الإلكتروني أو كلمة المرور التي أدخلتها غير صحيحة.",
+  },
+  emailNotConfirmed: {
+    en: "Please verify your email address before signing in.",
+    he: "יש לאמת את כתובת האימייל שלך לפני ההתחברות.",
+    ar: "يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول.",
+  },
+  emailAlreadyRegistered: {
+    en: "An account with this email already exists.",
+    he: "כבר קיים חשבון עם כתובת אימייל זו.",
+    ar: "يوجد حساب بهذا البريد الإلكتروني بالفعل.",
+  },
+  tooManyAuthAttempts: {
+    en: "Too many attempts. Please wait a moment and try again.",
+    he: "יותר מדי ניסיונות. אנא המתן רגע ונסה שוב.",
+    ar: "محاولات كثيرة جداً. يرجى الانتظار قليلاً والمحاولة مجدداً.",
+  },
   genericError: {
     en: "Something went wrong",
     he: "משהו השתבש",

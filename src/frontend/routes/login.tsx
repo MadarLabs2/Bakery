@@ -22,7 +22,16 @@ function LoginPage() {
     setBusy(true);
     const { error } = await signIn(email, password);
     if (error) {
-      toast.error(error);
+      const e = error.toLowerCase();
+      const msg =
+        e.includes("invalid login") || e.includes("invalid credentials")
+          ? t("invalidLoginCredentials")
+          : e.includes("email not confirmed")
+          ? t("emailNotConfirmed")
+          : e.includes("too many")
+          ? t("tooManyAuthAttempts")
+          : t("genericError");
+      toast.error(msg);
       setBusy(false);
       return;
     }
@@ -33,9 +42,9 @@ function LoginPage() {
   };
 
   return (
-    <div className="container mx-auto flex min-h-[70vh] items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-lg">
-        <h1 className="font-display text-3xl font-bold">{t("login")}</h1>
+    <div className="admin-page-enter container mx-auto flex min-h-[70vh] items-center justify-center px-4 py-10">
+      <div className="section-card-enter w-full max-w-md rounded-2xl border bg-card p-8 shadow-lg" style={{ animationDelay: "40ms" }}>
+        <h1 className="page-title-enter font-display text-3xl font-bold" style={{ animationDelay: "80ms" }}>{t("login")}</h1>
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
             <Label>{t("email")}</Label>

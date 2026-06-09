@@ -16,19 +16,21 @@ function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-20 text-center">
-        <h1 className="font-display text-3xl font-bold">{t("empty")}</h1>
-        <Button asChild className="mt-6">
-          <Link to="/products">{t("shopAll")}</Link>
-        </Button>
+      <div className="admin-page-enter container mx-auto px-4 py-20 text-center">
+        <h1 className="page-title-enter font-display text-3xl font-bold">{t("empty")}</h1>
+        <div className="section-card-enter mt-6 inline-block" style={{ animationDelay: "120ms" }}>
+          <Button asChild>
+            <Link to="/products">{t("shopAll")}</Link>
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto grid gap-8 px-4 py-10 lg:grid-cols-3">
-      <div className="lg:col-span-2 space-y-4">
-        <h1 className="font-display text-3xl font-bold">{t("cart")}</h1>
+    <div className="admin-page-enter container mx-auto grid gap-8 px-4 py-10 lg:grid-cols-3">
+      <div className="admin-list-stagger lg:col-span-2 space-y-4">
+        <h1 className="page-title-enter font-display text-3xl font-bold">{t("cart")}</h1>
         {items.map((i) => (
           <div key={i.id} className="flex gap-4 rounded-2xl border bg-card p-4">
             <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-secondary">
@@ -64,7 +66,7 @@ function CartPage() {
           </div>
         ))}
       </div>
-      <aside className="h-fit space-y-4 rounded-2xl border bg-card p-6">
+      <aside className="section-card-enter h-fit space-y-4 rounded-2xl border bg-card p-6" style={{ animationDelay: "260ms" }}>
         <h2 className="font-display text-xl font-bold">{t("total")}</h2>
         <div className="flex justify-between text-sm">
           <span>{t("subtotal")}</span>

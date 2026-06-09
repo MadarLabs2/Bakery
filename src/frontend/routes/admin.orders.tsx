@@ -332,7 +332,7 @@ function AdminOrders() {
   );
 
   const statsCard = (
-    <div className="relative overflow-hidden rounded-2xl border border-[#1B4332]/25 bg-gradient-to-br from-[#1B4332] via-[#163d2f] to-[#0f2a20] p-4 text-white shadow-md sm:p-5">
+    <div className="admin-section-enter relative overflow-hidden rounded-2xl border border-[#1B4332]/25 bg-gradient-to-br from-[#1B4332] via-[#163d2f] to-[#0f2a20] p-4 text-white shadow-md sm:p-5" style={{ animationDelay: "120ms" }}>
       <div
         className="pointer-events-none absolute -bottom-6 -end-8 h-36 w-36 opacity-[0.12]"
         aria-hidden
@@ -374,7 +374,7 @@ function AdminOrders() {
   );
 
   const tabStrip = (
-    <div className="flex items-center gap-2">
+    <div className="admin-section-enter flex items-center gap-2" style={{ animationDelay: "200ms" }}>
       <div className="scrollbar-none flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 pt-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((def) => {
           const count = tabCount(orders, def.id);
@@ -436,14 +436,14 @@ function AdminOrders() {
   );
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 px-4 py-6 md:space-y-6 md:px-8 md:py-8">
+    <div className="admin-page-enter mx-auto max-w-6xl space-y-5 px-4 py-6 md:space-y-6 md:px-8 md:py-8">
       <div className="md:hidden">{brandHero}</div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="hidden text-center font-display text-2xl font-bold tracking-tight text-[#1B4332] sm:text-start md:block md:text-3xl">
+        <h1 className="admin-header-enter hidden text-center font-display text-2xl font-bold tracking-tight text-[#1B4332] sm:text-start md:block md:text-3xl">
           {t("adminDashOrdersTitle")}
         </h1>
-        <h1 className="font-display text-xl font-bold tracking-tight text-[#1B4332] md:hidden">
+        <h1 className="admin-header-enter font-display text-xl font-bold tracking-tight text-[#1B4332] md:hidden">
           {t("adminDashOrdersTitle")}
         </h1>
       </div>
@@ -464,7 +464,7 @@ function AdminOrders() {
             </p>
           ) : (
             <>
-              <div className="space-y-3 md:hidden">
+              <div className="admin-list-stagger space-y-3 md:hidden">
                 {filtered.map((o) => (
                   <OrdersListCard key={o.id} o={o} lang={lang} t={t} onOpen={() => setSelected(o)} />
                 ))}

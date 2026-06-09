@@ -382,8 +382,8 @@ function AdminProducts() {
     "rounded-xl border border-stone-200/90 bg-white shadow-sm focus-visible:border-[#1B4332]/35 focus-visible:ring-[#1B4332]/20";
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
-      <h1 id="admin-products-top" tabIndex={-1} className="scroll-mt-24 font-display text-2xl font-bold outline-none md:text-3xl">
+    <div className="admin-page-enter mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
+      <h1 id="admin-products-top" tabIndex={-1} className="admin-header-enter scroll-mt-24 font-display text-2xl font-bold outline-none md:text-3xl">
         {t("products")}
       </h1>
 
@@ -439,7 +439,7 @@ function AdminProducts() {
               </Select>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="admin-list-stagger flex flex-col gap-3">
               {filteredProducts.length === 0 && (
                 <p className="rounded-xl border border-dashed bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
                   {emptyListMessage()}

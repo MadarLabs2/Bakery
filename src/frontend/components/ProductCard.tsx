@@ -166,7 +166,7 @@ export function ProductCard({
 
   const handleAdd = async () => {
     if (!user) {
-      toast.error(t("login"));
+      toast.info(t("login"));
       return;
     }
     try {

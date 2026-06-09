@@ -44,8 +44,12 @@ function ContactPage() {
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-16">
-      <h1 className="font-display text-5xl font-bold">{t("contact")}</h1>
-      <div className="mt-8 space-y-4 rounded-2xl border bg-card p-8">
+      <h1 className="page-title-enter font-display text-5xl font-bold">{t("contact")}</h1>
+
+      <div
+        className="section-card-enter mt-8 space-y-4 rounded-2xl border bg-card p-8"
+        style={{ animationDelay: "0.12s" }}
+      >
         {phoneDisplay ? (
           <p className="flex items-center gap-3">
             <Phone className="h-5 w-5 text-primary" /> {phoneDisplay}
@@ -65,7 +69,11 @@ function ContactPage() {
         ) : null}
       </div>
 
-      <form onSubmit={submit} className="mt-10 space-y-4 rounded-2xl border bg-card p-8">
+      <form
+        onSubmit={submit}
+        className="section-card-enter mt-10 space-y-4 rounded-2xl border bg-card p-8"
+        style={{ animationDelay: "0.24s" }}
+      >
         <h2 className="font-display text-xl font-semibold">Send a message</h2>
         <div>
           <Label htmlFor="cname">{t("fullName")}</Label>
@@ -100,7 +108,7 @@ function ContactPage() {
             onChange={(e) => setMessage(e.target.value)}
           />
         </div>
-        <Button type="submit" disabled={sending}>
+        <Button type="submit" disabled={sending} className="w-full transition-opacity duration-200">
           {sending ? "Sending…" : "Send"}
         </Button>
       </form>

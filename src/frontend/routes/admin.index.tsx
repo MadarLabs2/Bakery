@@ -218,9 +218,9 @@ function AdminDashboard() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-3 py-3 sm:px-4 sm:py-5 md:px-6 md:py-6 lg:max-w-[min(100%,80rem)]">
+    <div className="admin-page-enter mx-auto max-w-6xl px-3 py-3 sm:px-4 sm:py-5 md:px-6 md:py-6 lg:max-w-[min(100%,80rem)]">
       <div className="space-y-5 rounded-2xl border border-stone-200/45 bg-gradient-to-b from-[#fffdfb] via-[#faf7f2] to-[#f3efe8] p-4 shadow-[0_1px_3px_rgba(60,42,33,0.06)] sm:space-y-7 sm:rounded-3xl sm:p-6 md:space-y-10 md:p-8">
-        <header className="flex flex-col gap-3 sm:gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
+        <header className="admin-header-enter flex flex-col gap-3 sm:gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-8">
           <div className="min-w-0 max-w-2xl">
             <h1 className="font-display text-2xl font-medium tracking-[0.02em] text-[#2c3d34] sm:text-[1.65rem] md:text-[2.1rem] md:leading-[1.15]">
               {t("adminPanelTitle")}
@@ -247,7 +247,7 @@ function AdminDashboard() {
 
         <section aria-label={t("adminMetricsOverviewSr")}>
           <h2 className="sr-only">{t("adminMetricsOverviewSr")}</h2>
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
+          <div className="admin-list-stagger grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
             {kpis.map((k) => (
               <div
                 key={k.labelKey}
@@ -281,7 +281,7 @@ function AdminDashboard() {
           >
             {t("adminDashResourceSection")}
           </h2>
-          <ul className="grid list-none auto-rows-[1fr] grid-cols-2 gap-2.5 p-0 sm:gap-3 xl:grid-cols-3">
+          <ul className="admin-list-stagger grid list-none auto-rows-[1fr] grid-cols-2 gap-2.5 p-0 sm:gap-3 xl:grid-cols-3">
             {filteredTiles.map((tile) => {
               const Icon = tile.icon;
               const active = isTileActive(tile.to);
@@ -356,7 +356,7 @@ function AdminDashboard() {
           )}
         </section>
 
-        <section className="space-y-3 sm:space-y-4" aria-labelledby="recent-orders-heading">
+        <section className="admin-section-enter space-y-3 sm:space-y-4" style={{ animationDelay: "280ms" }} aria-labelledby="recent-orders-heading">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2
               id="recent-orders-heading"

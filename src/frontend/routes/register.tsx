@@ -21,7 +21,16 @@ function RegisterPage() {
     setBusy(true);
     const { error } = await signUp(form.email, form.password, form.name, form.phone);
     setBusy(false);
-    if (error) toast.error(error);
+    if (error) {
+      const e = error.toLowerCase();
+      const msg =
+        e.includes("already registered") || e.includes("already exists")
+          ? t("emailAlreadyRegistered")
+          : e.includes("too many")
+          ? t("tooManyAuthAttempts")
+          : t("genericError");
+      toast.error(msg);
+    }
     else {
       toast.success(t("accountCreatedSuccess"));
       nav({ to: "/login" });
@@ -29,9 +38,9 @@ function RegisterPage() {
   };
 
   return (
-    <div className="container mx-auto flex min-h-[70vh] items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-lg">
-        <h1 className="font-display text-3xl font-bold">{t("register")}</h1>
+    <div className="admin-page-enter container mx-auto flex min-h-[70vh] items-center justify-center px-4 py-10">
+      <div className="section-card-enter w-full max-w-md rounded-2xl border bg-card p-8 shadow-lg" style={{ animationDelay: "40ms" }}>
+        <h1 className="page-title-enter font-display text-3xl font-bold" style={{ animationDelay: "80ms" }}>{t("register")}</h1>
         <form onSubmit={submit} className="mt-6 space-y-4">
           <div>
             <Label>{t("fullName")}</Label>

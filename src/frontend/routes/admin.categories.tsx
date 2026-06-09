@@ -163,8 +163,8 @@ function AdminCategories() {
   }, [cats, search]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
-      <h1 id="admin-categories-top" className="scroll-mt-24 font-display text-2xl font-bold md:text-3xl">
+    <div className="admin-page-enter mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-8">
+      <h1 id="admin-categories-top" className="admin-header-enter scroll-mt-24 font-display text-2xl font-bold md:text-3xl">
         {t("categories")}
       </h1>
 
@@ -197,7 +197,7 @@ function AdminCategories() {
               aria-label={t("adminSearchCategories")}
             />
 
-            <div className="flex flex-col gap-3">
+            <div className="admin-list-stagger flex flex-col gap-3">
               {filteredCats.length === 0 && (
                 <p className="rounded-xl border border-dashed bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
                   {cats.length === 0 ? t("noCategories") : t("adminNoMatchingCategoriesSearch")}

@@ -461,9 +461,9 @@ function AdminOffers() {
   );
 
   return (
-    <div className="min-h-full pb-16 pt-2 md:pt-6" style={{ backgroundColor: cream }}>
+    <div className="admin-page-enter min-h-full pb-16 pt-2 md:pt-6" style={{ backgroundColor: cream }}>
       <div className="mx-auto max-w-6xl px-4 md:px-8">
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <header className="admin-header-enter mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="font-display text-3xl font-bold tracking-tight text-[#1B3324] md:text-4xl">
               {t("adminDashEmailOffersTitle")}
@@ -485,7 +485,8 @@ function AdminOffers() {
 
         <div
           role="alert"
-          className="mb-6 flex gap-3 rounded-xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          className="admin-section-enter mb-6 flex gap-3 rounded-xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+          style={{ animationDelay: "120ms" }}
         >
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
           <div>
@@ -494,7 +495,7 @@ function AdminOffers() {
           </div>
         </div>
 
-        <section className="mb-8">
+        <section className="admin-section-enter mb-8" style={{ animationDelay: "200ms" }}>
           <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="font-display text-lg font-semibold text-[#1B3324] md:text-xl">
               {t("adminOffersChooseTemplate")}

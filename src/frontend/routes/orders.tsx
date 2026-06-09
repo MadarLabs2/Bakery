@@ -73,9 +73,9 @@ function OrdersPage() {
   }, [userId, fetchBatch]);
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <h1 className="font-display text-4xl font-bold">{t("myOrders")}</h1>
-      <div className="mt-8 space-y-4">
+    <div className="admin-page-enter container mx-auto px-4 py-10">
+      <h1 className="page-title-enter font-display text-4xl font-bold" style={{ animationDelay: "30ms" }}>{t("myOrders")}</h1>
+      <div className="admin-list-stagger mt-8 space-y-4">
         {loadingList && <p className="text-muted-foreground">{t("loading")}</p>}
         {!loadingList && orders.length === 0 && <p className="text-muted-foreground">{t("myOrdersEmpty")}</p>}
         {!loadingList &&

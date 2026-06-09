@@ -4,7 +4,6 @@ import { useI18n, pickName, pickDesc, pickIngredients, pickAllergens } from "@/f
 import { useAuth } from "@/frontend/lib/auth";
 import { useCart } from "@/frontend/lib/cart";
 import { Button } from "@/frontend/components/ui/button";
-import { Skeleton } from "@/frontend/components/ui/skeleton";
 import { resolveImage } from "@/frontend/lib/images";
 import { toast } from "sonner";
 import { ProductPriceRow } from "@/frontend/components/ProductPriceRow";
@@ -63,11 +62,11 @@ export function ProductDetailView({
 
   const handleAdd = async (p: ProductDetailModel) => {
     if (!user) {
-      toast.error(t("login"));
+      toast.info(t("login"));
       return;
     }
     if (p.is_available === false) {
-      toast.error(t("unavailableProduct"));
+      toast.warning(t("unavailableProduct"));
       return;
     }
     try {
@@ -80,19 +79,12 @@ export function ProductDetailView({
 
   if (loading) {
     return (
-      <div className="overflow-hidden rounded-3xl border border-border/80 bg-card shadow-sm">
-        <div className="grid gap-0 md:grid-cols-2 md:items-start">
-          <div className="flex aspect-square items-center justify-center bg-secondary p-4 md:aspect-auto md:min-h-[280px] md:p-8">
-            <Skeleton className="h-full w-full rounded-none md:max-h-[400px] md:max-w-full md:rounded-2xl" />
+      <div className="space-y-6">
+        {topSlot && (
+          <div className="pd-content-enter" style={{ animationDelay: "0ms" }}>
+            {topSlot}
           </div>
-          <div className="flex flex-col gap-4 border-t p-6 md:border-t-0 md:border-s md:p-8">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-10 w-full max-w-md" />
-            <Skeleton className="h-16 w-full max-w-lg" />
-            <Skeleton className="h-8 w-32" />
-            <Skeleton className="h-12 w-full" />
-          </div>
-        </div>
+        )}
       </div>
     );
   }
@@ -111,24 +103,29 @@ export function ProductDetailView({
   const available = product.is_available !== false;
 
   const shell = (
-    <div className="overflow-hidden rounded-3xl border border-border/80 bg-card shadow-sm ring-1 ring-black/[0.03]">
+    <div
+      className="pd-card-enter overflow-hidden rounded-3xl border border-border/80 bg-card shadow-sm ring-1 ring-black/[0.03]"
+      style={{ animationDelay: "40ms" }}
+    >
       <div className="grid gap-0 md:grid-cols-2 md:items-start">
-        {/* Mobile: full-width square cover (unchanged feel). Desktop: framed, contained photo — no tall half-screen crop. */}
-        <div className="relative aspect-square bg-secondary max-md:min-h-0 md:flex md:min-h-[280px] md:items-center md:justify-center md:overflow-hidden md:bg-gradient-to-b md:from-secondary md:to-muted/40 md:p-8 lg:min-h-[320px] lg:p-10">
+        <div className="relative aspect-square overflow-hidden bg-secondary max-md:min-h-0 md:flex md:min-h-[280px] md:items-center md:justify-center md:bg-gradient-to-b md:from-secondary md:to-muted/40 md:p-8 lg:min-h-[320px] lg:p-10">
           {product.image_url ? (
             <img
               src={resolveImage(product.image_url)!}
               alt={pickName(product, lang)}
-              className="h-full w-full object-cover md:h-auto md:max-h-[min(420px,52vh)] md:w-full md:max-w-lg md:rounded-2xl md:object-contain md:object-center md:shadow-md lg:max-h-[min(460px,50vh)] lg:max-w-xl"
+              className="pd-image-enter h-full w-full object-cover md:h-auto md:max-h-[min(420px,52vh)] md:w-full md:max-w-lg md:rounded-2xl md:object-contain md:object-center md:shadow-md lg:max-h-[min(460px,50vh)] lg:max-w-xl"
             />
           ) : (
-            <div className="flex h-full min-h-[12rem] items-center justify-center text-muted-foreground md:min-h-[200px]">
+            <div className="pd-image-enter flex h-full min-h-[12rem] items-center justify-center text-muted-foreground md:min-h-[200px]">
               —
             </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-4 border-t border-border/60 bg-gradient-to-b from-card to-muted/10 p-6 md:border-t-0 md:border-s md:p-8 lg:p-10">
+        <div
+          className="pd-content-enter flex flex-col gap-4 border-t border-border/60 bg-gradient-to-b from-card to-muted/10 p-6 md:border-t-0 md:border-s md:p-8 lg:p-10"
+          style={{ animationDelay: "80ms" }}
+        >
           {product.category ? (
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
               {pickName(product.category, lang)}
@@ -152,7 +149,9 @@ export function ProductDetailView({
               {t("unavailableProduct")}
             </p>
           ) : null}
-          <ProductPriceRow price={Number(product.price)} compareAtPrice={product.compare_at_price} variant="hero" />
+          <div>
+            <ProductPriceRow price={Number(product.price)} compareAtPrice={product.compare_at_price} variant="hero" />
+          </div>
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <div
               className="flex items-center overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
@@ -160,7 +159,7 @@ export function ProductDetailView({
             >
               <button
                 type="button"
-                className="px-4 py-2.5 text-lg leading-none transition-colors hover:bg-muted"
+                className="pd-qty-btn px-4 py-2.5 text-lg leading-none hover:bg-muted"
                 onClick={() => setQty(Math.max(1, qty - 1))}
               >
                 −
@@ -168,13 +167,13 @@ export function ProductDetailView({
               <span className="min-w-[2.5rem] text-center text-base font-semibold tabular-nums">{qty}</span>
               <button
                 type="button"
-                className="px-4 py-2.5 text-lg leading-none transition-colors hover:bg-muted"
+                className="pd-qty-btn px-4 py-2.5 text-lg leading-none hover:bg-muted"
                 onClick={() => setQty(qty + 1)}
               >
                 +
               </button>
             </div>
-            <Button size="lg" className="gap-2 rounded-xl shadow-sm" disabled={!available} onClick={() => handleAdd(product)}>
+            <Button size="lg" className="pd-add-wrap gap-2 rounded-xl shadow-sm" disabled={!available} onClick={() => handleAdd(product)}>
               <Plus className="h-4 w-4 shrink-0" />
               {t("addToCart")}
             </Button>
@@ -183,7 +182,10 @@ export function ProductDetailView({
       </div>
 
       {(ingredients || allergens) && (
-        <div className="divide-y divide-border/60 border-t border-border/60 bg-muted/15">
+        <div
+          className="pd-section-enter divide-y divide-border/60 border-t border-border/60 bg-muted/15"
+          style={{ animationDelay: "160ms" }}
+        >
           {ingredients ? (
             <section className="p-6 md:p-8 lg:p-10">
               <h2 className="font-display text-xl font-semibold text-foreground md:text-2xl">{t("ingredients")}</h2>
@@ -207,7 +209,11 @@ export function ProductDetailView({
 
   return (
     <div className="space-y-6">
-      {topSlot}
+      {topSlot && (
+        <div className="pd-content-enter" style={{ animationDelay: "0ms" }}>
+          {topSlot}
+        </div>
+      )}
       {shell}
     </div>
   );

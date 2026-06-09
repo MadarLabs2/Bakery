@@ -47,8 +47,8 @@ function AdminReports() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-10 px-4 py-8 md:px-8">
-      <h1 className="font-display text-2xl font-bold tracking-tight text-[#1B4332] sm:text-3xl">
+    <div className="admin-page-enter mx-auto max-w-6xl space-y-10 px-4 py-8 md:px-8">
+      <h1 className="admin-header-enter font-display text-2xl font-bold tracking-tight text-[#1B4332] sm:text-3xl">
         {t("adminDashReportsTitle")}
       </h1>
 
@@ -56,7 +56,7 @@ function AdminReports() {
         <h2 id="reports-metric-heading" className="sr-only">
           {t("adminMetricsOverviewSr")}
         </h2>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="admin-list-stagger grid grid-cols-2 gap-3 lg:grid-cols-4">
           {metricSquares.map((c) => (
             <div
               key={c.titleKey}
@@ -76,7 +76,7 @@ function AdminReports() {
         </div>
       </section>
 
-      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <div className="admin-section-enter rounded-2xl border border-border bg-card p-6 shadow-sm" style={{ animationDelay: "240ms" }}>
         <h2 className="mb-4 font-display text-xl font-bold">{t("adminRecentOrders")}</h2>
         <div className="space-y-2">
           {recent.length === 0 && (
