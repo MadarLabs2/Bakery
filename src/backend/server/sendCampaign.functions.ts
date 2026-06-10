@@ -35,7 +35,7 @@ export type SendCampaignResult = {
 
 export const sendCampaignEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw) => sendOfferInput.parse(raw))
+  .validator((raw) => sendOfferInput.parse(raw))
   .handler(async ({ data, context }): Promise<SendCampaignResult> => {
     const ctx = context as {
       supabase: SupabaseClient<Database>;
@@ -163,7 +163,7 @@ export const sendCampaignEmail = createServerFn({ method: "POST" })
     let resendLastError: string | undefined;
 
     for (const to of recipients) {
-      const result = await sendOfferEmail(supabase, {
+      const result = await sendOfferEmail({
         to,
         subject,
         message,

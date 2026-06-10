@@ -4,8 +4,11 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useI18n } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
+import { generateUUID } from "@/frontend/lib/uuid";
 import { sendOrderConfirmation } from "@/backend/server/sendOrderConfirmation.functions";
-import { rotateCartAfterOrder, useCart } from "@/frontend/lib/cart";
+import { sendAdminNewOrder } from "@/backend/server/sendAdminNewOrder.functions";
+import { createOrder } from "@/backend/server/createOrder.functions";
+import { useCart } from "@/frontend/lib/cart";
 import { supabase } from "@/backend/db/client";
 import { Label } from "@/frontend/components/ui/label";
 import { Textarea } from "@/frontend/components/ui/textarea";
@@ -19,7 +22,6 @@ import { CheckoutSection } from "@/frontend/components/checkout/CheckoutSection"
 import { emptyDeliveryAddress, formatDeliveryAddress, type DeliveryMethod } from "@/frontend/lib/checkoutDelivery";
 import { useDeliveryFee } from "@/frontend/hooks/useDeliveryFee";
 import {
-  COUPON_SELECT,
   validateCouponForSubtotal,
   type CouponRow,
 } from "@/frontend/lib/checkoutCoupon";
@@ -35,11 +37,18 @@ export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
 function CheckoutPage() {
   const { t } = useI18n();
   const { user, session } = useAuth();
-  const sendConfirmationFn = useServerFn(sendOrderConfirmation);
+  const sendConfirmationFn  = useServerFn(sendOrderConfirmation);
+  const sendAdminNewOrderFn = useServerFn(sendAdminNewOrder);
+  const createOrderFn       = useServerFn(createOrder);
   const { items, subtotal, refresh } = useCart();
   const { deliveryFee: configuredDeliveryFee } = useDeliveryFee();
   const nav = useNavigate();
   const submitLock = useRef(false);
+
+  // One idempotency key per checkout session — regenerated on page mount.
+  // If the user submits twice (race through the lock), PostgreSQL rejects the
+  // duplicate and returns the already-committed order ID.
+  const [idempotencyKey] = useState(() => generateUUID());
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -102,13 +111,11 @@ function CheckoutPage() {
   };
 
   useEffect(() => {
-    if (!appliedCouponId) return;
+    if (!appliedCouponId || !lockedCode) return;
     let cancelled = false;
     void (async () => {
       const { data } = await supabase
-        .from("coupons")
-        .select(COUPON_SELECT)
-        .eq("id", appliedCouponId)
+        .rpc("lookup_coupon", { p_code: lockedCode })
         .maybeSingle();
       if (cancelled) return;
       if (!data) {
@@ -125,7 +132,7 @@ function CheckoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [subtotal, appliedCouponId, t, resetAppliedCoupon]);
+  }, [subtotal, appliedCouponId, lockedCode, t, resetAppliedCoupon]);
 
   const deliveryFee = recv === "delivery" ? configuredDeliveryFee : 0;
   const total = Math.max(0, subtotal - discount) + deliveryFee;
@@ -136,22 +143,19 @@ function CheckoutPage() {
     setCouponApplying(true);
     setCouponStatus(null);
     const { data, error } = await supabase
-      .from("coupons")
-      .select(COUPON_SELECT)
-      .eq("code", trimmed.toUpperCase())
-      .eq("is_active", true)
+      .rpc("lookup_coupon", { p_code: trimmed })
       .maybeSingle();
     setCouponApplying(false);
     if (error || !data) {
-      setCouponStatus({ type: "error", text: t("invalidCoupon") });
       resetAppliedCoupon();
+      setCouponStatus({ type: "error", text: t("invalidCoupon") });
       return;
     }
     const row = data as CouponRow;
     const v = validateCouponForSubtotal(row, subtotal, t);
     if (!v.ok) {
-      setCouponStatus({ type: "error", text: v.message });
       resetAppliedCoupon();
+      setCouponStatus({ type: "error", text: v.message });
       return;
     }
     setAppliedCouponId(row.id);
@@ -184,104 +188,60 @@ function CheckoutPage() {
   };
 
   const placeOrder = async () => {
-    if (!user || items.length === 0 || submitLock.current) return;
+    if (!user || !session?.access_token || items.length === 0 || submitLock.current) return;
     if (!validateCheckout()) return;
 
     submitLock.current = true;
     setSubmitting(true);
 
-    let couponId: string | null = null;
-    let orderDiscount = 0;
-
     try {
-      if (discount > 0) {
-        if (!appliedCouponId) {
-          toast.error(t("checkoutCouponMissing"));
-          return;
-        }
-        const { data: cpn, error: cErr } = await supabase
-          .from("coupons")
-          .select(COUPON_SELECT)
-          .eq("id", appliedCouponId)
-          .maybeSingle();
-        if (cErr || !cpn) {
-          toast.error(t("invalidCoupon"));
-          return;
-        }
-        const v = validateCouponForSubtotal(cpn as CouponRow, subtotal, t);
-        if (!v.ok) {
-          toast.error(v.message);
-          return;
-        }
-        orderDiscount = v.discount;
-        couponId = appliedCouponId;
-      }
-
-      const orderTotal = Math.max(0, subtotal - orderDiscount) + deliveryFee;
       const deliveryAddress = recv === "delivery" ? formatDeliveryAddress(deliveryFields) : null;
+      const couponCode      = lockedCode || null;
 
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert({
-          user_id: user.id,
-          coupon_id: couponId,
-          customer_name: name.trim(),
-          customer_phone: phone.trim(),
-          customer_email: email.trim(),
-          delivery_address: deliveryAddress,
-          notes: notes.trim() || null,
-          payment_method: pay,
-          delivery_method: recv,
-          payment_status: "pending",
-          order_status: "pending",
-          subtotal,
-          discount_amount: orderDiscount,
-          delivery_fee: deliveryFee,
-          total_amount: orderTotal,
-        })
-        .select()
-        .single();
+      const result = await createOrderFn({
+        data: {
+          customerName:    name.trim(),
+          customerPhone:   phone.trim(),
+          customerEmail:   email.trim(),
+          deliveryMethod:  recv,
+          deliveryAddress: deliveryAddress,
+          paymentMethod:   pay,
+          notes:           notes.trim() || null,
+          couponCode:      couponCode,
+          idempotencyKey:  idempotencyKey,
+        },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
 
-      if (error || !order) {
-        toast.error(error?.message ?? t("genericError"));
+      if (!result.ok) {
+        // Map server error key → translated message; fall back to genericError.
+        const msg = (() => {
+          try { return t(result.errorKey as Parameters<typeof t>[0]); } catch { return null; }
+        })();
+        toast.error(msg || t("genericError"));
         return;
       }
 
-      const orderItems = items.map((i) => ({
-        order_id: order.id,
-        product_id: i.product_id,
-        product_name: i.product.name,
-        product_price: Number(i.product.price),
-        quantity: i.quantity,
-        total_price: i.quantity * Number(i.product.price),
-      }));
-      const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
-      if (itemsError) {
-        toast.error(itemsError.message);
-        return;
-      }
-
-      try {
-        await rotateCartAfterOrder(user.id);
-      } catch (e: unknown) {
-        toast.error(e instanceof Error ? e.message : t("cartResetFailed"));
-        return;
-      }
-
+      // Cart rotation was performed server-side; just refresh the local state.
       await refresh();
 
-      // Fire-and-forget: order is saved; email failure must not block checkout.
-      if (session?.access_token) {
-        void sendConfirmationFn({
-          data: { orderId: order.id },
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        }).catch((e: unknown) => {
-          console.error("[checkout] Order confirmation email:", e);
-        });
-      }
+      // Fire-and-forget: order is saved; email failure must not cancel the order.
+      void sendConfirmationFn({
+        data: { orderId: result.orderId },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      }).catch((e: unknown) => {
+        console.error("[checkout] Order confirmation email:", e);
+      });
+
+      void sendAdminNewOrderFn({
+        data: { orderId: result.orderId },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      }).catch((e: unknown) => {
+        console.error("[checkout] Admin new-order email:", e);
+      });
 
       toast.success(t("orderConfirmedWithEmail"));
-      nav({ to: "/checkout/success", search: { orderId: order.id } });
+      nav({ to: "/checkout/success", search: { orderId: result.orderId } });
     } finally {
       setSubmitting(false);
       submitLock.current = false;

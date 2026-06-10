@@ -7,23 +7,28 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { nitro } from "nitro/vite";
 
-/** Vercel sets VERCEL=1 during CI builds; Nitro + vercel preset is required for SSR there. */
+// Vercel sets VERCEL=1 in CI. Locally and on Render the target is Node.js.
+// CF Workers is not used (Sharp requires native bindings unavailable in V8 isolates).
 const isVercel = Boolean(process.env.VERCEL);
 
 export default defineConfig({
-  cloudflare: isVercel ? false : undefined,
-  plugins: isVercel
-    ? [
-        nitro({
-          preset: "vercel",
-        }),
-      ]
-    : undefined,
+  cloudflare: false,
+  plugins: [
+    nitro({
+      preset: isVercel ? "vercel" : "node",
+      serverDir: "server",
+    }),
+  ],
   tanstackStart: {
     router: {
       entry: "frontend/router.tsx",
       routesDirectory: "frontend/routes",
       generatedRouteTree: "frontend/routeTree.gen.ts",
+    },
+  },
+  vite: {
+    build: {
+      sourcemap: false,
     },
   },
 });

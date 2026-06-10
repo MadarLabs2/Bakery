@@ -1,42 +1,46 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/backend/db/types";
+import { supabaseAdmin } from "@/backend/db/client.server";
+import { checkRateLimit } from "@/backend/lib/rate-limit";
+import { getClientIp } from "@/backend/lib/get-client-ip";
 
 const subscribeInput = z.object({
-  email: z.string().email().max(320),
-  full_name: z.string().max(200).nullable().optional(),
-  source: z.string().max(100).nullable().optional(),
+  email: z.string().email().max(254),
+  full_name: z.string().max(100).nullable().optional(),
+  source: z.string().max(50).nullable().optional(),
+  honeypot: z.string().optional().default(""), // bot trap — must arrive empty
 });
 
 export type SubscribeEmailResult = {
   ok: boolean;
-  alreadySubscribed: boolean;
   message: string;
 };
 
 /**
- * POST /api/email/subscribe equivalent — public newsletter signup.
- * Validates email, inserts into email_subscribers, never throws to client.
+ * POST — public newsletter signup.
+ *
+ * Security properties:
+ *  - Never reveals whether an email is already subscribed (opaque success)
+ *  - Uses supabaseAdmin (service-role) so no RLS policy needed for public writes
+ *  - IP-based rate limiting (5 per 15 min)
+ *  - Honeypot field silently absorbs bot submissions
+ *  - Reactivates unsubscribed addresses idempotently
+ *  - Error messages never expose DB internals
  */
 export const subscribeEmail = createServerFn({ method: "POST" })
-  .inputValidator((raw) => subscribeInput.parse(raw))
+  .validator((raw) => subscribeInput.parse(raw))
   .handler(async ({ data }): Promise<SubscribeEmailResult> => {
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_PUBLISHABLE_KEY =
-      process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+    // Honeypot filled → silently succeed; don't reveal detection to bots
+    if (data.honeypot !== "") return { ok: true, message: "subscribed" };
 
-    if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-      return { ok: false, alreadySubscribed: false, message: "Server configuration error" };
+    const ip = getClientIp();
+    if (!checkRateLimit(`sub:ip:${ip}`, 5, 15 * 60 * 1000)) {
+      return { ok: false, message: "genericError" };
     }
 
-    const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    const email = data.email.toLowerCase().trim();
 
-    const email = data.email.trim().toLowerCase();
-
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from("email_subscribers")
       .select("id, is_active")
       .eq("email", email)
@@ -44,25 +48,29 @@ export const subscribeEmail = createServerFn({ method: "POST" })
 
     if (existing) {
       if (!existing.is_active) {
-        await supabase.from("email_subscribers").update({ is_active: true }).eq("id", existing.id);
-        return { ok: true, alreadySubscribed: false, message: "Resubscribed successfully" };
+        await supabaseAdmin
+          .from("email_subscribers")
+          .update({ is_active: true })
+          .eq("id", existing.id);
       }
-      return { ok: true, alreadySubscribed: true, message: "Already subscribed" };
+      // Always return the same success response — never reveal subscription state
+      return { ok: true, message: "subscribed" };
     }
 
-    const { error } = await supabase.from("email_subscribers").insert({
+    const { error } = await supabaseAdmin.from("email_subscribers").insert({
       email,
       full_name: data.full_name?.trim() || null,
       source: data.source?.trim() || "homepage",
     });
 
     if (error) {
+      // Unique violation means a concurrent insert won — treat as success
       if (error.code === "23505") {
-        return { ok: true, alreadySubscribed: true, message: "Already subscribed" };
+        return { ok: true, message: "subscribed" };
       }
-      console.error("[subscribeEmail]", error.message);
-      return { ok: false, alreadySubscribed: false, message: error.message };
+      console.error("[subscribeEmail] DB error:", error.code);
+      return { ok: false, message: "genericError" };
     }
 
-    return { ok: true, alreadySubscribed: false, message: "Subscribed successfully" };
+    return { ok: true, message: "subscribed" };
   });

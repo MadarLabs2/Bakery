@@ -1,11 +1,28 @@
-import { Plus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Plus, ShoppingBag } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useI18n, pickName, pickDesc, pickIngredients, pickAllergens } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
 import { useCart } from "@/frontend/lib/cart";
 import { Button } from "@/frontend/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/frontend/components/ui/dialog";
 import { resolveImage } from "@/frontend/lib/images";
 import { toast } from "sonner";
+
+const LOGIN_PROMPT: Record<string, { title: string; desc: string }> = {
+  en: {
+    title: "Login to add items",
+    desc: "Create a free account or sign in to start adding products to your cart and place orders.",
+  },
+  he: {
+    title: "יש להתחבר כדי לקנות",
+    desc: "צור חשבון חינמי או התחבר כדי להוסיף מוצרים לסל ולבצע הזמנות.",
+  },
+  ar: {
+    title: "سجّل دخولك للتسوق",
+    desc: "أنشئ حساباً مجانياً أو سجّل دخولك لإضافة المنتجات إلى السلة وإتمام طلباتك.",
+  },
+};
 import { ProductPriceRow } from "@/frontend/components/ProductPriceRow";
 
 export type ProductDetailModel = {
@@ -55,6 +72,8 @@ export function ProductDetailView({
   const { user } = useAuth();
   const { addToCart } = useCart();
   const [qty, setQty] = useState(1);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const prompt = LOGIN_PROMPT[lang] ?? LOGIN_PROMPT.en;
 
   useEffect(() => {
     setQty(1);
@@ -62,7 +81,7 @@ export function ProductDetailView({
 
   const handleAdd = async (p: ProductDetailModel) => {
     if (!user) {
-      toast.info(t("login"));
+      setShowLoginPrompt(true);
       return;
     }
     if (p.is_available === false) {
@@ -215,6 +234,27 @@ export function ProductDetailView({
         </div>
       )}
       {shell}
+      <Dialog open={showLoginPrompt} onOpenChange={setShowLoginPrompt}>
+        <DialogContent className="max-w-sm rounded-2xl p-8 text-center">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+            <ShoppingBag className="h-7 w-7 text-primary" strokeWidth={1.75} />
+          </div>
+          <DialogTitle className="font-display text-xl font-bold text-foreground">
+            {prompt.title}
+          </DialogTitle>
+          <DialogDescription className="mt-2 text-sm text-muted-foreground">
+            {prompt.desc}
+          </DialogDescription>
+          <div className="mt-6 flex flex-col gap-2.5">
+            <Button asChild className="h-11 w-full">
+              <Link to="/login">{t("login")}</Link>
+            </Button>
+            <Button asChild variant="outline" className="h-11 w-full">
+              <Link to="/register">{t("register")}</Link>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

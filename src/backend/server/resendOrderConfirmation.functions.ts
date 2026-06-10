@@ -3,53 +3,67 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/backend/db/types";
 import { requireSupabaseAuth } from "@/backend/db/auth-middleware";
-import { sendOrderConfirmationEmail } from "@/backend/services/emailService";
+import { supabaseAdmin } from "@/backend/db/client.server";
+import { resolveIsAdmin } from "@/frontend/lib/resolveIsAdmin";
+import { resendOrderConfirmationEmail } from "@/backend/services/emailService";
 
-const orderConfirmationInput = z.object({
+const input = z.object({
   orderId: z.string().uuid(),
 });
 
-export type SendOrderConfirmationResult = {
+export type ResendOrderConfirmationResult = {
   ok: boolean;
   emailSent: boolean;
-  alreadySent?: boolean;
+  alreadySent: boolean; // informational: was there a prior 'sent' record
   error?: string;
 };
 
-export const sendOrderConfirmation = createServerFn({ method: "POST" })
+/**
+ * Admin-only action: resend the order confirmation email.
+ *
+ * Security:
+ *  - Requires admin JWT
+ *  - Fetches ALL order data server-side via supabaseAdmin
+ *  - forceResend=true bypasses the duplicate-prevention check
+ *  - Returns alreadySent as informational flag (not blocking)
+ */
+export const resendOrderConfirmation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((raw) => orderConfirmationInput.parse(raw))
-  .handler(async ({ data, context }): Promise<SendOrderConfirmationResult> => {
+  .validator((raw) => input.parse(raw))
+  .handler(async ({ data, context }): Promise<ResendOrderConfirmationResult> => {
     const { supabase, userId } = context as {
       supabase: SupabaseClient<Database>;
       userId: string;
     };
     const { orderId } = data;
 
-    // Fetch order data server-side — never trust client-supplied recipients or totals
-    const { data: order, error: orderError } = await supabase
+    if (!(await resolveIsAdmin(supabase, userId))) {
+      return { ok: false, emailSent: false, alreadySent: false, error: "forbidden" };
+    }
+
+    // Fetch full order data server-side
+    const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .select("*")
       .eq("id", orderId)
-      .eq("user_id", userId)
       .maybeSingle();
 
     if (orderError || !order) {
-      return { ok: false, emailSent: false, error: "order_not_found" };
+      return { ok: false, emailSent: false, alreadySent: false, error: "order_not_found" };
     }
 
-    const { data: items, error: itemsError } = await supabase
+    const { data: items, error: itemsError } = await supabaseAdmin
       .from("order_items")
       .select("product_name, quantity, product_price, total_price")
       .eq("order_id", orderId);
 
     if (itemsError) {
-      return { ok: false, emailSent: false, error: "items_fetch_failed" };
+      return { ok: false, emailSent: false, alreadySent: false, error: "items_fetch_failed" };
     }
 
     let couponCode: string | null = null;
     if (order.coupon_id) {
-      const { data: coupon } = await supabase
+      const { data: coupon } = await supabaseAdmin
         .from("coupons")
         .select("code")
         .eq("id", order.coupon_id)
@@ -68,7 +82,7 @@ export const sendOrderConfirmation = createServerFn({ method: "POST" })
       String(order.payment_method);
 
     try {
-      const result = await sendOrderConfirmationEmail({
+      const result = await resendOrderConfirmationEmail({
         orderId:        order.id,
         orderNumber:    order.id.slice(0, 8).toUpperCase(),
         customerName:   order.customer_name,
@@ -89,19 +103,17 @@ export const sendOrderConfirmation = createServerFn({ method: "POST" })
         couponCode,
       });
 
-      if (result.alreadySent) {
-        return { ok: true, emailSent: false, alreadySent: true };
-      }
+      const alreadySent = result.alreadySent ?? false;
 
       if (!result.ok) {
-        console.error("[sendOrderConfirmation] Email failed:", result.error);
-        return { ok: true, emailSent: false, error: result.error };
+        console.error("[resendOrderConfirmation] Email failed:", result.error);
+        return { ok: false, emailSent: false, alreadySent, error: result.error };
       }
 
-      return { ok: true, emailSent: true };
+      return { ok: true, emailSent: true, alreadySent };
     } catch (e) {
       const msg = e instanceof Error ? e.message : "email_send_failed";
-      console.error("[sendOrderConfirmation] Unexpected error:", msg);
-      return { ok: true, emailSent: false, error: msg };
+      console.error("[resendOrderConfirmation] Unexpected error:", msg);
+      return { ok: false, emailSent: false, alreadySent: false, error: msg };
     }
   });

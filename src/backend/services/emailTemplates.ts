@@ -147,10 +147,15 @@ function detailRow(label: string, value: string): string {
 
 function shopUrl(): string {
   return (
+    process.env.APP_BASE_URL?.trim() ||
     process.env.SITE_URL?.trim() ||
     process.env.VITE_SITE_URL?.trim() ||
     "http://localhost:8080"
   );
+}
+
+function adminPanelUrl(): string {
+  return `${shopUrl()}/admin/orders`;
 }
 
 function statusBadge(text: string): string {
@@ -328,5 +333,262 @@ export function offerEmailTemplate(data: OfferEmailData): { subject: string; htm
   return {
     subject: data.subject,
     html: emailShell(content, "Special Offer", data.subject),
+  };
+}
+
+// ─── Admin: New Order Notification ───────────────────────────────────────────
+
+export type AdminOrderEmailData = {
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  items: OrderItemLine[];
+  subtotal: number;
+  discountAmount: number;
+  deliveryFee: number;
+  totalAmount: number;
+  deliveryMethod: string;
+  deliveryAddress?: string | null;
+  paymentMethod: string;
+  notes?: string | null;
+};
+
+export function adminNewOrderTemplate(data: AdminOrderEmailData): { subject: string; html: string } {
+  const shortId = data.orderNumber || data.orderId.slice(0, 8).toUpperCase();
+  const subject = `New Order #${shortId} — ${BRAND_SHORT}`;
+
+  const itemRows = data.items
+    .map(
+      (item, i) => `
+    <tr style="background:${i % 2 === 0 ? WHITE : CREAM};">
+      <td style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${BROWN};border-bottom:1px solid ${BORDER};">${escapeHtml(item.product_name)}</td>
+      <td style="padding:10px 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${MUTED};text-align:center;border-bottom:1px solid ${BORDER};">${item.quantity}</td>
+      <td style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:${GREEN};text-align:right;border-bottom:1px solid ${BORDER};">${formatMoney(item.total_price)}</td>
+    </tr>`,
+    )
+    .join("");
+
+  const discountRow =
+    data.discountAmount > 0
+      ? `<tr><td colspan="2" style="padding:6px 12px;font-size:13px;color:${GREEN};font-family:Arial,Helvetica,sans-serif;">Discount</td><td style="padding:6px 12px;font-size:13px;color:${GREEN};text-align:right;font-weight:600;font-family:Arial,Helvetica,sans-serif;">−${formatMoney(data.discountAmount)}</td></tr>`
+      : "";
+
+  const deliveryRow =
+    data.deliveryFee > 0
+      ? `<tr><td colspan="2" style="padding:6px 12px;font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;">Delivery fee</td><td style="padding:6px 12px;font-size:13px;color:${BROWN};text-align:right;font-family:Arial,Helvetica,sans-serif;">${formatMoney(data.deliveryFee)}</td></tr>`
+      : "";
+
+  const addressNote = data.deliveryMethod === "delivery" && data.deliveryAddress
+    ? `<tr><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;">Address</td><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${BROWN};text-align:right;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(data.deliveryAddress)}</td></tr>`
+    : "";
+
+  const notesNote = data.notes
+    ? `<tr><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;">Notes</td><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${BROWN};text-align:right;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(data.notes)}</td></tr>`
+    : "";
+
+  const content = `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="text-align:center;padding-bottom:8px;">${statusBadge("New Order")}</td></tr>
+    </table>
+    <h1 style="margin:12px 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:${GREEN};text-align:center;line-height:1.2;">Order #${escapeHtml(shortId)}</h1>
+    <p style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:center;">A new order has been placed on ${BRAND_SHORT}.</p>
+
+    <!-- Customer card -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;background:${CREAM};border-radius:10px;border:1px solid ${BORDER};overflow:hidden;">
+      <tr><td style="padding:10px 16px;background:${GREEN};">
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};letter-spacing:1.5px;text-transform:uppercase;font-weight:bold;">Customer</p>
+      </td></tr>
+      <tr><td style="padding:6px 16px 12px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${detailRow("Name", data.customerName)}
+          ${detailRow("Phone", data.customerPhone)}
+          ${detailRow("Email", data.customerEmail)}
+          ${detailRow("Delivery", data.deliveryMethod.charAt(0).toUpperCase() + data.deliveryMethod.slice(1))}
+          ${detailRow("Payment", data.paymentMethod.charAt(0).toUpperCase() + data.paymentMethod.replace(/_/g, " ").slice(1))}
+          ${addressNote}
+          ${notesNote}
+        </table>
+      </td></tr>
+    </table>
+
+    <!-- Items -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BORDER};border-radius:10px;overflow:hidden;margin-bottom:8px;">
+      <tr style="background:${GREEN};">
+        <th style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:left;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Item</th>
+        <th style="padding:10px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:center;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Qty</th>
+        <th style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:right;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Total</th>
+      </tr>
+      ${itemRows}
+    </table>
+
+    <!-- Totals -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+      ${discountRow}
+      ${deliveryRow}
+      <tr><td colspan="3" style="padding:12px 12px 0;border-top:2px solid ${GREEN};">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:${GREEN};">Total</td>
+            <td style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:${GREEN};text-align:right;">${formatMoney(data.totalAmount)}</td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
+
+    ${ctaButton("View in Admin Panel →", adminPanelUrl())}`;
+
+  return {
+    subject,
+    html: emailShell(content, "New Order", `New order #${shortId} from ${data.customerName}`),
+  };
+}
+
+// ─── Customer: Order Status Update ───────────────────────────────────────────
+
+export type OrderStatusEmailData = {
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  deliveryMethod: string;
+  deliveryAddress?: string | null;
+  status: string; // internal status key
+  testModeNote?: string;
+};
+
+type StatusMeta = {
+  badgeText: string;
+  heading: string;
+  body: string;
+  headerSubtitle: string;
+  preheader: string;
+};
+
+function statusMeta(status: string, firstName: string, deliveryMethod: string): StatusMeta {
+  const f = escapeHtml(firstName);
+  const isDelivery = deliveryMethod === "delivery";
+  switch (status) {
+    case "confirmed":
+      return {
+        badgeText: "Order Confirmed",
+        heading: `Your order is confirmed, ${f}!`,
+        body: "We've confirmed your order and our team will start preparing it soon. You'll hear from us again as it progresses.",
+        headerSubtitle: "Order Confirmed",
+        preheader: `Your order is confirmed — ${BRAND_SHORT}`,
+      };
+    case "preparing":
+      return {
+        badgeText: "Preparing Your Order",
+        heading: `We're baking for you, ${f}!`,
+        body: "Our bakers have started preparing your fresh gluten-free order. We'll let you know when it's ready.",
+        headerSubtitle: "Baking in Progress",
+        preheader: `Your order is being prepared — ${BRAND_SHORT}`,
+      };
+    case "ready":
+    case "out_for_delivery":
+      return {
+        badgeText: isDelivery ? "Out for Delivery" : "Ready for Pickup",
+        heading: isDelivery ? `Your order is on its way, ${f}!` : `Your order is ready, ${f}!`,
+        body: isDelivery
+          ? "Your order has been handed to our delivery team and is on its way to you. Thank you for your patience!"
+          : "Your gluten-free order is freshly packed and ready for pickup. We look forward to seeing you!",
+        headerSubtitle: isDelivery ? "On the Way" : "Ready for Pickup",
+        preheader: isDelivery ? `Your order is on its way — ${BRAND_SHORT}` : `Your order is ready for pickup — ${BRAND_SHORT}`,
+      };
+    case "completed":
+      return {
+        badgeText: "Order Delivered",
+        heading: `Enjoy every bite, ${f}!`,
+        body: "Your order has been delivered. We hope you love it! Thank you for choosing Al-Nour Gluten-Free Bakery.",
+        headerSubtitle: "Order Complete",
+        preheader: `Your order has been delivered — ${BRAND_SHORT}`,
+      };
+    case "cancelled":
+      return {
+        badgeText: "Order Cancelled",
+        heading: `Your order has been cancelled, ${f}`,
+        body: "Your order has been cancelled. If you have any questions or this was unexpected, please don't hesitate to reach out to us.",
+        headerSubtitle: "Order Cancelled",
+        preheader: `Your order has been cancelled — ${BRAND_SHORT}`,
+      };
+    default:
+      return {
+        badgeText: "Order Update",
+        heading: `Order update for ${f}`,
+        body: "There has been an update to your order. Please contact us if you have any questions.",
+        headerSubtitle: "Order Update",
+        preheader: `Order update — ${BRAND_SHORT}`,
+      };
+  }
+}
+
+export function orderStatusTemplate(data: OrderStatusEmailData): { subject: string; html: string } {
+  const shortId = data.orderNumber || data.orderId.slice(0, 8).toUpperCase();
+  const firstName = data.customerName.split(" ")[0] ?? data.customerName;
+  const meta = statusMeta(data.status, firstName, data.deliveryMethod);
+  const subject = `${meta.badgeText} #${shortId} — ${BRAND_SHORT}`;
+
+  const testBanner = data.testModeNote ? testModeBanner(data.testModeNote) : "";
+
+  const isCancelled = data.status === "cancelled";
+  const badgeBg = isCancelled ? "#FEF2F2" : "#E8F5EE";
+  const badgeColor = isCancelled ? "#991B1B" : GREEN;
+
+  const locationBox =
+    data.deliveryMethod !== "delivery" && data.status === "ready"
+      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+           <tr><td style="padding:16px 20px;background:${CREAM};border-radius:10px;border-left:4px solid ${GOLD};">
+             <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${MUTED};letter-spacing:1.5px;text-transform:uppercase;font-weight:bold;">Pickup location</p>
+             <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};line-height:1.6;">Al-Nour Gluten-Free Bakery</p>
+           </td></tr>
+         </table>`
+      : data.deliveryMethod === "delivery" && data.deliveryAddress && (data.status === "ready" || data.status === "out_for_delivery")
+      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;">
+           <tr><td style="padding:16px 20px;background:${CREAM};border-radius:10px;border-left:4px solid ${GOLD};">
+             <p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${MUTED};letter-spacing:1.5px;text-transform:uppercase;font-weight:bold;">Delivery address</p>
+             <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};line-height:1.6;">${escapeHtml(data.deliveryAddress)}</p>
+           </td></tr>
+         </table>`
+      : "";
+
+  const content = `
+    ${testBanner}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="text-align:center;padding-bottom:8px;">
+        <span style="display:inline-block;padding:6px 14px;background:${badgeBg};color:${badgeColor};font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;border-radius:20px;">${escapeHtml(meta.badgeText)}</span>
+      </td></tr>
+    </table>
+    <h1 style="margin:12px 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:${isCancelled ? "#991B1B" : GREEN};text-align:center;line-height:1.25;">${meta.heading}</h1>
+    <p style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:${MUTED};text-align:center;line-height:1.65;">${escapeHtml(meta.body)}</p>
+
+    <!-- Order reference card -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;background:${CREAM};border-radius:10px;border:1px solid ${BORDER};overflow:hidden;">
+      <tr><td style="padding:10px 16px;background:${GREEN};">
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};letter-spacing:1.5px;text-transform:uppercase;font-weight:bold;">Order Reference</p>
+      </td></tr>
+      <tr><td style="padding:6px 16px 12px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${detailRow("Order #", shortId)}
+          ${detailRow("Name", data.customerName)}
+          ${detailRow("Delivery", data.deliveryMethod.charAt(0).toUpperCase() + data.deliveryMethod.slice(1))}
+        </table>
+      </td></tr>
+    </table>
+
+    ${locationBox}
+
+    <!-- Help -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
+      <tr><td style="padding:16px 20px;background:${CREAM_DARK};border-radius:10px;text-align:center;">
+        <p style="margin:0 0 4px;font-family:Georgia,'Times New Roman',serif;font-size:15px;font-weight:bold;color:${GREEN};">Questions? We're here.</p>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${MUTED};line-height:1.6;">Call us at <strong style="color:${BROWN};">053-763-6011</strong> or <strong style="color:${BROWN};">050-858-8985</strong></p>
+      </td></tr>
+    </table>`;
+
+  return {
+    subject,
+    html: emailShell(content, meta.headerSubtitle, meta.preheader),
   };
 }

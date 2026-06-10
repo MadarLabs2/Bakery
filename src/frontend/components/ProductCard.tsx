@@ -1,10 +1,11 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Plus, ShoppingBag } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useI18n, pickName, pickDesc } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
 import { useCart } from "@/frontend/lib/cart";
 import { Button } from "@/frontend/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/frontend/components/ui/dialog";
 import { resolveImage } from "@/frontend/lib/images";
 import { cn } from "@/frontend/lib/utils";
 import { toast } from "sonner";
@@ -22,6 +23,21 @@ interface Product {
   image_url: string | null;
   is_best_seller: boolean;
 }
+
+const LOGIN_PROMPT: Record<string, { title: string; desc: string }> = {
+  en: {
+    title: "Login to add items",
+    desc: "Create a free account or sign in to start adding products to your cart and place orders.",
+  },
+  he: {
+    title: "יש להתחבר כדי לקנות",
+    desc: "צור חשבון חינמי או התחבר כדי להוסיף מוצרים לסל ולבצע הזמנות.",
+  },
+  ar: {
+    title: "سجّل دخولك للتسوق",
+    desc: "أنشئ حساباً مجانياً أو سجّل دخولك لإضافة المنتجات إلى السلة وإتمام طلباتك.",
+  },
+};
 
 /** Fixed 2-line block for compact cards — tight, fully clipped inside the card. */
 const COMPACT_DESC_LINES =
@@ -163,10 +179,12 @@ export function ProductCard({
   const { user } = useAuth();
   const { addToCart } = useCart();
   const desc = pickDesc(product, lang);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+  const prompt = LOGIN_PROMPT[lang] ?? LOGIN_PROMPT.en;
 
   const handleAdd = async () => {
     if (!user) {
-      toast.info(t("login"));
+      setShowLoginPrompt(true);
       return;
     }
     try {
@@ -326,6 +344,28 @@ export function ProductCard({
           </Button>
         </div>
       </div>
+
+      <Dialog open={showLoginPrompt} onOpenChange={setShowLoginPrompt}>
+        <DialogContent className="max-w-sm rounded-2xl p-8 text-center">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+            <ShoppingBag className="h-7 w-7 text-primary" strokeWidth={1.75} />
+          </div>
+          <DialogTitle className="font-display text-xl font-bold text-foreground">
+            {prompt.title}
+          </DialogTitle>
+          <DialogDescription className="mt-2 text-sm text-muted-foreground">
+            {prompt.desc}
+          </DialogDescription>
+          <div className="mt-6 flex flex-col gap-2.5">
+            <Button asChild className="h-11 w-full">
+              <Link to="/login">{t("login")}</Link>
+            </Button>
+            <Button asChild variant="outline" className="h-11 w-full">
+              <Link to="/register">{t("register")}</Link>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

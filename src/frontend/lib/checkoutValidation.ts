@@ -2,7 +2,7 @@ import type { DeliveryAddressFields } from "@/frontend/lib/checkoutDelivery";
 import { isDeliveryAddressComplete } from "@/frontend/lib/checkoutDelivery";
 
 export function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email.trim());
 }
 
 export type ContactFields = {

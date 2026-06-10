@@ -84,21 +84,19 @@ function HomePage() {
     };
   }, [t]);
 
-  const subscribe = async (e: React.FormEvent) => {
+  const subscribe = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setSubbing(true);
     try {
       const result = await subscribeFn({ data: { email: email.trim(), source: "homepage" } });
       if (!result.ok) {
-        toast.error(result.message || t("genericError"));
-      } else if (result.alreadySubscribed) {
-        toast.info(t("alreadySub"));
+        toast.error(t("genericError"));
       } else {
         toast.success(t("thanks"));
         setEmail("");
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("genericError"));
+    } catch {
+      toast.error(t("genericError"));
     }
     setSubbing(false);
   };

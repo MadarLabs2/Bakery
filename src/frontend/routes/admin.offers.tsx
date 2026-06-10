@@ -35,6 +35,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useI18n } from "@/frontend/lib/i18n";
 import { cn } from "@/frontend/lib/utils";
+import { generateUUID } from "@/frontend/lib/uuid";
 import {
   loadSavedEmailTemplates,
   saveSavedEmailTemplates,
@@ -285,7 +286,7 @@ function AdminOffers() {
       return;
     }
     const row: SavedEmailTemplate = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       title,
       tag,
       subject: sub,

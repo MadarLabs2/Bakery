@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { supabase } from "@/backend/db/client";
+import { useAuth } from "@/frontend/lib/auth";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
 import { Label } from "@/frontend/components/ui/label";
@@ -26,6 +27,8 @@ import {
 import { resolveImage } from "@/frontend/lib/images";
 import { toast } from "sonner";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
+import { validateUpload } from "@/frontend/lib/uploadValidation";
+import { safeDeleteStorageFile } from "@/frontend/lib/storageDelete";
 
 export const Route = createFileRoute("/admin/categories")({ component: AdminCategories });
 
@@ -72,6 +75,7 @@ function categoryUpperLine(c: { name?: string | null; name_en?: string | null })
 
 function AdminCategories() {
   const { t, lang } = useI18n();
+  const { session } = useAuth();
   const [cats, setCats] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(empty);
@@ -79,6 +83,8 @@ function AdminCategories() {
   const [search, setSearch] = useState("");
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<any>(null);
+  // Old image URL to delete from Storage after a successful save (when replacing an image)
+  const urlToDeleteOnSave = useRef<string | null>(null);
 
   const load = () =>
     supabase
@@ -92,22 +98,56 @@ function AdminCategories() {
   }, []);
 
   const upload = async (file: File) => {
-    setUploading(true);
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `categories/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from("product-images").upload(path, file, {
-      upsert: false,
-      contentType: file.type || undefined,
-    });
-    if (error) {
-      toast.error(error.message);
-      setUploading(false);
+    // Client-side validation for UX feedback only — server re-validates everything
+    const validation = await validateUpload(file);
+    if (!validation.ok) {
+      if (validation.error === "file_too_large") toast.error(t("uploadFileTooLarge"));
+      else if (validation.error === "invalid_type") toast.error(t("uploadInvalidType"));
+      else toast.error(t("uploadInvalidDimensions"));
       return;
     }
-    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-    setEditing((prev: any) => ({ ...prev, image_url: data.publicUrl }));
-    setUploading(false);
-    toast.success(t("imageUploaded"));
+
+    if (!session?.access_token) {
+      toast.error(t("genericError"));
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("prefix", "categories");
+      const res = await fetch("/api/upload-image", {
+        method: "POST",
+        body: form,
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const result = await res.json() as { ok: boolean; publicUrl?: string; error?: string };
+
+      if (!result.ok) {
+        if (result.error === "file_too_large") toast.error(t("uploadFileTooLarge"));
+        else if (result.error === "invalid_type" || result.error === "invalid_file")
+          toast.error(t("uploadInvalidType"));
+        else if (result.error === "invalid_dimensions")
+          toast.error(t("uploadInvalidDimensions"));
+        else toast.error(t("genericError"));
+        return;
+      }
+
+      const newUrl = result.publicUrl!;
+      setEditing((prev: any) => {
+        // Track old image for deletion after save
+        if (prev.image_url && prev.image_url !== newUrl) {
+          urlToDeleteOnSave.current = String(prev.image_url);
+        }
+        return { ...prev, image_url: newUrl };
+      });
+      toast.success(t("imageUploaded"));
+    } catch {
+      toast.error(t("genericError"));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const save = async () => {
@@ -136,18 +176,30 @@ function AdminCategories() {
     const { error } = await op;
     if (error) return toast.error(error.message);
     toast.success(t("saved"));
+
+    // Delete the replaced image from Storage now that the DB record points to the new one
+    if (urlToDeleteOnSave.current) {
+      const oldUrl = urlToDeleteOnSave.current;
+      urlToDeleteOnSave.current = null;
+      void safeDeleteStorageFile(supabase, oldUrl, { excludeCategoryId: editing.id });
+    }
+
     setOpen(false);
     setEditing(empty);
     load();
   };
 
   const performDelete = async (id: string) => {
+    const target = cats.find((c) => c.id === id) ?? pendingDelete;
+    const imageUrl = target?.image_url ? String(target.image_url) : null;
+
     const { error } = await supabase.from("categories").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(t("deleted"));
-      load();
-    }
+    if (error) { toast.error(error.message); return; }
+
+    toast.success(t("deleted"));
+    // DB record gone — safe to delete the Storage file with no exclusion needed
+    if (imageUrl) void safeDeleteStorageFile(supabase, imageUrl);
+    load();
   };
 
   const filteredCats = useMemo(() => {
@@ -175,6 +227,7 @@ function AdminCategories() {
           if (!v) {
             setEditing(empty);
             setUploading(false);
+            urlToDeleteOnSave.current = null; // discard pending delete if closed without saving
           }
         }}
       >
@@ -333,7 +386,7 @@ function AdminCategories() {
               <p className="mt-2 text-xs text-muted-foreground">{t("adminCategoryImageHint")}</p>
               <Input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/avif"
                 className="mt-2"
                 onChange={(e) => {
                   const f = e.target.files?.[0];

@@ -287,6 +287,16 @@ export const dict: Dict = {
     ar: "يرجى تعبئة الاسم والهاتف والبريد الإلكتروني.",
   },
   fieldRequired: { en: "Required", he: "שדה חובה", ar: "مطلوب" },
+  phoneInvalidIsrael: {
+    en: "Enter a valid 10-digit Israeli phone number (e.g. 0501234567)",
+    he: "יש להזין מספר טלפון ישראלי תקין בן 10 ספרות (לדוגמה: 0501234567)",
+    ar: "أدخل رقم هاتف إسرائيلي صالحاً مكوناً من 10 أرقام (مثال: 0501234567)",
+  },
+  nameMinLength: {
+    en: "Name must be at least 2 characters",
+    he: "השם חייב להכיל לפחות 2 תווים",
+    ar: "يجب أن يحتوي الاسم على حرفين على الأقل",
+  },
   placeOrder: { en: "Place order", he: "בצע הזמנה", ar: "تأكيد الطلب" },
   fullName: { en: "Full name", he: "שם מלא", ar: "الاسم الكامل" },
   phone: { en: "Phone", he: "טלפון", ar: "الهاتف" },
@@ -590,7 +600,57 @@ export const dict: Dict = {
   deleted: { en: "Deleted", he: "נמחק", ar: "تم الحذف" },
   updated: { en: "Updated", he: "עודכן", ar: "تم التحديث" },
   created: { en: "Created", he: "נוצר", ar: "تم الإنشاء" },
+  resendConfirmationEmail: {
+    en: "Resend Confirmation Email",
+    he: "שלח מחדש אישור הזמנה",
+    ar: "إعادة إرسال بريد التأكيد",
+  },
+  sendingEmail: {
+    en: "Sending…",
+    he: "שולח…",
+    ar: "جارٍ الإرسال…",
+  },
+  emailResentSuccess: {
+    en: "Confirmation email sent",
+    he: "אישור ההזמנה נשלח",
+    ar: "تم إرسال بريد التأكيد",
+  },
+  emailAlreadySent: {
+    en: "Email was already sent",
+    he: "המייל כבר נשלח",
+    ar: "البريد الإلكتروني أُرسل بالفعل",
+  },
+  emailSendFailed: {
+    en: "Could not send email",
+    he: "שגיאה בשליחת המייל",
+    ar: "تعذّر إرسال البريد الإلكتروني",
+  },
+  orderStatusEmailSent: {
+    en: "Status email sent to customer",
+    he: "עדכון סטטוס נשלח ללקוח",
+    ar: "تم إرسال بريد الحالة للعميل",
+  },
+  orderStatusEmailFailed: {
+    en: "Order updated — status email failed",
+    he: "ההזמנה עודכנה — שגיאה בשליחת עדכון הסטטוס",
+    ar: "تم تحديث الطلب — فشل إرسال بريد الحالة",
+  },
   imageUploaded: { en: "Image uploaded", he: "התמונה הועלתה", ar: "تم رفع الصورة" },
+  uploadFileTooLarge: {
+    en: "File is too large. Maximum size is 5 MB.",
+    he: "הקובץ גדול מדי. הגודל המקסימלי הוא 5 MB.",
+    ar: "الملف كبير جدًا. الحجم الأقصى هو 5 ميغابايت.",
+  },
+  uploadInvalidType: {
+    en: "Invalid file type. Only JPEG, PNG, WebP and AVIF images are allowed.",
+    he: "סוג קובץ לא חוקי. מותרים רק תמונות JPEG, PNG, WebP ו-AVIF.",
+    ar: "نوع الملف غير صالح. يُسمح فقط بصور JPEG وPNG وWebP وAVIF.",
+  },
+  uploadInvalidDimensions: {
+    en: "Image is too large. Maximum dimensions are 4000 × 4000 px.",
+    he: "התמונה גדולה מדי. המידות המקסימליות הן 4000 × 4000 פיקסל.",
+    ar: "الصورة كبيرة جدًا. الأبعاد القصوى هي 4000 × 4000 بكسل.",
+  },
   subjectBodyRequired: {
     en: "Subject and message are required",
     he: "נדרשים נושא והודעה",

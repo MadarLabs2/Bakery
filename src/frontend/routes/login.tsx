@@ -1,15 +1,24 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Wheat, Clock, ShieldCheck } from "lucide-react";
+import { Wheat, Clock, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import brandLogo from "@/images/alnoor_bakery_profesional/BakeryLogo.png";
 import { useI18n } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
 import { Label } from "@/frontend/components/ui/label";
+import { cn } from "@/frontend/lib/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
+
+const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
+const LOGIN_FOOTER: Record<string, { question: string; cta: string }> = {
+  en: { question: "Don't have an account yet?", cta: "Create a free account" },
+  he: { question: "עדיין אין לך חשבון?", cta: "יצירת חשבון חינמי" },
+  ar: { question: "ليس لديك حساب بعد؟", cta: "إنشاء حساب مجاني" },
+};
 
 const BADGE_LABELS: Record<string, string[]> = {
   en: ["100% Gluten-Free", "Baked Fresh Daily", "Certified Kosher"],
@@ -25,14 +34,41 @@ function LoginPage() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const badges = BADGE_LABELS[lang] ?? BADGE_LABELS.en;
+  const loginFooter = LOGIN_FOOTER[lang] ?? LOGIN_FOOTER.en;
 
-  const submit = async (e: React.FormEvent) => {
+  function handleEmailChange(value: string) {
+    setEmail(value);
+    if (emailError && EMAIL_RE.test(value.trim())) setEmailError("");
+  }
+
+  function handleEmailBlur() {
+    if (!email.trim()) setEmailError(t("fieldRequired"));
+    else if (!EMAIL_RE.test(email.trim())) setEmailError(t("invalidEmail"));
+    else setEmailError("");
+  }
+
+  function handlePasswordBlur() {
+    if (!password) setPasswordError(t("fieldRequired"));
+    else setPasswordError("");
+  }
+
+  const submit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
+
+    let hasError = false;
+    if (!email.trim()) { setEmailError(t("fieldRequired")); hasError = true; }
+    else if (!EMAIL_RE.test(email.trim())) { setEmailError(t("invalidEmail")); hasError = true; }
+    if (!password) { setPasswordError(t("fieldRequired")); hasError = true; }
+    if (hasError) return;
+
     setBusy(true);
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(email.trim(), password);
     if (error) {
       const e = error.toLowerCase();
       const msg =
@@ -81,20 +117,29 @@ function LoginPage() {
           {t("login")}
         </h1>
 
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} noValidate className="space-y-4">
+          {/* Email */}
           <div className="space-y-1.5">
-            <Label>{t("email")}</Label>
+            <Label htmlFor="login-email">{t("email")}</Label>
             <Input
+              id="login-email"
               type="email"
-              required
+              inputMode="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => handleEmailChange(e.target.value)}
+              onBlur={handleEmailBlur}
+              aria-invalid={!!emailError}
+              className={cn(emailError && "border-destructive focus-visible:ring-destructive")}
             />
+            {emailError && (
+              <p className="text-xs text-destructive" role="alert">{emailError}</p>
+            )}
           </div>
 
+          {/* Password */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-              <Label>{t("password")}</Label>
+              <Label htmlFor="login-password">{t("password")}</Label>
               <Link
                 to="/forgot-password"
                 className="text-xs font-medium text-primary underline-offset-4 hover:underline"
@@ -102,12 +147,29 @@ function LoginPage() {
                 {t("forgotPasswordLink")}
               </Link>
             </div>
-            <Input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(""); }}
+                onBlur={handlePasswordBlur}
+                aria-invalid={!!passwordError}
+                className={cn("pe-10", passwordError && "border-destructive focus-visible:ring-destructive")}
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+                className="absolute inset-y-0 end-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+              </button>
+            </div>
+            {passwordError && (
+              <p className="text-xs text-destructive" role="alert">{passwordError}</p>
+            )}
           </div>
 
           <Button type="submit" className="h-11 w-full" disabled={busy}>
@@ -115,20 +177,12 @@ function LoginPage() {
           </Button>
         </form>
 
-        <div className="my-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="shrink-0 text-xs text-muted-foreground">{t("register")}?</span>
-          <div className="h-px flex-1 bg-border" />
+        <div className="mt-6 border-t border-border pt-5 text-center">
+          <p className="text-sm text-muted-foreground">{loginFooter.question}</p>
+          <Button asChild variant="outline" className="mt-3 h-10 w-full font-semibold">
+            <Link to="/register">{loginFooter.cta}</Link>
+          </Button>
         </div>
-
-        <p className="text-center text-sm">
-          <Link
-            to="/register"
-            className="font-semibold text-primary underline-offset-4 hover:underline"
-          >
-            {t("register")}
-          </Link>
-        </p>
       </div>
 
       {/* Trust badges */}

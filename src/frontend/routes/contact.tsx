@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { Phone, Mail, MapPin } from "lucide-react";
 import { SocialLinks } from "@/frontend/components/SocialLinks";
 import { getContactPhoneDisplay, hasAnySocialLink } from "@/config/socialLinks";
 import { useI18n } from "@/frontend/lib/i18n";
-import { supabase } from "@/backend/db/client";
+import { submitContact } from "@/backend/server/submitContact.functions";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
 import { Label } from "@/frontend/components/ui/label";
@@ -16,29 +17,45 @@ export const Route = createFileRoute("/contact")({ component: ContactPage });
 function ContactPage() {
   const { t } = useI18n();
   const phoneDisplay = getContactPhoneDisplay();
+  const submitFn = useServerFn(submitContact);
+
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  const [honeypot, setHoneypot] = useState("");
   const [sending, setSending] = useState(false);
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setSending(true);
-    const { error } = await supabase.from("contact_messages").insert({
-      full_name: fullName,
-      email,
-      phone: phone.trim() || null,
-      message,
-    });
-    setSending(false);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(t("thanks"));
-      setFullName("");
-      setEmail("");
-      setPhone("");
-      setMessage("");
+    try {
+      const result = await submitFn({
+        data: {
+          fullName,
+          email,
+          phone: phone.trim() || null,
+          message,
+          honeypot,
+        },
+      });
+      if (!result.ok) {
+        const msg =
+          result.errorKey === "rateLimited"
+            ? t("tooManyAuthAttempts")
+            : t("genericError");
+        toast.error(msg);
+      } else {
+        toast.success(t("thanks"));
+        setFullName("");
+        setEmail("");
+        setPhone("");
+        setMessage("");
+      }
+    } catch {
+      toast.error(t("genericError"));
+    } finally {
+      setSending(false);
     }
   };
 
@@ -75,11 +92,25 @@ function ContactPage() {
         style={{ animationDelay: "0.24s" }}
       >
         <h2 className="font-display text-xl font-semibold">Send a message</h2>
+
+        {/* Honeypot — hidden from real users; bots fill it automatically */}
+        <input
+          type="text"
+          name="website"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+          style={{ position: "absolute", left: "-9999px", top: "-9999px" }}
+        />
+
         <div>
           <Label htmlFor="cname">{t("fullName")}</Label>
           <Input
             id="cname"
             required
+            maxLength={100}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
           />
@@ -90,13 +121,19 @@ function ContactPage() {
             id="cemail"
             type="email"
             required
+            maxLength={254}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div>
           <Label htmlFor="cphone">{t("phone")}</Label>
-          <Input id="cphone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <Input
+            id="cphone"
+            maxLength={20}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
         </div>
         <div>
           <Label htmlFor="cmsg">Message</Label>
@@ -104,6 +141,7 @@ function ContactPage() {
             id="cmsg"
             required
             rows={5}
+            maxLength={2000}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { ar, enUS, he as heIL } from "date-fns/locale";
 import type { Locale } from "date-fns";
@@ -18,6 +19,9 @@ import {
 import brandLogo from "@/images/alnoor_bakery_profesional/BakeryLogo.png";
 import { BAKERY_PICKUP_ADDRESS } from "@/frontend/lib/checkoutDelivery";
 import { supabase } from "@/backend/db/client";
+import { useAuth } from "@/frontend/lib/auth";
+import { sendOrderStatusEmailFn } from "@/backend/server/sendOrderStatusEmail.functions";
+import { resendOrderConfirmation } from "@/backend/server/resendOrderConfirmation.functions";
 import {
   Select,
   SelectContent,
@@ -274,9 +278,14 @@ function OrdersListCard({
 
 function AdminOrders() {
   const { t, lang } = useI18n();
+  const { session } = useAuth();
+  const sendStatusEmailFn   = useServerFn(sendOrderStatusEmailFn);
+  const resendConfirmationFn = useServerFn(resendOrderConfirmation);
+
   const [orders, setOrders] = useState<any[]>([]);
   const [selected, setSelected] = useState<any>(null);
   const [tab, setTab] = useState<TabId>("all");
+  const [resending, setResending] = useState(false);
 
   const load = () =>
     supabase
@@ -299,11 +308,42 @@ function AdminOrders() {
 
   const setStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("orders").update({ order_status: status }).eq("id", id);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(t("updated"));
-      setSelected((s) => (s && s.id === id ? { ...s, order_status: status } : s));
-      load();
+    if (error) { toast.error(error.message); return; }
+    toast.success(t("updated"));
+    setSelected((s: any) => (s && s.id === id ? { ...s, order_status: status } : s));
+    load();
+
+    // Fire customer status email — failure must never affect the status update
+    if (session?.access_token) {
+      void sendStatusEmailFn({
+        data: { orderId: id, newStatus: status },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      }).catch(() => {});
+    }
+  };
+
+  const handleResend = async () => {
+    if (!session?.access_token || !selected) return;
+    setResending(true);
+    try {
+      const result = await resendConfirmationFn({
+        data: { orderId: selected.id },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!result.ok) {
+        toast.error(t("emailSendFailed"));
+      } else if (result.alreadySent && !result.emailSent) {
+        // prior send existed but resend succeeded anyway (forceResend)
+        toast.success(t("emailResentSuccess"));
+      } else if (result.emailSent) {
+        toast.success(t("emailResentSuccess"));
+      } else {
+        toast.error(t("emailSendFailed"));
+      }
+    } catch {
+      toast.error(t("genericError"));
+    } finally {
+      setResending(false);
     }
   };
 
@@ -709,6 +749,18 @@ function AdminOrders() {
                     <span dir="ltr">₪{Number(selected.total_amount).toFixed(2)}</span>
                   </div>
                 </section>
+              </div>
+
+              <div className="border-t border-stone-200 bg-[#faf8f4] px-5 py-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={resending}
+                  onClick={() => void handleResend()}
+                  className="w-full border-[#1B4332]/25 text-[#1B4332] hover:bg-[#1B4332]/5"
+                >
+                  {resending ? t("sendingEmail") : t("resendConfirmationEmail")}
+                </Button>
               </div>
             </>
           )}

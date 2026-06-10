@@ -6,6 +6,29 @@ export type Database = {
   };
   public: {
     Tables: {
+      user_roles: {
+        Row: {
+          id: string;
+          user_id: string;
+          role: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          role: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          role?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "user_roles_user_id_fkey"; columns: ["user_id"]; referencedRelation: "profiles"; referencedColumns: ["id"] },
+        ];
+      };
       cart_items: {
         Row: {
           id: string;
@@ -263,11 +286,13 @@ export type Database = {
           campaign_id: string | null;
           order_id: string | null;
           recipient_email: string;
-          email_type: string;
+          email_type: "order_confirmation" | "order_status_confirmed" | "order_status_preparing" | "order_status_ready" | "order_status_delivered" | "order_status_cancelled" | "admin_new_order" | "offer" | "welcome" | "password_reset";
           subject: string;
-          status: string;
+          status: "pending" | "processing" | "sent" | "failed";
           provider_message_id: string | null;
           error_message: string | null;
+          attempt_count: number;
+          sent_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -275,11 +300,13 @@ export type Database = {
           campaign_id?: string | null;
           order_id?: string | null;
           recipient_email: string;
-          email_type: string;
+          email_type: "order_confirmation" | "order_status_confirmed" | "order_status_preparing" | "order_status_ready" | "order_status_delivered" | "order_status_cancelled" | "admin_new_order" | "offer" | "welcome" | "password_reset";
           subject: string;
-          status: string;
+          status: "pending" | "processing" | "sent" | "failed";
           provider_message_id?: string | null;
           error_message?: string | null;
+          attempt_count?: number;
+          sent_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -287,11 +314,13 @@ export type Database = {
           campaign_id?: string | null;
           order_id?: string | null;
           recipient_email?: string;
-          email_type?: string;
+          email_type?: "order_confirmation" | "order_status_confirmed" | "order_status_preparing" | "order_status_ready" | "order_status_delivered" | "order_status_cancelled" | "admin_new_order" | "offer" | "welcome" | "password_reset";
           subject?: string;
-          status?: string;
+          status?: "pending" | "processing" | "sent" | "failed";
           provider_message_id?: string | null;
           error_message?: string | null;
+          attempt_count?: number;
+          sent_at?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -380,6 +409,7 @@ export type Database = {
           total_amount: number;
           delivery_address: string | null;
           notes: string | null;
+          idempotency_key: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -400,6 +430,7 @@ export type Database = {
           total_amount: number;
           delivery_address?: string | null;
           notes?: string | null;
+          idempotency_key?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -420,6 +451,7 @@ export type Database = {
           total_amount?: number;
           delivery_address?: string | null;
           notes?: string | null;
+          idempotency_key?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -546,6 +578,38 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
+      };
+      has_role: {
+        Args: { _user_id: string; _role: string };
+        Returns: boolean;
+      };
+      lookup_coupon: {
+        Args: { p_code: string };
+        Returns: {
+          id: string;
+          code: string;
+          discount_type: string;
+          discount_value: number;
+          min_order_amount: number;
+          max_uses: number | null;
+          used_count: number;
+          expires_at: string | null;
+          is_active: boolean;
+        }[];
+      };
+      create_order_secure: {
+        Args: {
+          p_customer_name:    string;
+          p_customer_phone:   string;
+          p_customer_email:   string;
+          p_delivery_method:  string;
+          p_delivery_address: string;
+          p_payment_method:   string;
+          p_notes:            string;
+          p_coupon_code:      string;
+          p_idempotency_key:  string;
+        };
+        Returns: Json;
       };
     };
     Enums: {

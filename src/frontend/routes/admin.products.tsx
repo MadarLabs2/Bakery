@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "@/backend/db/client";
+import { useAuth } from "@/frontend/lib/auth";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
 import { Label } from "@/frontend/components/ui/label";
@@ -49,6 +50,8 @@ import { toast } from "sonner";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { cn } from "@/frontend/lib/utils";
 import { ProductPriceRow } from "@/frontend/components/ProductPriceRow";
+import { validateUpload } from "@/frontend/lib/uploadValidation";
+import { safeDeleteStorageFiles } from "@/frontend/lib/storageDelete";
 
 export const Route = createFileRoute("/admin/products")({ component: AdminProducts });
 
@@ -133,6 +136,7 @@ function CategoryThumb({ cat, className }: { cat: { image_url?: string | null };
 
 function AdminProducts() {
   const { t, lang, dir } = useI18n();
+  const { session } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
@@ -145,6 +149,8 @@ function AdminProducts() {
   const [pendingDelete, setPendingDelete] = useState<any>(null);
   const heroFileRef = useRef<HTMLInputElement>(null);
   const galleryFileRef = useRef<HTMLInputElement>(null);
+  // URLs collected during this edit session to delete from Storage after a successful save
+  const urlsToDeleteOnSave = useRef<string[]>([]);
 
   const BackChevron = dir === "rtl" ? ChevronRight : ChevronLeft;
 
@@ -184,6 +190,7 @@ function AdminProducts() {
   const closeForm = () => {
     setOpen(false);
     setEditing({ ...empty });
+    urlsToDeleteOnSave.current = []; // discard pending deletes if user closed without saving
   };
 
   const save = async () => {
@@ -267,17 +274,32 @@ function AdminProducts() {
       return toast.error(error.message);
     }
     toast.success(t("saved"));
+
+    // Delete any Storage files that were replaced or removed during this edit session
+    const toDelete = urlsToDeleteOnSave.current.splice(0);
+    void safeDeleteStorageFiles(supabase, toDelete, { excludeProductId: editing.id });
+
     closeForm();
     load();
   };
 
   const performDelete = async (id: string) => {
+    // Capture image URLs before DB deletion so we can clean up Storage afterwards
+    const target = products.find((p) => p.id === id) ?? pendingDelete;
+    const imageUrls = [
+      ...(target?.image_url ? [String(target.image_url)] : []),
+      ...(Array.isArray(target?.gallery_urls)
+        ? (target.gallery_urls as unknown[]).filter((u): u is string => typeof u === "string")
+        : []),
+    ];
+
     const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(t("deleted"));
-      load();
-    }
+    if (error) { toast.error(error.message); return; }
+
+    toast.success(t("deleted"));
+    // DB record is gone — safe to delete Storage files with no exclusion
+    void safeDeleteStorageFiles(supabase, imageUrls);
+    load();
   };
 
   const filteredProducts = useMemo(() => {
@@ -344,29 +366,68 @@ function AdminProducts() {
   };
 
   const uploadImage = async (file: File, target: "cover" | "gallery") => {
-    setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from("product-images").upload(path, file);
-    if (error) {
-      toast.error(error.message);
-      setUploading(false);
+    // Client-side validation for UX feedback only — server re-validates everything
+    const validation = await validateUpload(file);
+    if (!validation.ok) {
+      if (validation.error === "file_too_large") toast.error(t("uploadFileTooLarge"));
+      else if (validation.error === "invalid_type") toast.error(t("uploadInvalidType"));
+      else toast.error(t("uploadInvalidDimensions"));
       return;
     }
-    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-    const url = data.publicUrl;
-    setEditing((prev: any) => {
-      if (target === "cover") return { ...prev, image_url: url };
-      if (!prev.image_url) return { ...prev, image_url: url };
-      const g = [...(prev.gallery_urls ?? [])];
-      if (!g.includes(url)) g.push(url);
-      return { ...prev, gallery_urls: g };
-    });
-    setUploading(false);
+
+    if (!session?.access_token) {
+      toast.error(t("genericError"));
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("prefix", "products");
+      const res = await fetch("/api/upload-image", {
+        method: "POST",
+        body: form,
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const result = await res.json() as { ok: boolean; publicUrl?: string; error?: string };
+
+      if (!result.ok) {
+        if (result.error === "file_too_large") toast.error(t("uploadFileTooLarge"));
+        else if (result.error === "invalid_type" || result.error === "invalid_file")
+          toast.error(t("uploadInvalidType"));
+        else if (result.error === "invalid_dimensions")
+          toast.error(t("uploadInvalidDimensions"));
+        else toast.error(t("genericError"));
+        return;
+      }
+
+      const newUrl = result.publicUrl!;
+      setEditing((prev: any) => {
+        if (target === "cover") {
+          // Track the old cover URL for Storage cleanup after save
+          if (prev.image_url && prev.image_url !== newUrl) {
+            urlsToDeleteOnSave.current.push(String(prev.image_url));
+          }
+          return { ...prev, image_url: newUrl };
+        }
+        if (!prev.image_url) return { ...prev, image_url: newUrl };
+        const g = [...(prev.gallery_urls ?? [])];
+        if (!g.includes(newUrl)) g.push(newUrl);
+        return { ...prev, gallery_urls: g };
+      });
+    } catch {
+      toast.error(t("genericError"));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeImageAtIndex = (index: number) => {
     const urls = dedupeImageUrls(String(editing.image_url ?? ""), editing.gallery_urls);
+    const removedUrl = urls[index];
+    // Queue for Storage deletion after the next successful save
+    if (removedUrl) urlsToDeleteOnSave.current.push(removedUrl);
     const next = urls.filter((_, i) => i !== index);
     const [first, ...rest] = next;
     setEditing({
@@ -596,7 +657,7 @@ function AdminProducts() {
               <input
                 ref={heroFileRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/avif"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -607,7 +668,7 @@ function AdminProducts() {
               <input
                 ref={galleryFileRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/avif"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
