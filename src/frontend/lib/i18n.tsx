@@ -862,6 +862,37 @@ export const dict: Dict = {
     he: "השינוי חל על הזמנות חדשות מיד. הזמנות קיימות שומרות את דמי המשלוח מרגע ביצוען.",
     ar: "تُطبَّق التغييرات على الطلبات الجديدة فورًا. الطلبات السابقة تحتفظ برسوم التوصيل وقت إنشائها.",
   },
+  carouselPrev: { en: "Previous products", he: "מוצרים קודמים", ar: "المنتجات السابقة" },
+  carouselNext: { en: "Next products", he: "מוצרים הבאים", ar: "المنتجات التالية" },
+  adminHomepageSectionsTitle: {
+    en: "Homepage category sections",
+    he: "מדורי קטגוריות בדף הבית",
+    ar: "أقسام الفئات في الصفحة الرئيسية",
+  },
+  adminHomepageSectionsDesc: {
+    en: "Choose which categories appear on the homepage and in what order. Empty categories are hidden automatically.",
+    he: "בחרו אילו קטגוריות יופיעו בדף הבית ובאיזה סדר. קטגוריות ריקות לא יוצגו.",
+    ar: "اختر الفئات التي تظهر في الصفحة الرئيسية وترتيبها. الفئات الفارغة تُخفى تلقائياً.",
+  },
+  adminHomepageSectionsSave: { en: "Save section order", he: "שמירת סדר המדורים", ar: "حفظ ترتيب الأقسام" },
+  adminHomepageSectionsSaving: { en: "Saving…", he: "שומר…", ar: "جارٍ الحفظ…" },
+  adminHomepageSectionsSaved: {
+    en: "Homepage section order saved",
+    he: "סדר המדורים נשמר",
+    ar: "تم حفظ ترتيب الأقسام",
+  },
+  adminHomepageSectionsEmpty: {
+    en: "No categories yet — add categories and products in Admin.",
+    he: "אין קטגוריות עדיין — הוסיפו קטגוריות ומוצרים בניהול.",
+    ar: "لا توجد فئات بعد — أضف فئات ومنتجات من الإدارة.",
+  },
+  adminHomepageSectionsProductCount: {
+    en: "products",
+    he: "מוצרים",
+    ar: "منتجات",
+  },
+  adminHomepageSectionsMoveUp: { en: "Move up", he: "הזז למעלה", ar: "تحريك لأعلى" },
+  adminHomepageSectionsMoveDown: { en: "Move down", he: "הזז למטה", ar: "تحريك لأسفل" },
   adminDashSettingsTitle: {
     en: "Store settings",
     he: "הגדרות חנות",

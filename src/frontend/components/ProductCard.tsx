@@ -166,11 +166,17 @@ function CompactProductDescription({
 export function ProductCard({
   product,
   compact,
+  minimal,
+  rail,
   onProductNavigate,
   className,
 }: {
   product: Product;
   compact?: boolean;
+  /** Image, name, price, add-to-cart only — no description (homepage rails). */
+  minimal?: boolean;
+  /** Tighter layout for homepage category rails only. */
+  rail?: boolean;
   /** When set, image/title open detail via callback (e.g. modal) instead of navigating away */
   onProductNavigate?: (id: string) => void;
   className?: string;
@@ -195,12 +201,15 @@ export function ProductCard({
     }
   };
 
+  const isRail = !!(rail && compact && minimal);
+
   const bestSellerBadge =
     product.is_best_seller ? (
       <span
         className={cn(
           "pointer-events-none absolute top-2 right-2 z-10 inline-flex max-w-[calc(100%-1rem)] items-center rounded-full bg-accent/90 font-medium leading-none text-accent-foreground shadow-md ring-1 ring-black/5 backdrop-blur-[2px]",
           compact ? "px-1.5 py-1 text-[10px] sm:px-2 sm:py-1.5 sm:text-xs" : "px-2 py-1.5 text-xs",
+          isRail && "top-1.5 right-1.5 px-1 py-0.5 text-[9px] sm:text-[10px]",
         )}
       >
         ★ {t("bestSellers")}
@@ -212,13 +221,17 @@ export function ProductCard({
       className={cn(
         "group flex flex-col overflow-hidden rounded-2xl border bg-card transition-all hover:-translate-y-1 hover:shadow-lg",
         compact && "h-full min-h-0 w-full rounded-xl shadow-sm",
+        isRail && "rounded-lg [@media(hover:hover)_and_(pointer:fine)]:hover:-translate-y-0.5 [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-md",
         className,
       )}
     >
       {onProductNavigate ? (
         <button
           type="button"
-          className="relative block aspect-square w-full shrink-0 overflow-hidden bg-secondary text-start"
+          className={cn(
+            "relative block w-full shrink-0 overflow-hidden bg-secondary text-start",
+            isRail ? "aspect-[5/4]" : "aspect-square",
+          )}
           onClick={() => onProductNavigate(product.id)}
         >
           {bestSellerBadge}
@@ -239,7 +252,10 @@ export function ProductCard({
         <Link
           to="/products/$id"
           params={{ id: product.id }}
-          className="relative block aspect-square shrink-0 overflow-hidden bg-secondary"
+          className={cn(
+            "relative block shrink-0 overflow-hidden bg-secondary",
+            isRail ? "aspect-[5/4]" : "aspect-square",
+          )}
         >
           {bestSellerBadge}
           {product.image_url ? (
@@ -259,9 +275,11 @@ export function ProductCard({
       <div
         className={cn(
           "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
-          compact
-            ? "gap-1 p-2 sm:p-2.5 md:gap-1 md:p-3"
-            : "flex-1 flex-col gap-2 p-4",
+          isRail
+            ? "gap-0 p-1.5 sm:p-2"
+            : compact
+              ? "gap-1 p-2 sm:p-2.5 md:gap-1 md:p-3"
+              : "flex-1 flex-col gap-2 p-4",
         )}
       >
         {onProductNavigate ? (
@@ -273,9 +291,11 @@ export function ProductCard({
             <h3
               className={cn(
                 "font-display font-semibold leading-tight",
-                compact
-                  ? "line-clamp-2 min-h-[2.25rem] text-sm sm:min-h-[2.375rem] sm:text-base md:text-lg"
-                  : "text-lg",
+                isRail
+                  ? "line-clamp-2 text-xs leading-snug sm:text-sm"
+                  : compact
+                    ? "line-clamp-2 min-h-[2.25rem] text-sm sm:min-h-[2.375rem] sm:text-base md:text-lg"
+                    : "text-lg",
               )}
             >
               {pickName(product, lang)}
@@ -286,9 +306,11 @@ export function ProductCard({
             <h3
               className={cn(
                 "font-display font-semibold leading-tight",
-                compact
-                  ? "line-clamp-2 min-h-[2.25rem] text-sm sm:min-h-[2.375rem] sm:text-base md:text-lg"
-                  : "text-lg",
+                isRail
+                  ? "line-clamp-2 text-xs leading-snug sm:text-sm"
+                  : compact
+                    ? "line-clamp-2 min-h-[2.25rem] text-sm sm:min-h-[2.375rem] sm:text-base md:text-lg"
+                    : "text-lg",
               )}
             >
               {pickName(product, lang)}
@@ -296,7 +318,7 @@ export function ProductCard({
           </Link>
         )}
 
-        {compact ? (
+        {compact && !minimal ? (
           desc ? (
             <CompactProductDescription
               desc={desc}
@@ -309,37 +331,40 @@ export function ProductCard({
               <div className="min-h-[1.375rem]" />
             </div>
           )
-        ) : (
+        ) : compact && minimal ? null : (
           <p dir="auto" className="line-clamp-2 min-h-[2.75rem] text-sm text-muted-foreground">
             {desc}
           </p>
         )}
 
-        <div className="min-h-0 flex-1" aria-hidden />
+        {!isRail ? <div className="min-h-0 flex-1" aria-hidden /> : null}
 
         <div
           className={cn(
             "flex shrink-0 gap-2",
-            compact
-              ? "flex-col items-stretch pt-0.5 md:flex-row md:items-center md:justify-between md:pt-1"
-              : "items-center justify-between pt-2",
+            isRail
+              ? "mt-0.5 flex-row items-center justify-between gap-1.5 pt-0"
+              : compact
+                ? "flex-col items-stretch pt-0.5 md:flex-row md:items-center md:justify-between md:pt-1"
+                : "items-center justify-between pt-2",
           )}
         >
           <ProductPriceRow
             price={Number(product.price)}
             compareAtPrice={product.compare_at_price}
-            variant={compact ? "compact" : "default"}
-            className={cn(compact ? "min-w-0" : undefined)}
+            variant={isRail ? "rail" : compact ? "compact" : "default"}
+            className={cn(compact || isRail ? "min-w-0" : undefined)}
           />
           <Button
             size="sm"
             className={cn(
               "inline-flex shrink-0 items-center gap-1",
-              compact && "h-8 w-full text-xs md:w-auto",
+              isRail && "h-7 px-2 text-[10px] sm:h-7 sm:text-[11px]",
+              compact && !isRail && "h-8 w-full text-xs md:w-auto",
             )}
             onClick={handleAdd}
           >
-            <Plus className="h-4 w-4 shrink-0" />
+            <Plus className={cn("shrink-0", isRail ? "h-3 w-3" : "h-4 w-4")} />
             {t("addToCart")}
           </Button>
         </div>

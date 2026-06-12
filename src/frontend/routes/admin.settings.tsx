@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Loader2, Settings, Truck } from "lucide-react";
-import { useI18n } from "@/frontend/lib/i18n";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, LayoutGrid, Loader2, Settings, Truck } from "lucide-react";
+import { useI18n, pickName } from "@/frontend/lib/i18n";
 import {
   fetchDeliveryFee,
+  fetchHomepageCategoryOrder,
   isValidDeliveryFeeInput,
   updateDeliveryFee,
+  updateHomepageCategoryOrder,
 } from "@/frontend/lib/storeSettings";
+import { supabase } from "@/backend/db/client";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
 import { Label } from "@/frontend/components/ui/label";
@@ -15,12 +18,26 @@ import { cn } from "@/frontend/lib/utils";
 
 export const Route = createFileRoute("/admin/settings")({ component: AdminSettingsPage });
 
+type CategoryRow = {
+  id: string;
+  name: string;
+  name_en?: string | null;
+  name_he?: string | null;
+  name_ar?: string | null;
+};
+
 function AdminSettingsPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [feeInput, setFeeInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [fieldError, setFieldError] = useState<string | null>(null);
+
+  const [categories, setCategories] = useState<CategoryRow[]>([]);
+  const [productCountByCategory, setProductCountByCategory] = useState<Map<string, number>>(new Map());
+  const [sectionOrder, setSectionOrder] = useState<string[]>([]);
+  const [sectionsLoading, setSectionsLoading] = useState(true);
+  const [sectionsSaving, setSectionsSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,6 +52,88 @@ function AdminSettingsPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [catRes, prodRes, savedOrder] = await Promise.all([
+          supabase.from("categories").select("*").order("name"),
+          supabase.from("products").select("id, category_id").eq("is_available", true),
+          fetchHomepageCategoryOrder(),
+        ]);
+
+        if (cancelled) return;
+
+        const cats = (catRes.data ?? []) as CategoryRow[];
+        const counts = new Map<string, number>();
+        for (const p of prodRes.data ?? []) {
+          if (!p.category_id) continue;
+          counts.set(p.category_id, (counts.get(p.category_id) ?? 0) + 1);
+        }
+
+        setCategories(cats);
+        setProductCountByCategory(counts);
+
+        const withProducts = cats.filter((c) => (counts.get(c.id) ?? 0) > 0);
+        if (savedOrder?.length) {
+          const rank = new Map(savedOrder.map((id, i) => [id, i]));
+          const ordered = withProducts
+            .filter((c) => rank.has(c.id))
+            .sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
+          const appended = withProducts
+            .filter((c) => !rank.has(c.id))
+            .sort((a, b) =>
+              pickName(a, lang).localeCompare(pickName(b, lang), lang === "en" ? "en" : lang),
+            );
+          setSectionOrder([...ordered, ...appended].map((c) => c.id));
+        } else {
+          setSectionOrder(
+            [...withProducts]
+              .sort((a, b) =>
+                pickName(a, lang).localeCompare(pickName(b, lang), lang === "en" ? "en" : lang),
+              )
+              .map((c) => c.id),
+          );
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (!cancelled) setSectionsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [lang]);
+
+  const sectionCategories = useMemo(
+    () =>
+      sectionOrder
+        .map((id) => categories.find((c) => c.id === id))
+        .filter((c): c is CategoryRow => !!c),
+    [sectionOrder, categories],
+  );
+
+  const moveSection = (index: number, direction: "up" | "down") => {
+    const next = [...sectionOrder];
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    setSectionOrder(next);
+  };
+
+  const saveSections = async () => {
+    setSectionsSaving(true);
+    const result = await updateHomepageCategoryOrder(sectionOrder);
+    setSectionsSaving(false);
+
+    if (!result.ok) {
+      toast.error(result.message);
+      return;
+    }
+    toast.success(t("adminHomepageSectionsSaved"));
+  };
 
   const validate = (): number | null => {
     if (!isValidDeliveryFeeInput(feeInput)) {
@@ -141,6 +240,98 @@ function AdminSettingsPage() {
                   </>
                 ) : (
                   t("adminDeliveryFeeSave")
+                )}
+              </Button>
+            </>
+          )}
+        </div>
+      </section>
+
+      <section
+        className="admin-section-enter overflow-hidden rounded-2xl border border-[#1B4332]/10 bg-white shadow-sm"
+        style={{ animationDelay: "180ms" }}
+      >
+        <div className="border-b border-[#1B4332]/10 bg-gradient-to-br from-[#1B4332] to-[#2d5a45] px-5 py-5 text-[#faf8f4] sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/15">
+              <LayoutGrid className="h-5 w-5" aria-hidden />
+            </div>
+            <div>
+              <h2 className="font-display text-lg font-semibold">{t("adminHomepageSectionsTitle")}</h2>
+              <p className="mt-0.5 text-sm text-[#faf8f4]/85">{t("adminHomepageSectionsDesc")}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 p-5 sm:p-6">
+          {sectionsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              {t("loading")}
+            </div>
+          ) : sectionCategories.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("adminHomepageSectionsEmpty")}</p>
+          ) : (
+            <>
+              <ul className="space-y-2">
+                {sectionCategories.map((category, index) => {
+                  const count = productCountByCategory.get(category.id) ?? 0;
+                  return (
+                    <li
+                      key={category.id}
+                      className="flex items-center gap-3 rounded-xl border border-[#1B4332]/10 bg-[#faf8f4]/40 px-4 py-3"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1B4332]/10 text-sm font-semibold tabular-nums text-[#1B4332]">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-[#1B4332]">{pickName(category, lang)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {count} {t("adminHomepageSectionsProductCount")}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9"
+                          disabled={index === 0}
+                          aria-label={t("adminHomepageSectionsMoveUp")}
+                          onClick={() => moveSection(index, "up")}
+                        >
+                          <ArrowUp className="h-4 w-4" aria-hidden />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9"
+                          disabled={index === sectionCategories.length - 1}
+                          aria-label={t("adminHomepageSectionsMoveDown")}
+                          onClick={() => moveSection(index, "down")}
+                        >
+                          <ArrowDown className="h-4 w-4" aria-hidden />
+                        </Button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <Button
+                type="button"
+                className="h-11 bg-[#1B4332] px-6 hover:bg-[#1B4332]/90"
+                onClick={() => void saveSections()}
+                disabled={sectionsSaving}
+              >
+                {sectionsSaving ? (
+                  <>
+                    <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden />
+                    {t("adminHomepageSectionsSaving")}
+                  </>
+                ) : (
+                  t("adminHomepageSectionsSave")
                 )}
               </Button>
             </>

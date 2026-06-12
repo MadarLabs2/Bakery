@@ -14,7 +14,7 @@ export function ProductPriceRow({
 }: {
   price: number;
   compareAtPrice?: number | null;
-  variant: "compact" | "default" | "hero";
+  variant: "compact" | "rail" | "default" | "hero";
   className?: string;
 }) {
   const { t } = useI18n();
@@ -22,18 +22,22 @@ export function ProductPriceRow({
   const was = resolveCompareAtPrice(sell, compareAtPrice);
 
   const wasSize =
-    variant === "compact"
-      ? "text-[11px] sm:text-xs md:text-sm"
-      : variant === "default"
-        ? "text-sm"
-        : "text-xl md:text-2xl";
+    variant === "rail"
+      ? "text-[10px] sm:text-[11px]"
+      : variant === "compact"
+        ? "text-[11px] sm:text-xs md:text-sm"
+        : variant === "default"
+          ? "text-sm"
+          : "text-xl md:text-2xl";
 
   const nowSize =
-    variant === "compact"
-      ? "text-sm sm:text-base md:text-xl"
-      : variant === "default"
-        ? "text-xl"
-        : "text-3xl md:text-4xl";
+    variant === "rail"
+      ? "text-xs sm:text-sm"
+      : variant === "compact"
+        ? "text-sm sm:text-base md:text-xl"
+        : variant === "default"
+          ? "text-xl"
+          : "text-3xl md:text-4xl";
 
   return (
     <div className={cn("font-display text-primary", className)}>

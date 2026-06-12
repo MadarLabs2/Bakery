@@ -8,7 +8,13 @@ import { subscribeEmail } from "@/backend/server/subscribeEmail.functions";
 import { Button } from "@/frontend/components/ui/button";
 import { Skeleton } from "@/frontend/components/ui/skeleton";
 import { ProductCard } from "@/frontend/components/ProductCard";
+import { CategoryProductRail } from "@/frontend/components/CategoryProductRail";
 import { resolveImage } from "@/frontend/lib/images";
+import { fetchHomepageCategoryOrder } from "@/frontend/lib/storeSettings";
+import {
+  resolveHomepageCategorySections,
+  productsForCategory,
+} from "@/frontend/lib/homepageSections";
 import { toast } from "sonner";
 import { ScrollReveal3D } from "@/frontend/components/ScrollReveal3D";
 import { HeroImageShowcase } from "@/frontend/components/HeroImageShowcase";
@@ -32,6 +38,8 @@ function HomePage() {
   const subscribeFn = useServerFn(subscribeEmail);
   const [bestSellers, setBestSellers] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [homepageCategoryOrder, setHomepageCategoryOrder] = useState<string[] | null>(null);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [subbing, setSubbing] = useState(false);
@@ -42,7 +50,7 @@ function HomePage() {
 
     const loadCatalog = async () => {
       try {
-        const [prodRes, catRes] = await Promise.all([
+        const [prodRes, catRes, allProdRes, orderRes] = await Promise.all([
           supabase
             .from("products")
             .select("*")
@@ -50,6 +58,8 @@ function HomePage() {
             .eq("is_best_seller", true)
             .limit(4),
           supabase.from("categories").select("*").order("name"),
+          supabase.from("products").select("*").eq("is_available", true).order("name"),
+          fetchHomepageCategoryOrder(),
         ]);
 
         if (cancelled) return;
@@ -63,8 +73,10 @@ function HomePage() {
 
         setBestSellers(prodRes.data ?? []);
         setCategories(catRes.data ?? []);
+        setAllProducts(allProdRes.data ?? []);
+        setHomepageCategoryOrder(orderRes);
 
-        const msg = catRes.error?.message ?? prodRes.error?.message;
+        const msg = catRes.error?.message ?? prodRes.error?.message ?? allProdRes.error?.message;
         if (msg) {
           toast.error(`${msg} — ${t("catalogConfigHint")}`, { duration: 8000 });
         }
@@ -83,6 +95,13 @@ function HomePage() {
       cancelled = true;
     };
   }, [t]);
+
+  const homepageSections = resolveHomepageCategorySections(
+    categories,
+    allProducts,
+    homepageCategoryOrder,
+    lang,
+  );
 
   const subscribe = async (e: { preventDefault(): void }) => {
     e.preventDefault();
@@ -239,6 +258,16 @@ function HomePage() {
           )}
         </div>
       </section>
+
+      {/* CATEGORY PRODUCT RAILS */}
+      {!categoriesLoading &&
+        homepageSections.map((category) => {
+          const products = productsForCategory(allProducts, category.id);
+          if (products.length === 0) return null;
+          return (
+            <CategoryProductRail key={category.id} category={category} products={products as any} />
+          );
+        })}
 
       {/* SUBSCRIBE */}
       <section className="container mx-auto px-4 py-12">
