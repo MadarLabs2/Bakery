@@ -11,7 +11,7 @@ import {
   ShoppingCart,
   Tag,
 } from "lucide-react";
-import { format } from "date-fns";
+import { formatOrderDate } from "@/frontend/lib/formatDate";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/backend/db/client";
 import { Input } from "@/frontend/components/ui/input";
@@ -143,7 +143,7 @@ type OrderRow = {
 };
 
 function AdminDashboard() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const pendingOrders = useAdminPendingOrderCount();
   const [search, setSearch] = useState("");
@@ -400,7 +400,7 @@ function AdminDashboard() {
                         </span>
                       </div>
                       <div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] text-stone-500">
-                        <time dateTime={o.created_at}>{format(new Date(o.created_at), "MMM d, h:mm a")}</time>
+                        <time dateTime={o.created_at}>{formatOrderDate(o.created_at, lang, "PP p")}</time>
                         <span className="shrink-0 font-sans font-medium tabular-nums text-[#4a4238]">
                           ₪{Number(o.total_amount ?? 0).toFixed(2)}
                         </span>
@@ -450,7 +450,7 @@ function AdminDashboard() {
                             </span>
                           </td>
                           <td className="px-5 py-3.5 font-sans text-sm text-stone-600">
-                            {format(new Date(o.created_at), "MMM d, h:mm a")}
+                            {formatOrderDate(o.created_at, lang, "PP p")}
                           </td>
                           <td className="px-5 py-3.5 text-end font-sans text-sm font-medium tabular-nums text-[#4a4238]">
                             ₪{Number(o.total_amount ?? 0).toFixed(2)}

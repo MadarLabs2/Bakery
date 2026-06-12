@@ -4,7 +4,8 @@ import { supabase } from "@/backend/db/client";
 import { Button } from "@/frontend/components/ui/button";
 import { useAuth } from "@/frontend/lib/auth";
 import { useI18n } from "@/frontend/lib/i18n";
-import { format } from "date-fns";
+import { formatOrderDate } from "@/frontend/lib/formatDate";
+import { adminOrderStatusLabel } from "@/frontend/lib/adminLabels";
 
 export const Route = createFileRoute("/orders")({ component: OrdersPage });
 
@@ -13,7 +14,7 @@ const PAGE_SIZE = 5;
 function OrdersPage() {
   const { user, loading } = useAuth();
   const userId = user?.id;
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const nav = useNavigate();
   const [orders, setOrders] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(false);
@@ -84,9 +85,9 @@ function OrdersPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <div className="text-sm text-muted-foreground">
-                    #{o.id.slice(0, 8)} · {format(new Date(o.created_at), "PP")}
+                    #{o.id.slice(0, 8)} · {formatOrderDate(o.created_at, lang, "PP")}
                   </div>
-                  <div className="font-display text-lg font-semibold capitalize">{o.order_status}</div>
+                  <div className="font-display text-lg font-semibold">{adminOrderStatusLabel(o.order_status, t)}</div>
                 </div>
                 <div className="font-display text-xl font-bold text-primary">
                   ₪{Number(o.total_amount).toFixed(2)}

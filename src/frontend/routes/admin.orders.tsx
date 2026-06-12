@@ -1,9 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { ar, enUS, he as heIL } from "date-fns/locale";
-import type { Locale } from "date-fns";
-import { format, isSameDay, subDays } from "date-fns";
+import { isSameDay, subDays } from "date-fns";
 import {
   Calendar,
   CheckCircle2,
@@ -39,6 +37,7 @@ import {
 import { Button } from "@/frontend/components/ui/button";
 import { toast } from "sonner";
 import { useI18n, type Lang, dict } from "@/frontend/lib/i18n";
+import { formatOrderDate } from "@/frontend/lib/formatDate";
 import { adminOrderStatusLabel, adminOrderStatusPillClass } from "@/frontend/lib/adminLabels";
 import { resolveImage } from "@/frontend/lib/images";
 import { cn } from "@/frontend/lib/utils";
@@ -76,16 +75,6 @@ const TABS: { id: TabId; labelKey: DictKey; match: (status: string) => boolean }
   { id: "completed", labelKey: "adminOrdersTabCompleted", match: (s) => s === "completed" },
   { id: "cancelled", labelKey: "adminOrdersTabCancelled", match: (s) => s === "cancelled" },
 ];
-
-function orderDateLocale(lang: Lang): Locale {
-  if (lang === "he") return heIL;
-  if (lang === "ar") return ar;
-  return enUS;
-}
-
-function formatOrderDate(iso: string, lang: Lang, pattern: string) {
-  return format(new Date(iso), pattern, { locale: orderDateLocale(lang) });
-}
 
 function deliveryLabel(raw: string | null | undefined, t: Translate) {
   const k = String(raw ?? "").toLowerCase().replace(/\s+/g, "_");

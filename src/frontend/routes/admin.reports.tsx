@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Package, ShoppingCart, Star, TrendingUp } from "lucide-react";
-import { format } from "date-fns";
+import { formatOrderDate } from "@/frontend/lib/formatDate";
 import { supabase } from "@/backend/db/client";
 import { useI18n } from "@/frontend/lib/i18n";
 import { adminOrderStatusLabel } from "@/frontend/lib/adminLabels";
@@ -9,7 +9,7 @@ import { adminOrderStatusLabel } from "@/frontend/lib/adminLabels";
 export const Route = createFileRoute("/admin/reports")({ component: AdminReports });
 
 function AdminReports() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [stats, setStats] = useState({ orders: 0, products: 0, bestSellers: 0, revenue: 0 });
   const [recent, setRecent] = useState<any[]>([]);
 
@@ -90,7 +90,7 @@ function AdminReports() {
               <div>
                 <div className="font-medium">{o.customer_name}</div>
                 <div className="text-xs text-muted-foreground">
-                  #{o.id.slice(0, 8)} · {format(new Date(o.created_at), "PP")}
+                  #{o.id.slice(0, 8)} · {formatOrderDate(o.created_at, lang, "PP")}
                 </div>
               </div>
               <div className="text-right">
