@@ -5,8 +5,6 @@ import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useI18n } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
 import { generateUUID } from "@/frontend/lib/uuid";
-import { sendOrderConfirmation } from "@/backend/server/sendOrderConfirmation.functions";
-import { sendAdminNewOrder } from "@/backend/server/sendAdminNewOrder.functions";
 import { createOrder } from "@/backend/server/createOrder.functions";
 import { useCart } from "@/frontend/lib/cart";
 import { supabase } from "@/backend/db/client";
@@ -37,9 +35,7 @@ export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
 function CheckoutPage() {
   const { t } = useI18n();
   const { user, session } = useAuth();
-  const sendConfirmationFn  = useServerFn(sendOrderConfirmation);
-  const sendAdminNewOrderFn = useServerFn(sendAdminNewOrder);
-  const createOrderFn       = useServerFn(createOrder);
+  const createOrderFn = useServerFn(createOrder);
   const { items, subtotal, refresh } = useCart();
   const { deliveryFee: configuredDeliveryFee } = useDeliveryFee();
   const nav = useNavigate();
@@ -224,21 +220,6 @@ function CheckoutPage() {
 
       // Cart rotation was performed server-side; just refresh the local state.
       await refresh();
-
-      // Fire-and-forget: order is saved; email failure must not cancel the order.
-      void sendConfirmationFn({
-        data: { orderId: result.orderId },
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      }).catch((e: unknown) => {
-        console.error("[checkout] Order confirmation email:", e);
-      });
-
-      void sendAdminNewOrderFn({
-        data: { orderId: result.orderId },
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      }).catch((e: unknown) => {
-        console.error("[checkout] Admin new-order email:", e);
-      });
 
       toast.success(t("orderConfirmedWithEmail"));
       nav({ to: "/checkout/success", search: { orderId: result.orderId } });

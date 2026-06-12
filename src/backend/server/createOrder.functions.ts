@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database, Json } from "@/backend/db/types";
 import { requireSupabaseAuth } from "@/backend/db/auth-middleware";
+import { dispatchOrderEmails } from "@/backend/server/orderEmail.helpers";
 
 // ── Input schema ──────────────────────────────────────────────────────────────
 const createOrderInput = z.object({
@@ -56,7 +57,7 @@ export const createOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw) => createOrderInput.parse(raw))
   .handler(async ({ data, context }): Promise<CreateOrderResult> => {
-    const { supabase } = context as {
+    const { supabase, userId } = context as {
       supabase: SupabaseClient<Database>;
       userId:   string;
     };
@@ -82,6 +83,15 @@ export const createOrder = createServerFn({ method: "POST" })
     const res = result as { order_id: string; idempotent: boolean } | null;
     if (!res?.order_id) {
       return { ok: false, errorKey: "genericError" };
+    }
+
+    // Send emails server-side (await so Vercel does not kill the function early).
+    if (!res.idempotent) {
+      try {
+        await dispatchOrderEmails(supabase, res.order_id, userId);
+      } catch (e: unknown) {
+        console.error("[createOrder] Order emails:", e);
+      }
     }
 
     return { ok: true, orderId: res.order_id, idempotent: res.idempotent ?? false };

@@ -96,12 +96,20 @@ function emailFooter(): string {
   </tr>`;
 }
 
-function emailShell(content: string, headerSubtitle?: string, preheader?: string): string {
+function emailShell(
+  content: string,
+  headerSubtitle?: string,
+  preheader?: string,
+  options?: { locale?: "en" | "he" },
+): string {
+  const locale = options?.locale ?? "en";
+  const lang = locale === "he" ? "he" : "en";
+  const dir = locale === "he" ? "rtl" : "ltr";
   const pre = preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:${CREAM};">${escapeHtml(preheader)}</div>`
     : "";
   return `<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="${lang}" dir="${dir}" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
@@ -138,11 +146,25 @@ function ctaButton(label: string, href: string): string {
   </table>`;
 }
 
-function detailRow(label: string, value: string): string {
+function detailRow(label: string, value: string, rtl = false): string {
   return `<tr>
-    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;">${escapeHtml(label)}</td>
-    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:14px;color:${BROWN};text-align:right;font-weight:600;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(value)}</td>
+    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;${rtl ? "text-align:right;" : ""}">${escapeHtml(label)}</td>
+    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:14px;color:${BROWN};text-align:${rtl ? "left" : "right"};font-weight:600;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(value)}</td>
   </tr>`;
+}
+
+function heDeliveryLabel(method: string): string {
+  const k = method.toLowerCase();
+  if (k === "pickup" || k === "איסוף") return "איסוף";
+  if (k === "delivery" || k === "משלוח") return "משלוח";
+  return method;
+}
+
+function hePaymentLabel(method: string): string {
+  const k = method.toLowerCase().replace(/\s+/g, "_");
+  if (k === "cash" || k === "מזומן") return "מזומן";
+  if (k === "card" || k === "credit_card" || k === "creditcard") return "כרטיס אשראי";
+  return method;
 }
 
 function shopUrl(): string {
@@ -190,23 +212,26 @@ export type OrderConfirmationData = {
 
 export function orderConfirmationTemplate(data: OrderConfirmationData): { subject: string; html: string } {
   const shortId = data.orderNumber || data.orderId.slice(0, 8).toUpperCase();
-  const subject = `Order Confirmation #${shortId} — ${BRAND_SHORT}`;
+  const firstName = data.customerName.split(" ")[0] ?? data.customerName;
+  const deliveryHe = heDeliveryLabel(data.deliveryMethod);
+  const paymentHe = hePaymentLabel(data.paymentMethod);
+  const subject = `אישור הזמנה #${shortId} — ${BRAND_SHORT}`;
 
   const itemRows = data.items
     .map(
       (item, i) => `
     <tr style="background:${i % 2 === 0 ? WHITE : CREAM};">
-      <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};border-bottom:1px solid ${BORDER};">${escapeHtml(item.product_name)}</td>
+      <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};border-bottom:1px solid ${BORDER};text-align:right;">${escapeHtml(item.product_name)}</td>
       <td style="padding:14px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:center;border-bottom:1px solid ${BORDER};">${item.quantity}</td>
-      <td style="padding:14px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:right;border-bottom:1px solid ${BORDER};">${formatMoney(item.product_price)}</td>
-      <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${GREEN};text-align:right;border-bottom:1px solid ${BORDER};">${formatMoney(item.total_price)}</td>
+      <td style="padding:14px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:left;border-bottom:1px solid ${BORDER};">${formatMoney(item.product_price)}</td>
+      <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${GREEN};text-align:left;border-bottom:1px solid ${BORDER};">${formatMoney(item.total_price)}</td>
     </tr>`,
     )
     .join("");
 
   const discountRow =
     data.discountAmount > 0
-      ? `<tr><td colspan="3" style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${GREEN};">Discount${data.couponCode ? ` (${escapeHtml(data.couponCode)})` : ""}</td><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${GREEN};text-align:right;font-weight:600;">−${formatMoney(data.discountAmount)}</td></tr>`
+      ? `<tr><td colspan="3" style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${GREEN};text-align:right;">הנחה${data.couponCode ? ` (${escapeHtml(data.couponCode)})` : ""}</td><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${GREEN};text-align:left;font-weight:600;">−${formatMoney(data.discountAmount)}</td></tr>`
       : "";
 
   const testBanner = data.testModeNote ? testModeBanner(data.testModeNote) : "";
@@ -214,65 +239,61 @@ export function orderConfirmationTemplate(data: OrderConfirmationData): { subjec
   const content = `
     ${testBanner}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr><td style="text-align:center;padding-bottom:8px;">${statusBadge("Order Confirmed")}</td></tr>
+      <tr><td style="text-align:center;padding-bottom:8px;">${statusBadge("ההזמנה אושרה")}</td></tr>
     </table>
-    <h1 style="margin:12px 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:bold;color:${GREEN};text-align:center;line-height:1.2;">Thank you, ${escapeHtml(data.customerName.split(" ")[0])}!</h1>
-    <p style="margin:0 0 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:${MUTED};text-align:center;line-height:1.6;">Your order has been received and our bakers are getting started.<br/>We'll have your gluten-free treats ready soon.</p>
+    <h1 style="margin:12px 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:bold;color:${GREEN};text-align:center;line-height:1.3;">תודה, ${escapeHtml(firstName)}!</h1>
+    <p style="margin:0 0 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:${MUTED};text-align:center;line-height:1.7;">קיבלנו את ההזמנה שלך והאופים שלנו כבר מתחילים לעבוד.<br/>מעדנים ללא גלוטן טריים — בדרך אליך.</p>
 
-    <!-- Order details card -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;background:${CREAM};border-radius:12px;border:1px solid ${BORDER};overflow:hidden;">
       <tr><td style="padding:14px 20px;background:${GREEN};">
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${GOLD_LIGHT};letter-spacing:1.5px;text-transform:uppercase;font-weight:bold;">Order Details</p>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${GOLD_LIGHT};letter-spacing:1px;font-weight:bold;text-align:right;">פרטי הזמנה</p>
       </td></tr>
       <tr><td style="padding:8px 20px 16px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-          ${detailRow("Order #", shortId)}
-          ${detailRow("Email", data.customerEmail)}
-          ${detailRow("Phone", data.customerPhone)}
-          ${detailRow("Delivery", data.deliveryMethod)}
-          ${detailRow("Payment", data.paymentMethod)}
+          ${detailRow("מס׳ הזמנה", shortId, true)}
+          ${detailRow('דוא"ל', data.customerEmail, true)}
+          ${detailRow("טלפון", data.customerPhone, true)}
+          ${detailRow("משלוח / איסוף", deliveryHe, true)}
+          ${detailRow("תשלום", paymentHe, true)}
         </table>
       </td></tr>
     </table>
 
-    <!-- Items table -->
-    <p style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:${GREEN};">Your order</p>
+    <p style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:${GREEN};text-align:right;">ההזמנה שלך</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BORDER};border-radius:12px;overflow:hidden;margin-bottom:8px;">
       <tr style="background:${GREEN};">
-        <th style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:left;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Item</th>
-        <th style="padding:12px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:center;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Qty</th>
-        <th style="padding:12px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:right;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Price</th>
-        <th style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:right;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Total</th>
+        <th style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:right;letter-spacing:0.5px;font-weight:bold;">פריט</th>
+        <th style="padding:12px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:center;letter-spacing:0.5px;font-weight:bold;">כמות</th>
+        <th style="padding:12px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:left;letter-spacing:0.5px;font-weight:bold;">מחיר</th>
+        <th style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:left;letter-spacing:0.5px;font-weight:bold;">סה״כ</th>
       </tr>
       ${itemRows}
     </table>
 
-    <!-- Totals -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-      <tr><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};">Subtotal</td><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:right;">${formatMoney(data.subtotal)}</td></tr>
+      <tr><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:right;">סכום ביניים</td><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:left;">${formatMoney(data.subtotal)}</td></tr>
       ${discountRow}
-      <tr><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};">Delivery fee</td><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:right;">${formatMoney(data.deliveryFee)}</td></tr>
+      <tr><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:right;">דמי משלוח</td><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:left;">${formatMoney(data.deliveryFee)}</td></tr>
       <tr><td colspan="2" style="padding:16px 12px 0;border-top:2px solid ${GREEN};">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
-            <td style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:${GREEN};">Total</td>
-            <td style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:bold;color:${GREEN};text-align:right;">${formatMoney(data.totalAmount)}</td>
+            <td style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:${GREEN};text-align:right;">סה״כ לתשלום</td>
+            <td style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:bold;color:${GREEN};text-align:left;">${formatMoney(data.totalAmount)}</td>
           </tr>
         </table>
       </td></tr>
     </table>
 
-    <!-- Help box -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr><td style="padding:20px 22px;background:linear-gradient(135deg,${CREAM} 0%,${CREAM_DARK} 100%);border-radius:12px;border:1px solid ${BORDER};text-align:center;">
-        <p style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:bold;color:${GREEN};">Need help with your order?</p>
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};line-height:1.6;">Call us at <strong style="color:${BROWN};">0537636011</strong> or <strong style="color:${BROWN};">0508588985</strong></p>
+        <p style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:bold;color:${GREEN};">צריכים עזרה עם ההזמנה?</p>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};line-height:1.7;">התקשרו אלינו: <strong style="color:${BROWN};">053-763-6011</strong> או <strong style="color:${BROWN};">050-858-8985</strong></p>
       </td></tr>
     </table>`;
 
   return {
     subject,
-    html: emailShell(content, "Order Confirmation", `Your order #${shortId} is confirmed — ${BRAND_SHORT}`),
+    html: emailShell(content, "אישור הזמנה", `ההזמנה #${shortId} אושרה — ${BRAND_SHORT}`, { locale: "he" }),
   };
 }
 
@@ -357,56 +378,59 @@ export type AdminOrderEmailData = {
 
 export function adminNewOrderTemplate(data: AdminOrderEmailData): { subject: string; html: string } {
   const shortId = data.orderNumber || data.orderId.slice(0, 8).toUpperCase();
-  const subject = `New Order #${shortId} — ${BRAND_SHORT}`;
+  const subject = `הזמנה חדשה #${shortId} — ${BRAND_SHORT}`;
 
   const itemRows = data.items
     .map(
       (item, i) => `
     <tr style="background:${i % 2 === 0 ? WHITE : CREAM};">
-      <td style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${BROWN};border-bottom:1px solid ${BORDER};">${escapeHtml(item.product_name)}</td>
+      <td style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${BROWN};border-bottom:1px solid ${BORDER};text-align:right;">${escapeHtml(item.product_name)}</td>
       <td style="padding:10px 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${MUTED};text-align:center;border-bottom:1px solid ${BORDER};">${item.quantity}</td>
-      <td style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:${GREEN};text-align:right;border-bottom:1px solid ${BORDER};">${formatMoney(item.total_price)}</td>
+      <td style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:${GREEN};text-align:left;border-bottom:1px solid ${BORDER};">${formatMoney(item.total_price)}</td>
     </tr>`,
     )
     .join("");
 
   const discountRow =
     data.discountAmount > 0
-      ? `<tr><td colspan="2" style="padding:6px 12px;font-size:13px;color:${GREEN};font-family:Arial,Helvetica,sans-serif;">Discount</td><td style="padding:6px 12px;font-size:13px;color:${GREEN};text-align:right;font-weight:600;font-family:Arial,Helvetica,sans-serif;">−${formatMoney(data.discountAmount)}</td></tr>`
+      ? `<tr><td colspan="2" style="padding:6px 12px;font-size:13px;color:${GREEN};font-family:Arial,Helvetica,sans-serif;text-align:right;">הנחה</td><td style="padding:6px 12px;font-size:13px;color:${GREEN};text-align:left;font-weight:600;font-family:Arial,Helvetica,sans-serif;">−${formatMoney(data.discountAmount)}</td></tr>`
       : "";
 
   const deliveryRow =
     data.deliveryFee > 0
-      ? `<tr><td colspan="2" style="padding:6px 12px;font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;">Delivery fee</td><td style="padding:6px 12px;font-size:13px;color:${BROWN};text-align:right;font-family:Arial,Helvetica,sans-serif;">${formatMoney(data.deliveryFee)}</td></tr>`
+      ? `<tr><td colspan="2" style="padding:6px 12px;font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;text-align:right;">דמי משלוח</td><td style="padding:6px 12px;font-size:13px;color:${BROWN};text-align:left;font-family:Arial,Helvetica,sans-serif;">${formatMoney(data.deliveryFee)}</td></tr>`
       : "";
 
-  const addressNote = data.deliveryMethod === "delivery" && data.deliveryAddress
-    ? `<tr><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;">Address</td><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${BROWN};text-align:right;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(data.deliveryAddress)}</td></tr>`
+  const addressNote = data.deliveryMethod.toLowerCase() === "delivery" && data.deliveryAddress
+    ? `<tr><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;text-align:right;">כתובת</td><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${BROWN};text-align:left;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(data.deliveryAddress)}</td></tr>`
     : "";
 
   const notesNote = data.notes
-    ? `<tr><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;">Notes</td><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${BROWN};text-align:right;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(data.notes)}</td></tr>`
+    ? `<tr><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;text-align:right;">הערות</td><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${BROWN};text-align:left;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(data.notes)}</td></tr>`
     : "";
+
+  const deliveryHe = heDeliveryLabel(data.deliveryMethod);
+  const paymentHe = hePaymentLabel(data.paymentMethod);
 
   const content = `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr><td style="text-align:center;padding-bottom:8px;">${statusBadge("New Order")}</td></tr>
+      <tr><td style="text-align:center;padding-bottom:8px;">${statusBadge("הזמנה חדשה")}</td></tr>
     </table>
-    <h1 style="margin:12px 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:${GREEN};text-align:center;line-height:1.2;">Order #${escapeHtml(shortId)}</h1>
-    <p style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:center;">A new order has been placed on ${BRAND_SHORT}.</p>
+    <h1 style="margin:12px 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:${GREEN};text-align:center;line-height:1.2;">הזמנה #${escapeHtml(shortId)}</h1>
+    <p style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:center;">התקבלה הזמנה חדשה באתר ${BRAND_SHORT}.</p>
 
     <!-- Customer card -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;background:${CREAM};border-radius:10px;border:1px solid ${BORDER};overflow:hidden;">
       <tr><td style="padding:10px 16px;background:${GREEN};">
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};letter-spacing:1.5px;text-transform:uppercase;font-weight:bold;">Customer</p>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};letter-spacing:1px;font-weight:bold;text-align:right;">לקוח</p>
       </td></tr>
       <tr><td style="padding:6px 16px 12px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-          ${detailRow("Name", data.customerName)}
-          ${detailRow("Phone", data.customerPhone)}
-          ${detailRow("Email", data.customerEmail)}
-          ${detailRow("Delivery", data.deliveryMethod.charAt(0).toUpperCase() + data.deliveryMethod.slice(1))}
-          ${detailRow("Payment", data.paymentMethod.charAt(0).toUpperCase() + data.paymentMethod.replace(/_/g, " ").slice(1))}
+          ${detailRow("שם", data.customerName, true)}
+          ${detailRow("טלפון", data.customerPhone, true)}
+          ${detailRow('דוא"ל', data.customerEmail, true)}
+          ${detailRow("משלוח / איסוף", deliveryHe, true)}
+          ${detailRow("תשלום", paymentHe, true)}
           ${addressNote}
           ${notesNote}
         </table>
@@ -416,9 +440,9 @@ export function adminNewOrderTemplate(data: AdminOrderEmailData): { subject: str
     <!-- Items -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BORDER};border-radius:10px;overflow:hidden;margin-bottom:8px;">
       <tr style="background:${GREEN};">
-        <th style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:left;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Item</th>
-        <th style="padding:10px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:center;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Qty</th>
-        <th style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:right;letter-spacing:1px;text-transform:uppercase;font-weight:bold;">Total</th>
+        <th style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:right;letter-spacing:0.5px;font-weight:bold;">פריט</th>
+        <th style="padding:10px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:center;letter-spacing:0.5px;font-weight:bold;">כמות</th>
+        <th style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:left;letter-spacing:0.5px;font-weight:bold;">סה״כ</th>
       </tr>
       ${itemRows}
     </table>
@@ -430,18 +454,18 @@ export function adminNewOrderTemplate(data: AdminOrderEmailData): { subject: str
       <tr><td colspan="3" style="padding:12px 12px 0;border-top:2px solid ${GREEN};">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
-            <td style="font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:${GREEN};">Total</td>
-            <td style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:${GREEN};text-align:right;">${formatMoney(data.totalAmount)}</td>
+            <td style="font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:${GREEN};text-align:right;">סה״כ</td>
+            <td style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:${GREEN};text-align:left;">${formatMoney(data.totalAmount)}</td>
           </tr>
         </table>
       </td></tr>
     </table>
 
-    ${ctaButton("View in Admin Panel →", adminPanelUrl())}`;
+    ${ctaButton("צפייה בניהול הזמנות ←", adminPanelUrl())}`;
 
   return {
     subject,
-    html: emailShell(content, "New Order", `New order #${shortId} from ${data.customerName}`),
+    html: emailShell(content, "הזמנה חדשה", `הזמנה חדשה #${shortId} מ${data.customerName}`, { locale: "he" }),
   };
 }
 
