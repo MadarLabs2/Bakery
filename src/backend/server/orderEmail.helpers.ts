@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/backend/db/types";
 import type { OrderConfirmationData, AdminOrderEmailData } from "@/backend/services/emailTemplates";
+import { normalizeEmailLocale } from "@/backend/services/emailTemplates";
 import { sendAdminNewOrderEmail, sendOrderConfirmationEmail } from "@/backend/services/emailService";
 
 export async function loadOrderEmailPayload(
@@ -67,7 +68,7 @@ export async function loadOrderEmailPayload(
   };
 
   return {
-    confirmation: { ...base, couponCode },
+    confirmation: { ...base, couponCode, locale: normalizeEmailLocale(order.customer_locale) },
     admin: {
       ...base,
       orderId: order.id,

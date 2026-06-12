@@ -101,6 +101,7 @@ export const resendOrderConfirmation = createServerFn({ method: "POST" })
         deliveryMethod: deliveryLabel,
         paymentMethod:  paymentLabel,
         couponCode,
+        locale:         order.customer_locale,
       });
 
       const alreadySent = result.alreadySent ?? false;

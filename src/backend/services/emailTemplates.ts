@@ -223,6 +223,135 @@ function emailDeliveryLabel(locale: EmailLocale, method: string): string {
   return isDelivery ? "Delivery" : "Pickup";
 }
 
+function emailPaymentLabel(locale: EmailLocale, method: string): string {
+  const k = method.toLowerCase().replace(/\s+/g, "_");
+  if (locale === "he") {
+    if (k === "cash" || k === "מזומן") return "מזומן";
+    if (k === "card" || k === "credit_card" || k === "creditcard") return "כרטיס אשראי";
+    return method;
+  }
+  if (locale === "ar") {
+    if (k === "cash" || k === "מזומן") return "نقدًا";
+    if (k === "card" || k === "credit_card" || k === "creditcard") return "بطاقة ائتمان";
+    return method;
+  }
+  if (k === "cash") return "Cash";
+  if (k === "card" || k === "credit_card" || k === "creditcard") return "Card";
+  return method;
+}
+
+type ConfirmationLabels = {
+  subject: (shortId: string) => string;
+  preheader: (shortId: string) => string;
+  headerSubtitle: string;
+  badge: string;
+  thanks: (name: string) => string;
+  intro: string;
+  orderDetails: string;
+  orderNum: string;
+  email: string;
+  phone: string;
+  delivery: string;
+  payment: string;
+  yourOrder: string;
+  item: string;
+  qty: string;
+  price: string;
+  lineTotal: string;
+  subtotal: string;
+  discount: string;
+  deliveryFee: string;
+  grandTotal: string;
+  helpTitle: string;
+  helpBody: string;
+  or: string;
+};
+
+function confirmationEmailLabels(locale: EmailLocale): ConfirmationLabels {
+  if (locale === "ar") {
+    return {
+      subject: (id) => `تأكيد الطلب #${id} — ${BRAND_SHORT}`,
+      preheader: (id) => `تم تأكيد الطلب #${id} — ${BRAND_SHORT}`,
+      headerSubtitle: "تأكيد الطلب",
+      badge: "تم تأكيد الطلب",
+      thanks: (name) => `شكرًا، ${name}!`,
+      intro: "استلمنا طلبك وبدأ خبّازونا بالعمل عليه.\nمخبوزات خالية من الغلوتين — في طريقها إليك.",
+      orderDetails: "تفاصيل الطلب",
+      orderNum: "رقم الطلب",
+      email: "البريد الإلكتروني",
+      phone: "الهاتف",
+      delivery: "التوصيل / الاستلام",
+      payment: "الدفع",
+      yourOrder: "طلبك",
+      item: "المنتج",
+      qty: "الكمية",
+      price: "السعر",
+      lineTotal: "المجموع",
+      subtotal: "المجموع الفرعي",
+      discount: "خصم",
+      deliveryFee: "رسوم التوصيل",
+      grandTotal: "الإجمالي للدفع",
+      helpTitle: "هل تحتاج مساعدة مع طلبك؟",
+      helpBody: "اتصل بنا:",
+      or: "أو",
+    };
+  }
+  if (locale === "en") {
+    return {
+      subject: (id) => `Order Confirmation #${id} — ${BRAND_SHORT}`,
+      preheader: (id) => `Order #${id} confirmed — ${BRAND_SHORT}`,
+      headerSubtitle: "Order Confirmation",
+      badge: "Order Confirmed",
+      thanks: (name) => `Thank you, ${name}!`,
+      intro: "We've received your order and our bakers are already getting started.\nFresh gluten-free treats — on their way to you.",
+      orderDetails: "Order Details",
+      orderNum: "Order #",
+      email: "Email",
+      phone: "Phone",
+      delivery: "Delivery / Pickup",
+      payment: "Payment",
+      yourOrder: "Your Order",
+      item: "Item",
+      qty: "Qty",
+      price: "Price",
+      lineTotal: "Total",
+      subtotal: "Subtotal",
+      discount: "Discount",
+      deliveryFee: "Delivery fee",
+      grandTotal: "Total due",
+      helpTitle: "Need help with your order?",
+      helpBody: "Call us:",
+      or: "or",
+    };
+  }
+  return {
+    subject: (id) => `אישור הזמנה #${id} — ${BRAND_SHORT}`,
+    preheader: (id) => `ההזמנה #${id} אושרה — ${BRAND_SHORT}`,
+    headerSubtitle: "אישור הזמנה",
+    badge: "ההזמנה אושרה",
+    thanks: (name) => `תודה, ${name}!`,
+    intro: "קיבלנו את ההזמנה שלך והאופים שלנו כבר מתחילים לעבוד.\nמעדנים ללא גלוטן טריים — בדרך אליך.",
+    orderDetails: "פרטי הזמנה",
+    orderNum: "מס׳ הזמנה",
+    email: 'דוא"ל',
+    phone: "טלפון",
+    delivery: "משלוח / איסוף",
+    payment: "תשלום",
+    yourOrder: "ההזמנה שלך",
+    item: "פריט",
+    qty: "כמות",
+    price: "מחיר",
+    lineTotal: "סה״כ",
+    subtotal: "סכום ביניים",
+    discount: "הנחה",
+    deliveryFee: "דמי משלוח",
+    grandTotal: "סה״כ לתשלום",
+    helpTitle: "צריכים עזרה עם ההזמנה?",
+    helpBody: "התקשרו אלינו:",
+    or: "או",
+  };
+}
+
 function shopUrl(): string {
   return (
     process.env.APP_BASE_URL?.trim() ||
@@ -263,81 +392,115 @@ export type OrderConfirmationData = {
   deliveryMethod: string;
   paymentMethod: string;
   couponCode?: string | null;
+  locale?: EmailLocale | string | null;
   testModeNote?: string;
 };
 
 export function orderConfirmationTemplate(data: OrderConfirmationData): { subject: string; html: string } {
+  const locale = normalizeEmailLocale(data.locale);
+  const labels = confirmationEmailLabels(locale);
+  const rtl = locale !== "en";
   const shortId = data.orderNumber || data.orderId.slice(0, 8).toUpperCase();
   const firstName = data.customerName.split(" ")[0] ?? data.customerName;
-  const deliveryHe = heDeliveryLabel(data.deliveryMethod);
-  const paymentHe = hePaymentLabel(data.paymentMethod);
-  const subject = `אישור הזמנה #${shortId} — ${BRAND_SHORT}`;
+  const deliveryLabel = emailDeliveryLabel(locale, data.deliveryMethod);
+  const paymentLabel = emailPaymentLabel(locale, data.paymentMethod);
+  const subject = labels.subject(shortId);
+  const introHtml = escapeHtml(labels.intro).replace(/\n/g, "<br/>");
+  const textAlign = rtl ? "right" : "left";
+  const priceAlign = rtl ? "left" : "right";
 
   const itemRows = data.items
     .map(
       (item, i) => `
     <tr style="background:${i % 2 === 0 ? WHITE : CREAM};">
-      <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};border-bottom:1px solid ${BORDER};text-align:right;">${escapeHtml(item.product_name)}</td>
+      <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};border-bottom:1px solid ${BORDER};text-align:${textAlign};">${escapeHtml(item.product_name)}</td>
       <td style="padding:14px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:center;border-bottom:1px solid ${BORDER};">${item.quantity}</td>
-      <td style="padding:14px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:left;border-bottom:1px solid ${BORDER};" dir="ltr">${formatMoney(item.product_price)}</td>
-      <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${GREEN};text-align:left;border-bottom:1px solid ${BORDER};" dir="ltr">${formatMoney(item.total_price)}</td>
+      <td style="padding:14px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:${priceAlign};border-bottom:1px solid ${BORDER};" dir="ltr">${formatMoney(item.product_price)}</td>
+      <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${GREEN};text-align:${priceAlign};border-bottom:1px solid ${BORDER};" dir="ltr">${formatMoney(item.total_price)}</td>
     </tr>`,
     )
     .join("");
 
   const testBanner = data.testModeNote ? testModeBanner(data.testModeNote) : "";
 
+  const detailRows = rtl
+    ? `${detailRowHe(labels.orderNum, shortId, true)}
+       ${detailRowHe(labels.email, data.customerEmail, true)}
+       ${detailRowHe(labels.phone, data.customerPhone, true)}
+       ${detailRowHe(labels.delivery, deliveryLabel)}
+       ${detailRowHe(labels.payment, paymentLabel)}`
+    : `${detailRow(labels.orderNum, shortId)}
+       ${detailRow(labels.email, data.customerEmail)}
+       ${detailRow(labels.phone, data.customerPhone)}
+       ${detailRow(labels.delivery, deliveryLabel)}
+       ${detailRow(labels.payment, paymentLabel)}`;
+
+  const summaryRows = rtl
+    ? `${summaryRowHe(labels.subtotal, data.subtotal)}
+       ${data.discountAmount > 0 ? summaryRowHe(`${labels.discount}${data.couponCode ? ` (${escapeHtml(data.couponCode)})` : ""}`, data.discountAmount, true) : ""}
+       ${summaryRowHe(labels.deliveryFee, data.deliveryFee)}
+       ${totalRowHe(labels.grandTotal, data.totalAmount)}`
+    : `<tr><td style="padding:6px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+         <td style="padding:4px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};">${labels.subtotal}</td>
+         <td width="100" style="padding:4px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:right;white-space:nowrap;" dir="ltr">${formatMoney(data.subtotal)}</td>
+       </tr></table></td></tr>
+       ${data.discountAmount > 0 ? `<tr><td style="padding:6px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+         <td style="padding:4px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${GREEN};">${labels.discount}${data.couponCode ? ` (${escapeHtml(data.couponCode)})` : ""}</td>
+         <td width="100" style="padding:4px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${GREEN};text-align:right;font-weight:600;white-space:nowrap;" dir="ltr">−${formatMoney(data.discountAmount)}</td>
+       </tr></table></td></tr>` : ""}
+       <tr><td style="padding:6px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+         <td style="padding:4px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};">${labels.deliveryFee}</td>
+         <td width="100" style="padding:4px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:right;white-space:nowrap;" dir="ltr">${formatMoney(data.deliveryFee)}</td>
+       </tr></table></td></tr>
+       <tr><td style="padding:14px 0 0;border-top:2px solid ${GREEN};"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+         <td style="font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:${GREEN};">${labels.grandTotal}</td>
+         <td width="120" style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:${GREEN};text-align:right;white-space:nowrap;" dir="ltr">${formatMoney(data.totalAmount)}</td>
+       </tr></table></td></tr>`;
+
   const content = `
     ${testBanner}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr><td style="text-align:center;padding-bottom:8px;">${statusBadge("ההזמנה אושרה")}</td></tr>
+      <tr><td style="text-align:center;padding-bottom:8px;">${statusBadge(labels.badge)}</td></tr>
     </table>
-    <h1 style="margin:12px 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:bold;color:${GREEN};text-align:center;line-height:1.3;">תודה, ${escapeHtml(firstName)}!</h1>
-    <p style="margin:0 0 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:${MUTED};text-align:center;line-height:1.7;">קיבלנו את ההזמנה שלך והאופים שלנו כבר מתחילים לעבוד.<br/>מעדנים ללא גלוטן טריים — בדרך אליך.</p>
+    <h1 style="margin:12px 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:bold;color:${GREEN};text-align:center;line-height:1.3;">${escapeHtml(labels.thanks(firstName))}</h1>
+    <p style="margin:0 0 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:${MUTED};text-align:center;line-height:1.7;">${introHtml}</p>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;background:${CREAM};border-radius:12px;border:1px solid ${BORDER};overflow:hidden;">
       <tr><td style="padding:14px 20px;background:${GREEN};">
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${GOLD_LIGHT};letter-spacing:1px;font-weight:bold;text-align:right;">פרטי הזמנה</p>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${GOLD_LIGHT};letter-spacing:1px;font-weight:bold;text-align:${textAlign};">${labels.orderDetails}</p>
       </td></tr>
       <tr><td style="padding:8px 20px 16px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-          ${detailRowHe("מס׳ הזמנה", shortId, true)}
-          ${detailRowHe('דוא"ל', data.customerEmail, true)}
-          ${detailRowHe("טלפון", data.customerPhone, true)}
-          ${detailRowHe("משלוח / איסוף", deliveryHe)}
-          ${detailRowHe("תשלום", paymentHe)}
+          ${detailRows}
         </table>
       </td></tr>
     </table>
 
-    <p style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:${GREEN};text-align:right;">ההזמנה שלך</p>
+    <p style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:${GREEN};text-align:${textAlign};">${labels.yourOrder}</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BORDER};border-radius:12px;overflow:hidden;margin-bottom:8px;">
       <tr style="background:${GREEN};">
-        <th style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:right;letter-spacing:0.5px;font-weight:bold;">פריט</th>
-        <th style="padding:12px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:center;letter-spacing:0.5px;font-weight:bold;">כמות</th>
-        <th style="padding:12px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:left;letter-spacing:0.5px;font-weight:bold;">מחיר</th>
-        <th style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:left;letter-spacing:0.5px;font-weight:bold;">סה״כ</th>
+        <th style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:${textAlign};letter-spacing:0.5px;font-weight:bold;">${labels.item}</th>
+        <th style="padding:12px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:center;letter-spacing:0.5px;font-weight:bold;">${labels.qty}</th>
+        <th style="padding:12px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:${priceAlign};letter-spacing:0.5px;font-weight:bold;">${labels.price}</th>
+        <th style="padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:${GOLD_LIGHT};text-align:${priceAlign};letter-spacing:0.5px;font-weight:bold;">${labels.lineTotal}</th>
       </tr>
       ${itemRows}
     </table>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-      ${summaryRowHe("סכום ביניים", data.subtotal)}
-      ${data.discountAmount > 0 ? summaryRowHe(`הנחה${data.couponCode ? ` (${escapeHtml(data.couponCode)})` : ""}`, data.discountAmount, true) : ""}
-      ${summaryRowHe("דמי משלוח", data.deliveryFee)}
-      ${totalRowHe("סה״כ לתשלום", data.totalAmount)}
+      ${summaryRows}
     </table>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr><td style="padding:20px 22px;background:linear-gradient(135deg,${CREAM} 0%,${CREAM_DARK} 100%);border-radius:12px;border:1px solid ${BORDER};text-align:center;">
-        <p style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:bold;color:${GREEN};">צריכים עזרה עם ההזמנה?</p>
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};line-height:1.7;">התקשרו אלינו: <strong style="color:${BROWN};">053-763-6011</strong> או <strong style="color:${BROWN};">050-858-8985</strong></p>
+        <p style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:bold;color:${GREEN};">${labels.helpTitle}</p>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};line-height:1.7;">${labels.helpBody} <strong style="color:${BROWN};">053-763-6011</strong> ${labels.or} <strong style="color:${BROWN};">050-858-8985</strong></p>
       </td></tr>
     </table>`;
 
   return {
     subject,
-    html: emailShell(content, "אישור הזמנה", `ההזמנה #${shortId} אושרה — ${BRAND_SHORT}`, { locale: "he" }),
+    html: emailShell(content, labels.headerSubtitle, labels.preheader(shortId), { locale }),
   };
 }
 
