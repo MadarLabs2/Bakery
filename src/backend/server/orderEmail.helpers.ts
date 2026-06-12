@@ -96,8 +96,18 @@ export async function dispatchOrderEmails(
 
   if (confirmation.status === "rejected") {
     console.error("[dispatchOrderEmails] Confirmation rejected:", confirmation.reason);
+  } else if (confirmation.value.alreadySent) {
+    console.info(
+      "[dispatchOrderEmails] Confirmation skipped (already sent to",
+      confirmation.value.actualRecipient + ")",
+    );
   } else if (!confirmation.value.ok) {
     console.error("[dispatchOrderEmails] Confirmation failed:", confirmation.value.error);
+  } else {
+    console.info(
+      "[dispatchOrderEmails] Confirmation sent to",
+      confirmation.value.actualRecipient,
+    );
   }
 
   if (admin.status === "rejected") {

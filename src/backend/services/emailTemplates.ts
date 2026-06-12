@@ -146,10 +146,51 @@ function ctaButton(label: string, href: string): string {
   </table>`;
 }
 
-function detailRow(label: string, value: string, rtl = false): string {
+function detailRow(label: string, value: string): string {
   return `<tr>
-    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;${rtl ? "text-align:right;" : ""}">${escapeHtml(label)}</td>
-    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:14px;color:${BROWN};text-align:${rtl ? "left" : "right"};font-weight:600;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(value)}</td>
+    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;">${escapeHtml(label)}</td>
+    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};font-size:14px;color:${BROWN};text-align:right;font-weight:600;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(value)}</td>
+  </tr>`;
+}
+
+/** Stacked label/value rows — reliable in Gmail RTL (avoids collapsed columns). */
+function detailRowHe(label: string, value: string, ltrValue = false): string {
+  const valueHtml = ltrValue
+    ? `<span dir="ltr" style="unicode-bidi:isolate;display:inline-block;text-align:left;">${escapeHtml(value)}</span>`
+    : escapeHtml(value);
+  return `<tr>
+    <td style="padding:10px 0;border-bottom:1px solid ${BORDER};">
+      <p style="margin:0 0 4px;font-size:12px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;text-align:right;line-height:1.4;">${escapeHtml(label)}</p>
+      <p style="margin:0;font-size:14px;color:${BROWN};font-family:Arial,Helvetica,sans-serif;text-align:right;font-weight:600;line-height:1.5;word-break:break-word;">${valueHtml}</p>
+    </td>
+  </tr>`;
+}
+
+function totalRowHe(label: string, amount: number): string {
+  return `<tr>
+    <td style="padding:14px 0 0;border-top:2px solid ${GREEN};">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:${GREEN};text-align:right;padding-top:4px;">${escapeHtml(label)}</td>
+          <td width="120" style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:${GREEN};text-align:left;padding-top:4px;white-space:nowrap;" dir="ltr">${formatMoney(amount)}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>`;
+}
+
+function summaryRowHe(label: string, amount: number, discount = false): string {
+  const display = discount ? `−${formatMoney(Math.abs(amount))}` : formatMoney(amount);
+  const color = discount ? GREEN : BROWN;
+  return `<tr>
+    <td style="padding:6px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:4px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:right;">${escapeHtml(label)}</td>
+          <td width="100" style="padding:4px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${color};text-align:left;white-space:nowrap;font-weight:${discount ? "600" : "normal"};" dir="ltr">${display}</td>
+        </tr>
+      </table>
+    </td>
   </tr>`;
 }
 
@@ -223,16 +264,11 @@ export function orderConfirmationTemplate(data: OrderConfirmationData): { subjec
     <tr style="background:${i % 2 === 0 ? WHITE : CREAM};">
       <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};border-bottom:1px solid ${BORDER};text-align:right;">${escapeHtml(item.product_name)}</td>
       <td style="padding:14px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:center;border-bottom:1px solid ${BORDER};">${item.quantity}</td>
-      <td style="padding:14px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:left;border-bottom:1px solid ${BORDER};">${formatMoney(item.product_price)}</td>
-      <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${GREEN};text-align:left;border-bottom:1px solid ${BORDER};">${formatMoney(item.total_price)}</td>
+      <td style="padding:14px 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:left;border-bottom:1px solid ${BORDER};" dir="ltr">${formatMoney(item.product_price)}</td>
+      <td style="padding:14px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${GREEN};text-align:left;border-bottom:1px solid ${BORDER};" dir="ltr">${formatMoney(item.total_price)}</td>
     </tr>`,
     )
     .join("");
-
-  const discountRow =
-    data.discountAmount > 0
-      ? `<tr><td colspan="3" style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${GREEN};text-align:right;">הנחה${data.couponCode ? ` (${escapeHtml(data.couponCode)})` : ""}</td><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${GREEN};text-align:left;font-weight:600;">−${formatMoney(data.discountAmount)}</td></tr>`
-      : "";
 
   const testBanner = data.testModeNote ? testModeBanner(data.testModeNote) : "";
 
@@ -250,11 +286,11 @@ export function orderConfirmationTemplate(data: OrderConfirmationData): { subjec
       </td></tr>
       <tr><td style="padding:8px 20px 16px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-          ${detailRow("מס׳ הזמנה", shortId, true)}
-          ${detailRow('דוא"ל', data.customerEmail, true)}
-          ${detailRow("טלפון", data.customerPhone, true)}
-          ${detailRow("משלוח / איסוף", deliveryHe, true)}
-          ${detailRow("תשלום", paymentHe, true)}
+          ${detailRowHe("מס׳ הזמנה", shortId, true)}
+          ${detailRowHe('דוא"ל', data.customerEmail, true)}
+          ${detailRowHe("טלפון", data.customerPhone, true)}
+          ${detailRowHe("משלוח / איסוף", deliveryHe)}
+          ${detailRowHe("תשלום", paymentHe)}
         </table>
       </td></tr>
     </table>
@@ -271,17 +307,10 @@ export function orderConfirmationTemplate(data: OrderConfirmationData): { subjec
     </table>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
-      <tr><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:right;">סכום ביניים</td><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:left;">${formatMoney(data.subtotal)}</td></tr>
-      ${discountRow}
-      <tr><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:right;">דמי משלוח</td><td style="padding:8px 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${BROWN};text-align:left;">${formatMoney(data.deliveryFee)}</td></tr>
-      <tr><td colspan="2" style="padding:16px 12px 0;border-top:2px solid ${GREEN};">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-          <tr>
-            <td style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:${GREEN};text-align:right;">סה״כ לתשלום</td>
-            <td style="font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:bold;color:${GREEN};text-align:left;">${formatMoney(data.totalAmount)}</td>
-          </tr>
-        </table>
-      </td></tr>
+      ${summaryRowHe("סכום ביניים", data.subtotal)}
+      ${data.discountAmount > 0 ? summaryRowHe(`הנחה${data.couponCode ? ` (${escapeHtml(data.couponCode)})` : ""}`, data.discountAmount, true) : ""}
+      ${summaryRowHe("דמי משלוח", data.deliveryFee)}
+      ${totalRowHe("סה״כ לתשלום", data.totalAmount)}
     </table>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -386,27 +415,27 @@ export function adminNewOrderTemplate(data: AdminOrderEmailData): { subject: str
     <tr style="background:${i % 2 === 0 ? WHITE : CREAM};">
       <td style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${BROWN};border-bottom:1px solid ${BORDER};text-align:right;">${escapeHtml(item.product_name)}</td>
       <td style="padding:10px 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${MUTED};text-align:center;border-bottom:1px solid ${BORDER};">${item.quantity}</td>
-      <td style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:${GREEN};text-align:left;border-bottom:1px solid ${BORDER};">${formatMoney(item.total_price)}</td>
+      <td style="padding:10px 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:${GREEN};text-align:left;border-bottom:1px solid ${BORDER};" dir="ltr">${formatMoney(item.total_price)}</td>
     </tr>`,
     )
     .join("");
 
   const discountRow =
     data.discountAmount > 0
-      ? `<tr><td colspan="2" style="padding:6px 12px;font-size:13px;color:${GREEN};font-family:Arial,Helvetica,sans-serif;text-align:right;">הנחה</td><td style="padding:6px 12px;font-size:13px;color:${GREEN};text-align:left;font-weight:600;font-family:Arial,Helvetica,sans-serif;">−${formatMoney(data.discountAmount)}</td></tr>`
+      ? summaryRowHe("הנחה", data.discountAmount, true)
       : "";
 
   const deliveryRow =
     data.deliveryFee > 0
-      ? `<tr><td colspan="2" style="padding:6px 12px;font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;text-align:right;">דמי משלוח</td><td style="padding:6px 12px;font-size:13px;color:${BROWN};text-align:left;font-family:Arial,Helvetica,sans-serif;">${formatMoney(data.deliveryFee)}</td></tr>`
+      ? summaryRowHe("דמי משלוח", data.deliveryFee)
       : "";
 
   const addressNote = data.deliveryMethod.toLowerCase() === "delivery" && data.deliveryAddress
-    ? `<tr><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;text-align:right;">כתובת</td><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${BROWN};text-align:left;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(data.deliveryAddress)}</td></tr>`
+    ? detailRowHe("כתובת", data.deliveryAddress)
     : "";
 
   const notesNote = data.notes
-    ? `<tr><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${MUTED};font-family:Arial,Helvetica,sans-serif;text-align:right;">הערות</td><td style="padding:8px 0;border-bottom:1px solid ${BORDER};font-size:13px;color:${BROWN};text-align:left;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(data.notes)}</td></tr>`
+    ? detailRowHe("הערות", data.notes)
     : "";
 
   const deliveryHe = heDeliveryLabel(data.deliveryMethod);
@@ -416,7 +445,7 @@ export function adminNewOrderTemplate(data: AdminOrderEmailData): { subject: str
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr><td style="text-align:center;padding-bottom:8px;">${statusBadge("הזמנה חדשה")}</td></tr>
     </table>
-    <h1 style="margin:12px 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:${GREEN};text-align:center;line-height:1.2;">הזמנה #${escapeHtml(shortId)}</h1>
+    <h1 style="margin:12px 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:bold;color:${GREEN};text-align:center;line-height:1.2;">הזמנה <span dir="ltr" style="unicode-bidi:isolate;">#${escapeHtml(shortId)}</span></h1>
     <p style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};text-align:center;">התקבלה הזמנה חדשה באתר ${BRAND_SHORT}.</p>
 
     <!-- Customer card -->
@@ -426,11 +455,11 @@ export function adminNewOrderTemplate(data: AdminOrderEmailData): { subject: str
       </td></tr>
       <tr><td style="padding:6px 16px 12px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-          ${detailRow("שם", data.customerName, true)}
-          ${detailRow("טלפון", data.customerPhone, true)}
-          ${detailRow('דוא"ל', data.customerEmail, true)}
-          ${detailRow("משלוח / איסוף", deliveryHe, true)}
-          ${detailRow("תשלום", paymentHe, true)}
+          ${detailRowHe("שם", data.customerName)}
+          ${detailRowHe("טלפון", data.customerPhone, true)}
+          ${detailRowHe('דוא"ל', data.customerEmail, true)}
+          ${detailRowHe("משלוח / איסוף", deliveryHe)}
+          ${detailRowHe("תשלום", paymentHe)}
           ${addressNote}
           ${notesNote}
         </table>
@@ -451,14 +480,7 @@ export function adminNewOrderTemplate(data: AdminOrderEmailData): { subject: str
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
       ${discountRow}
       ${deliveryRow}
-      <tr><td colspan="3" style="padding:12px 12px 0;border-top:2px solid ${GREEN};">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-          <tr>
-            <td style="font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:bold;color:${GREEN};text-align:right;">סה״כ</td>
-            <td style="font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:bold;color:${GREEN};text-align:left;">${formatMoney(data.totalAmount)}</td>
-          </tr>
-        </table>
-      </td></tr>
+      ${totalRowHe("סה״כ", data.totalAmount)}
     </table>
 
     ${ctaButton("צפייה בניהול הזמנות ←", adminPanelUrl())}`;

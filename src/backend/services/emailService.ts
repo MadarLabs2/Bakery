@@ -52,10 +52,13 @@ export const ORDER_STATUS_EMAIL_TYPE: Partial<Record<string, EmailType>> = {
 
 /** True when using Resend sandbox or explicit test flag — limits recipients to ADMIN_EMAIL. */
 export function isEmailTestMode(): boolean {
-  if (process.env.EMAIL_TEST_MODE === "false") return false;
+  const flag = process.env.EMAIL_TEST_MODE?.trim().toLowerCase();
+  if (flag === "true" || flag === "1") return true;
+  if (flag === "false" || flag === "0") return false;
   const from = process.env.RESEND_FROM_EMAIL?.trim() ?? "";
   if (from.includes("@resend.dev")) return true;
-  return process.env.EMAIL_TEST_MODE !== "false";
+  // Verified custom domain without explicit flag → send to real customers.
+  return false;
 }
 
 /** Resend account / admin inbox used in test mode. */
@@ -215,17 +218,20 @@ async function sendAndLogOrderEmail(opts: {
 }): Promise<SendEmailResult & { alreadySent: boolean }> {
   const { orderId, emailType, recipientEmail, subject, html, forceResend = false } = opts;
 
-  // ── Duplicate-send guard ──────────────────────────────────────────────────
+  // ── Duplicate-send guard (same order + type + recipient) ─────────────────
   if (!forceResend) {
     const { data: sent } = await supabaseAdmin
       .from("email_logs")
-      .select("id")
+      .select("id, recipient_email")
       .eq("order_id", orderId)
       .eq("email_type", emailType)
       .eq("status", "sent")
       .maybeSingle();
 
-    if (sent) {
+    if (
+      sent &&
+      sent.recipient_email?.trim().toLowerCase() === recipientEmail.trim().toLowerCase()
+    ) {
       return { ok: true, alreadySent: true, actualRecipient: recipientEmail };
     }
   }
