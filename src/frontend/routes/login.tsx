@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Wheat, Clock, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import brandLogo from "@/images/alnoor_bakery_profesional/BakeryLogo.png";
 import { useI18n } from "@/frontend/lib/i18n";
@@ -30,7 +30,7 @@ const BADGE_ICONS = [Wheat, Clock, ShieldCheck];
 
 function LoginPage() {
   const { t, lang } = useI18n();
-  const { signIn, refreshIsAdmin } = useAuth();
+  const { signIn, refreshIsAdmin, user, loading: authLoading } = useAuth();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,6 +41,13 @@ function LoginPage() {
 
   const badges = BADGE_LABELS[lang] ?? BADGE_LABELS.en;
   const loginFooter = LOGIN_FOOTER[lang] ?? LOGIN_FOOTER.en;
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    void refreshIsAdmin().then((isAdmin) => {
+      nav({ to: isAdmin ? "/admin" : "/orders", replace: true });
+    });
+  }, [authLoading, user, refreshIsAdmin, nav]);
 
   function handleEmailChange(value: string) {
     setEmail(value);

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/orders")({ component: OrdersPage });
 const PAGE_SIZE = 5;
 
 function OrdersPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const userId = user?.id;
   const { t, lang } = useI18n();
   const nav = useNavigate();
@@ -24,8 +24,9 @@ function OrdersPage() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) nav({ to: "/login" });
-  }, [user, loading, nav]);
+    if (authLoading) return;
+    if (!user) nav({ to: "/login" });
+  }, [user, authLoading, nav]);
 
   const fetchBatch = useCallback(
     async (offset: number, append: boolean) => {

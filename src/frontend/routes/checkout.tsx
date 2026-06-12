@@ -44,7 +44,7 @@ export const Route = createFileRoute("/checkout")({
 function CheckoutPage() {
   const { t, lang } = useI18n();
   const { payment: paymentSearch, orderId: orderIdSearch } = Route.useSearch();
-  const { user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const createOrderFn = useServerFn(createOrder);
   const getPaymentConfigFn = useServerFn(getPaymentConfig);
   const { releaseIfNeeded } = useReleasePendingCardOrder();
@@ -99,7 +99,13 @@ function CheckoutPage() {
   }, [orderIdSearch]);
 
   useEffect(() => {
-    if (!user || !session?.access_token || !pendingCardOrderId) return;
+    if (authLoading || !session?.access_token || !pendingCardOrderId) return;
+    // Only restore cart on explicit payment failure or browser back (no query params).
+    // Never release while payment=pending — that can delete a just-paid order before sync.
+    const shouldRelease =
+      paymentSearch === "failed" ||
+      (paymentSearch !== "pending" && !orderIdSearch && !!pendingCardOrderId);
+    if (!shouldRelease) return;
 
     let cancelled = false;
     void (async () => {
@@ -112,8 +118,7 @@ function CheckoutPage() {
 
       if (outcome === "already_paid") {
         nav({
-          to: "/checkout/success",
-          search: { orderId: pendingCardOrderId, payment: "card" },
+          to: "/orders",
           replace: true,
         });
         return;
@@ -127,8 +132,6 @@ function CheckoutPage() {
 
       if (paymentSearch === "failed") {
         toast.error(t("cardPaymentFailed"));
-      } else if (paymentSearch === "pending") {
-        toast.info(t("cardPaymentPending"));
       }
     })();
 
@@ -136,9 +139,10 @@ function CheckoutPage() {
       cancelled = true;
     };
   }, [
-    user,
+    authLoading,
     session?.access_token,
     pendingCardOrderId,
+    orderIdSearch,
     releaseIfNeeded,
     paymentSearch,
     t,
@@ -146,6 +150,7 @@ function CheckoutPage() {
   ]);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       nav({ to: "/login" });
       return;
@@ -162,7 +167,7 @@ function CheckoutPage() {
           setEmail(user.email || "");
         } else setEmail(user.email || "");
       });
-  }, [user, nav]);
+  }, [user, authLoading, nav]);
 
   const resetAppliedCoupon = useCallback(() => {
     setDiscount(0);

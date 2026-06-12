@@ -10,6 +10,7 @@ import { Button } from "@/frontend/components/ui/button";
 import { Skeleton } from "@/frontend/components/ui/skeleton";
 import { BAKERY_PICKUP_ADDRESS } from "@/frontend/lib/checkoutDelivery";
 import { PENDING_CARD_ORDER_STORAGE_KEY } from "@/frontend/lib/orderPayment";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout/success")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -42,7 +43,13 @@ function CheckoutSuccessPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user || !orderId) {
+
+    if (!user) {
+      nav({ to: "/login", replace: true });
+      return;
+    }
+
+    if (!orderId) {
       setLoading(false);
       return;
     }
@@ -60,7 +67,7 @@ function CheckoutSuccessPage() {
 
       if (needsSync && session?.access_token) {
         setPaymentSyncing(true);
-        for (let attempt = 0; attempt < 8; attempt++) {
+        for (let attempt = 0; attempt < 12; attempt++) {
           if (cancelled) return;
           try {
             const sync = await syncPaymentFn({
@@ -79,45 +86,52 @@ function CheckoutSuccessPage() {
           }
           await new Promise((r) => setTimeout(r, 1500));
           data = await loadOrder();
+          if (String(data?.payment_status ?? "").toLowerCase() === "paid") break;
         }
         setPaymentSyncing(false);
       }
 
       data = await loadOrder();
 
-      if (!cancelled) {
-        setOrder(data);
-        setLoading(false);
+      if (cancelled) return;
 
-        const isCardOrder =
-          data?.payment_method === "credit_card" || data?.payment_method === "card";
-        const paid = String(data?.payment_status ?? "").toLowerCase() === "paid";
+      setOrder(data);
+      setLoading(false);
 
-        if (isCardOrder && paid) {
-          try {
-            sessionStorage.removeItem(PENDING_CARD_ORDER_STORAGE_KEY);
-          } catch {
-            /* ignore */
-          }
+      const isCardOrder =
+        data?.payment_method === "credit_card" || data?.payment_method === "card";
+      const paid = String(data?.payment_status ?? "").toLowerCase() === "paid";
+      const failed = String(data?.payment_status ?? "").toLowerCase() === "failed";
+
+      if (isCardOrder && paid) {
+        try {
+          sessionStorage.removeItem(PENDING_CARD_ORDER_STORAGE_KEY);
+        } catch {
+          /* ignore */
         }
+        toast.success(t("cardPaymentConfirmed"));
+        nav({ to: "/orders", replace: true });
+        return;
+      }
 
-        if (isCardOrder && !paid) {
-          nav({
-            to: "/checkout",
-            search: {
-              payment: String(data?.payment_status ?? "").toLowerCase() === "failed" ? "failed" : "pending",
-              orderId,
-            },
-            replace: true,
-          });
+      if (isCardOrder && failed) {
+        try {
+          sessionStorage.removeItem(PENDING_CARD_ORDER_STORAGE_KEY);
+        } catch {
+          /* ignore */
         }
+        nav({
+          to: "/checkout",
+          search: { payment: "failed", orderId },
+          replace: true,
+        });
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [user, authLoading, orderId, session?.access_token, syncPaymentFn, payment, nav]);
+  }, [user, authLoading, orderId, session?.access_token, syncPaymentFn, payment, nav, t]);
 
   const shortId = orderId ? orderId.replace(/-/g, "").slice(0, 8).toUpperCase() : "—";
   const isPickup = String(order?.delivery_method ?? "").toLowerCase() === "pickup";
@@ -137,30 +151,34 @@ function CheckoutSuccessPage() {
                 : "bg-[#1B4332]/10 text-[#1B4332]"
             }`}
           >
-            {paymentSyncing || paymentPending ? (
+            {paymentSyncing || paymentPending || authLoading ? (
               <Loader2 className="h-9 w-9 animate-spin" aria-hidden />
             ) : (
               <CheckCircle2 className="h-9 w-9" aria-hidden />
             )}
           </div>
           <h1 className="mt-6 font-display text-2xl font-bold text-[#1B4332] sm:text-3xl">
-            {paymentFailed
-              ? t("cardPaymentFailed")
-              : paymentSyncing || paymentPending
-                ? t("cardPaymentPending")
-                : isCard && paymentStatus === "paid"
-                  ? t("cardPaymentConfirmed")
-                  : t("orderConfirmationTitle")}
+            {authLoading
+              ? t("loading")
+              : paymentFailed
+                ? t("cardPaymentFailed")
+                : paymentSyncing || paymentPending
+                  ? t("cardPaymentPending")
+                  : isCard && paymentStatus === "paid"
+                    ? t("cardPaymentConfirmed")
+                    : t("orderConfirmationTitle")}
           </h1>
           <p className="mt-2 text-muted-foreground">
-            {paymentFailed
-              ? t("cardPaymentFailed")
-              : paymentSyncing || paymentPending
-                ? t("cardPaymentPending")
-                : t("orderConfirmationThanks")}
+            {authLoading
+              ? t("loading")
+              : paymentFailed
+                ? t("cardPaymentFailed")
+                : paymentSyncing || paymentPending
+                  ? t("cardPaymentPending")
+                  : t("orderConfirmationThanks")}
           </p>
 
-          {loading ? (
+          {loading || authLoading ? (
             <div className="mt-8 space-y-3">
               <Skeleton className="mx-auto h-4 w-48" />
               <Skeleton className="mx-auto h-4 w-32" />
