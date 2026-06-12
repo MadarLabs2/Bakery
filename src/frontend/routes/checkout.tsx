@@ -99,52 +99,43 @@ function CheckoutPage() {
   }, [orderIdSearch]);
 
   useEffect(() => {
-    if (authLoading || !session?.access_token || !pendingCardOrderId) return;
-    // Only restore cart on explicit payment failure or browser back (no query params).
-    // Never release while payment=pending — that can delete a just-paid order before sync.
-    const shouldRelease =
-      paymentSearch === "failed" ||
-      (paymentSearch !== "pending" && !orderIdSearch && !!pendingCardOrderId);
-    if (!shouldRelease) return;
+    if (authLoading || !pendingCardOrderId) return;
 
-    let cancelled = false;
-    void (async () => {
-      setRestoringCart(true);
-      const outcome = await releaseIfNeeded(pendingCardOrderId);
-      if (cancelled) return;
+    if (paymentSearch === "failed" && orderIdSearch) {
+      if (!session?.access_token) return;
+      let cancelled = false;
+      void (async () => {
+        setRestoringCart(true);
+        const outcome = await releaseIfNeeded(orderIdSearch);
+        if (cancelled) return;
+        setRestoringCart(false);
+        setPendingCardOrderId(null);
+        if (outcome === "already_paid") {
+          nav({ to: "/orders", replace: true });
+          return;
+        }
+        if (outcome === "released") {
+          toast.info(t("cardCartRestored"));
+          nav({ to: "/checkout", search: {}, replace: true });
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
 
-      setRestoringCart(false);
-      setPendingCardOrderId(null);
-
-      if (outcome === "already_paid") {
-        nav({
-          to: "/orders",
-          replace: true,
-        });
-        return;
-      }
-
-      if (outcome === "released") {
-        toast.info(t("cardCartRestored"));
-        nav({ to: "/checkout", search: {}, replace: true });
-        return;
-      }
-
-      if (paymentSearch === "failed") {
-        toast.error(t("cardPaymentFailed"));
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    nav({
+      to: "/checkout/success",
+      search: { orderId: pendingCardOrderId, payment: "card" },
+      replace: true,
+    });
   }, [
     authLoading,
     session?.access_token,
     pendingCardOrderId,
     orderIdSearch,
-    releaseIfNeeded,
     paymentSearch,
+    releaseIfNeeded,
     t,
     nav,
   ]);

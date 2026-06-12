@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/backend/db/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/backend/db/types";
+import { confirmCardcomPayment } from "@/backend/server/cardcomPayment.helpers";
 
 const inputSchema = z.object({
   orderId: z.string().uuid(),
@@ -18,6 +19,11 @@ export const releasePendingCardOrder = createServerFn({ method: "POST" })
   .validator((raw) => inputSchema.parse(raw))
   .handler(async ({ data, context }): Promise<ReleasePendingCardOrderResult> => {
     const { supabase } = context as { supabase: SupabaseClient<Database> };
+
+    const syncStatus = await confirmCardcomPayment(data.orderId);
+    if (syncStatus === "paid" || syncStatus === "already_paid") {
+      return { ok: true, released: false, alreadyPaid: true };
+    }
 
     const { data: result, error } = await supabase.rpc("release_pending_card_order", {
       p_order_id: data.orderId,

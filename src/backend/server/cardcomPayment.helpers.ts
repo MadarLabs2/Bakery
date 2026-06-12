@@ -33,9 +33,8 @@ export function cardcomSuccessRedirectUrl(orderId: string): string {
 }
 
 export function cardcomFailedRedirectUrl(orderId: string): string {
-  const { appBaseUrl } = getCardcomConfig();
-  const params = new URLSearchParams({ payment: "failed", orderId });
-  return `${appBaseUrl}/checkout?${params.toString()}`;
+  // Same landing page as success — sync payment before any cart release.
+  return cardcomSuccessRedirectUrl(orderId);
 }
 
 export async function startCardcomPaymentForOrder(orderId: string): Promise<
