@@ -7,12 +7,10 @@ import { useAuth } from "@/frontend/lib/auth";
 import { generateUUID } from "@/frontend/lib/uuid";
 import { createOrder } from "@/backend/server/createOrder.functions";
 import { getPaymentConfig } from "@/backend/server/getPaymentConfig.functions";
-import { resumeCardcomPayment } from "@/backend/server/resumeCardcomPayment.functions";
 import { useCart } from "@/frontend/lib/cart";
 import { supabase } from "@/backend/db/client";
 import { Label } from "@/frontend/components/ui/label";
 import { Textarea } from "@/frontend/components/ui/textarea";
-import { Button } from "@/frontend/components/ui/button";
 import { DeliveryMethodSelector, type DeliveryFieldErrors } from "@/frontend/components/DeliveryMethodSelector";
 import { CheckoutCustomerForm } from "@/frontend/components/checkout/CheckoutCustomerForm";
 import { PaymentMethodSelector, type PaymentMethod } from "@/frontend/components/checkout/PaymentMethodSelector";
@@ -33,6 +31,7 @@ import {
 } from "@/frontend/lib/checkoutValidation";
 import { toast } from "sonner";
 import { PENDING_CARD_ORDER_STORAGE_KEY } from "@/frontend/lib/orderPayment";
+import { useReleasePendingCardOrder } from "@/frontend/lib/useReleasePendingCardOrder";
 
 export const Route = createFileRoute("/checkout")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -48,7 +47,7 @@ function CheckoutPage() {
   const { user, session } = useAuth();
   const createOrderFn = useServerFn(createOrder);
   const getPaymentConfigFn = useServerFn(getPaymentConfig);
-  const resumePaymentFn = useServerFn(resumeCardcomPayment);
+  const { releaseIfNeeded } = useReleasePendingCardOrder();
   const { items, subtotal, refresh } = useCart();
   const { deliveryFee: configuredDeliveryFee } = useDeliveryFee();
   const nav = useNavigate();
@@ -77,7 +76,7 @@ function CheckoutPage() {
     null,
   );
   const [submitting, setSubmitting] = useState(false);
-  const [resumingPayment, setResumingPayment] = useState(false);
+  const [restoringCart, setRestoringCart] = useState(false);
   const [cardPaymentAvailable, setCardPaymentAvailable] = useState(false);
   const [pendingCardOrderId, setPendingCardOrderId] = useState<string | null>(null);
 
@@ -97,13 +96,54 @@ function CheckoutPage() {
       }
     }
     setPendingCardOrderId(id);
+  }, [orderIdSearch]);
 
-    if (paymentSearch === "failed") {
-      toast.error(t("cardPaymentFailed"));
-    } else if (paymentSearch === "pending") {
-      toast.info(t("cardPaymentPending"));
-    }
-  }, [orderIdSearch, paymentSearch, t]);
+  useEffect(() => {
+    if (!user || !session?.access_token || !pendingCardOrderId) return;
+
+    let cancelled = false;
+    void (async () => {
+      setRestoringCart(true);
+      const outcome = await releaseIfNeeded(pendingCardOrderId);
+      if (cancelled) return;
+
+      setRestoringCart(false);
+      setPendingCardOrderId(null);
+
+      if (outcome === "already_paid") {
+        nav({
+          to: "/checkout/success",
+          search: { orderId: pendingCardOrderId, payment: "card" },
+          replace: true,
+        });
+        return;
+      }
+
+      if (outcome === "released") {
+        toast.info(t("cardCartRestored"));
+        nav({ to: "/checkout", search: {}, replace: true });
+        return;
+      }
+
+      if (paymentSearch === "failed") {
+        toast.error(t("cardPaymentFailed"));
+      } else if (paymentSearch === "pending") {
+        toast.info(t("cardPaymentPending"));
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    user,
+    session?.access_token,
+    pendingCardOrderId,
+    releaseIfNeeded,
+    paymentSearch,
+    t,
+    nav,
+  ]);
 
   useEffect(() => {
     if (!user) {
@@ -284,64 +324,11 @@ function CheckoutPage() {
     }
   };
 
-  const resumeCardPayment = async () => {
-    if (!pendingCardOrderId || !session?.access_token || resumingPayment) return;
-    setResumingPayment(true);
-    try {
-      const result = await resumePaymentFn({
-        data: { orderId: pendingCardOrderId },
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      if (!result.ok) {
-        if ("alreadyPaid" in result && result.alreadyPaid) {
-          try {
-            sessionStorage.removeItem(PENDING_CARD_ORDER_STORAGE_KEY);
-          } catch {
-            /* ignore */
-          }
-          nav({ to: "/checkout/success", search: { orderId: pendingCardOrderId, payment: "card" } });
-          return;
-        }
-        const detail = "detail" in result && result.detail ? result.detail : null;
-        toast.error(detail ? `${t("cardPaymentSetupFailed")} (${detail})` : t("cardPaymentSetupFailed"));
-        return;
-      }
-      toast.info(t("cardPaymentRedirect"));
-      window.location.href = result.paymentRedirectUrl;
-    } catch (e) {
-      console.error("[checkout] resumeCardPayment:", e);
-      toast.error(t("genericError"));
-    } finally {
-      setResumingPayment(false);
-    }
-  };
-
-  if (items.length === 0 && pendingCardOrderId) {
-    const shortId = pendingCardOrderId.replace(/-/g, "").slice(0, 8).toUpperCase();
+  if (restoringCart || (items.length === 0 && pendingCardOrderId)) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#faf8f4]/80 via-white to-white">
         <div className="container mx-auto max-w-lg px-4 py-16 text-center">
-          <h1 className="font-display text-2xl font-bold text-[#1B4332] sm:text-3xl">
-            {t("cardPaymentResumeTitle")}
-          </h1>
-          <p className="mt-3 text-sm text-muted-foreground sm:text-base">{t("cardPaymentResumeBody")}</p>
-          <p className="mt-4 font-mono text-sm text-[#1B4332]" dir="ltr">
-            #{shortId}
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button
-              type="button"
-              size="lg"
-              className="h-11"
-              disabled={resumingPayment}
-              onClick={() => void resumeCardPayment()}
-            >
-              {resumingPayment ? t("placingOrder") : t("cardPaymentResumeAction")}
-            </Button>
-            <Button asChild variant="outline" size="lg" className="h-11">
-              <Link to="/products">{t("continueShopping")}</Link>
-            </Button>
-          </div>
+          <p className="font-display text-xl font-semibold text-[#1B4332]">{t("cardCartRestoring")}</p>
         </div>
       </div>
     );

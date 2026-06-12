@@ -624,6 +624,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      release_pending_card_order: {
+        Args: { p_order_id: string };
+        Returns: Json;
+      };
     };
     Enums: {
       [_ in never]: never;

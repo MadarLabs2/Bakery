@@ -169,6 +169,16 @@ export const dict: Dict = {
     he: "המשך לתשלום",
     ar: "متابعة إلى الدفع",
   },
+  cardCartRestored: {
+    en: "Payment was not completed. Your cart has been restored.",
+    he: "התשלום לא הושלם. הסל שוחזר.",
+    ar: "لم يكتمل الدفع. تمت استعادة السلة.",
+  },
+  cardCartRestoring: {
+    en: "Restoring your cart…",
+    he: "משחזר את הסל…",
+    ar: "جارٍ استعادة السلة…",
+  },
   comingSoon: { en: "Coming soon", he: "בקרוב", ar: "قريبًا" },
   couponAppliedSuccess: {
     en: "Coupon applied successfully",

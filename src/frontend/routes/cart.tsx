@@ -1,18 +1,52 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import { Trash2, Minus, Plus } from "lucide-react";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { useCart } from "@/frontend/lib/cart";
 import { useAuth } from "@/frontend/lib/auth";
 import { Button } from "@/frontend/components/ui/button";
 import { resolveImage } from "@/frontend/lib/images";
+import { useReleasePendingCardOrder } from "@/frontend/lib/useReleasePendingCardOrder";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/cart")({ component: CartPage });
 
 function CartPage() {
   const { t, lang } = useI18n();
-  const { items, subtotal, updateQty, remove } = useCart();
+  const { items, subtotal, updateQty, remove, loading } = useCart();
   const { user } = useAuth();
   const nav = useNavigate();
+  const { releaseIfNeeded } = useReleasePendingCardOrder();
+  const [restoringCart, setRestoringCart] = useState(false);
+  const restoreAttemptedRef = useRef(false);
+
+  useEffect(() => {
+    if (!user || loading || items.length > 0 || restoreAttemptedRef.current) return;
+    restoreAttemptedRef.current = true;
+    let cancelled = false;
+    void (async () => {
+      setRestoringCart(true);
+      const outcome = await releaseIfNeeded();
+      if (cancelled) return;
+      setRestoringCart(false);
+      if (outcome === "already_paid") {
+        nav({ to: "/orders" });
+      } else if (outcome === "released") {
+        toast.info(t("cardCartRestored"));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, loading, items.length, releaseIfNeeded, nav, t]);
+
+  if (loading || restoringCart) {
+    return (
+      <div className="admin-page-enter container mx-auto px-4 py-20 text-center">
+        <p className="text-muted-foreground">{t("loading")}</p>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
