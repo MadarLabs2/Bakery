@@ -4,7 +4,7 @@ import { supabase } from "@/backend/db/client";
 import { Button } from "@/frontend/components/ui/button";
 import { useAuth } from "@/frontend/lib/auth";
 import { useI18n } from "@/frontend/lib/i18n";
-import { formatOrderDate } from "@/frontend/lib/formatDate";
+import { OrderRefAndDate } from "@/frontend/components/OrderRefAndDate";
 import { adminOrderStatusLabel } from "@/frontend/lib/adminLabels";
 
 export const Route = createFileRoute("/orders")({ component: OrdersPage });
@@ -84,9 +84,7 @@ function OrdersPage() {
             <div key={o.id} className="rounded-2xl border bg-card p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <div className="text-sm text-muted-foreground">
-                    #{o.id.slice(0, 8)} · {formatOrderDate(o.created_at, lang, "PP")}
-                  </div>
+                  <OrderRefAndDate orderId={o.id} createdAt={o.created_at} lang={lang} />
                   <div className="font-display text-lg font-semibold">{adminOrderStatusLabel(o.order_status, t)}</div>
                 </div>
                 <div className="font-display text-xl font-bold text-primary">

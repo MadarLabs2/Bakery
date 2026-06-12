@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Package, ShoppingCart, Star, TrendingUp } from "lucide-react";
-import { formatOrderDate } from "@/frontend/lib/formatDate";
+import { OrderRefAndDate } from "@/frontend/components/OrderRefAndDate";
 import { supabase } from "@/backend/db/client";
 import { useI18n } from "@/frontend/lib/i18n";
 import { adminOrderStatusLabel } from "@/frontend/lib/adminLabels";
@@ -89,9 +89,7 @@ function AdminReports() {
             >
               <div>
                 <div className="font-medium">{o.customer_name}</div>
-                <div className="text-xs text-muted-foreground">
-                  #{o.id.slice(0, 8)} · {formatOrderDate(o.created_at, lang, "PP")}
-                </div>
+                <OrderRefAndDate orderId={o.id} createdAt={o.created_at} lang={lang} className="text-xs" />
               </div>
               <div className="text-right">
                 <div className="font-semibold">₪{Number(o.total_amount).toFixed(2)}</div>

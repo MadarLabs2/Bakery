@@ -11,7 +11,7 @@ import {
   ShoppingCart,
   Tag,
 } from "lucide-react";
-import { formatOrderDate } from "@/frontend/lib/formatDate";
+import { formatOrderDateDisplay } from "@/frontend/lib/formatDate";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/backend/db/client";
 import { Input } from "@/frontend/components/ui/input";
@@ -400,7 +400,7 @@ function AdminDashboard() {
                         </span>
                       </div>
                       <div className="mt-1.5 flex items-center justify-between gap-2 text-[10px] text-stone-500">
-                        <time dateTime={o.created_at}>{formatOrderDate(o.created_at, lang, "PP p")}</time>
+                        <time dateTime={o.created_at}>{formatOrderDateDisplay(o.created_at, lang, true)}</time>
                         <span className="shrink-0 font-sans font-medium tabular-nums text-[#4a4238]">
                           ₪{Number(o.total_amount ?? 0).toFixed(2)}
                         </span>
@@ -450,7 +450,7 @@ function AdminDashboard() {
                             </span>
                           </td>
                           <td className="px-5 py-3.5 font-sans text-sm text-stone-600">
-                            {formatOrderDate(o.created_at, lang, "PP p")}
+                            {formatOrderDateDisplay(o.created_at, lang, true)}
                           </td>
                           <td className="px-5 py-3.5 text-end font-sans text-sm font-medium tabular-nums text-[#4a4238]">
                             ₪{Number(o.total_amount ?? 0).toFixed(2)}

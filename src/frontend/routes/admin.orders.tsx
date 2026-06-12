@@ -37,7 +37,7 @@ import {
 import { Button } from "@/frontend/components/ui/button";
 import { toast } from "sonner";
 import { useI18n, type Lang, dict } from "@/frontend/lib/i18n";
-import { formatOrderDate } from "@/frontend/lib/formatDate";
+import { formatOrderDate, formatOrderDateDisplay } from "@/frontend/lib/formatDate";
 import { adminOrderStatusLabel, adminOrderStatusPillClass } from "@/frontend/lib/adminLabels";
 import { resolveImage } from "@/frontend/lib/images";
 import { cn } from "@/frontend/lib/utils";
@@ -238,7 +238,7 @@ function OrdersListCard({
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
             <span className="inline-flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
-              {formatOrderDate(o.created_at, lang, "MMM d, yyyy")}
+              {formatOrderDate(o.created_at, lang, lang === "en" ? "MMM d, yyyy" : "d MMMM yyyy")}
             </span>
             <span className="inline-flex items-center gap-1">
               <Clock className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
@@ -534,7 +534,7 @@ function AdminOrders() {
                           {o.id.slice(0, 8)}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
-                          {formatOrderDate(o.created_at, lang, "PP p")}
+                          {formatOrderDateDisplay(o.created_at, lang, true)}
                         </td>
                         <td className="max-w-[12rem] px-4 py-3">
                           <div className="font-medium leading-snug text-foreground">{o.customer_name}</div>
@@ -600,11 +600,11 @@ function AdminOrders() {
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <span>
-                      {t("adminOrderDetailPlaced")}: {formatOrderDate(selected.created_at, lang, "PPp")}
+                      {t("adminOrderDetailPlaced")}: {formatOrderDateDisplay(selected.created_at, lang, true)}
                     </span>
                     {selected.updated_at ? (
                       <span>
-                        {t("adminOrderDetailUpdated")}: {formatOrderDate(selected.updated_at, lang, "PPp")}
+                        {t("adminOrderDetailUpdated")}: {formatOrderDateDisplay(selected.updated_at, lang, true)}
                       </span>
                     ) : null}
                   </div>
