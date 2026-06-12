@@ -6,6 +6,7 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { nitro } from "nitro/vite";
+import { SECURITY_HEADERS } from "./src/config/securityHeaders";
 
 // Vercel sets VERCEL=1 in CI. Locally and on Render the target is Node.js.
 // CF Workers is not used (Sharp requires native bindings unavailable in V8 isolates).
@@ -17,6 +18,10 @@ export default defineConfig({
     nitro({
       preset: isVercel ? "vercel" : "node",
       serverDir: "server",
+      // Nitro Build Output API — vercel.json alone does not apply to SSR responses.
+      routeRules: {
+        "/**": { headers: SECURITY_HEADERS },
+      },
     }),
   ],
   tanstackStart: {
