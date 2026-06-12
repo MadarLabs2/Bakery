@@ -227,11 +227,11 @@ function CheckoutPage() {
       });
 
       if (!result.ok) {
-        // Map server error key → translated message; fall back to genericError.
         const msg = (() => {
           try { return t(result.errorKey as Parameters<typeof t>[0]); } catch { return null; }
         })();
-        toast.error(msg || t("genericError"));
+        const detail = "detail" in result && result.detail ? result.detail : null;
+        toast.error(detail ? `${msg || t("genericError")} (${detail})` : msg || t("genericError"));
         return;
       }
 
@@ -245,6 +245,10 @@ function CheckoutPage() {
 
       toast.success(t("orderConfirmedWithEmail"));
       nav({ to: "/checkout/success", search: { orderId: result.orderId } });
+    } catch (e) {
+      console.error("[checkout] placeOrder:", e);
+      const message = e instanceof Error ? e.message : t("genericError");
+      toast.error(message);
     } finally {
       setSubmitting(false);
       submitLock.current = false;

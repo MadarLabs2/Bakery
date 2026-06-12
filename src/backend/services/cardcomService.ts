@@ -45,7 +45,7 @@ export async function createCardcomLowProfile(
   }
 
   const { terminalNumber, apiUsername, apiBase } = getCardcomConfig();
-  const body = {
+  const body: Record<string, unknown> = {
     TerminalNumber: terminalNumber,
     ApiName: apiUsername,
     Operation: "ChargeOnly",
@@ -57,11 +57,6 @@ export async function createCardcomLowProfile(
     ProductName: input.productName.slice(0, 50),
     Language: input.language,
     ISOCoinId: 1,
-    UIDefinition: {
-      CardOwnerNameValue: input.customerName.slice(0, 50),
-      CardOwnerEmailValue: input.customerEmail.slice(0, 100),
-      IsCardOwnerEmailRequired: true,
-    },
   };
 
   try {
@@ -71,12 +66,19 @@ export async function createCardcomLowProfile(
       body: JSON.stringify(body),
     });
 
-    const payload = (await res.json()) as {
+    const rawText = await res.text();
+    let payload: {
       ResponseCode?: number;
       Description?: string;
       LowProfileId?: string;
       Url?: string;
     };
+    try {
+      payload = JSON.parse(rawText) as typeof payload;
+    } catch {
+      console.error("[cardcom] Create non-JSON response:", rawText.slice(0, 500));
+      return { ok: false, message: `CardCom invalid response (HTTP ${res.status})` };
+    }
 
     if (!res.ok || payload.ResponseCode !== 0 || !payload.Url || !payload.LowProfileId) {
       const msg = payload.Description ?? `CardCom HTTP ${res.status}`;

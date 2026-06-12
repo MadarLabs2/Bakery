@@ -53,12 +53,24 @@ const PG_ERROR_MAP: Record<string, string> = {
 };
 
 function parseDbError(raw: string): { errorKey: string; detail?: string } {
-  // raw format: "ERR_CODE" or "ERR_CODE:detail"
   const colonIdx = raw.indexOf(":");
   const code   = colonIdx === -1 ? raw.trim() : raw.slice(0, colonIdx).trim();
   const detail = colonIdx === -1 ? undefined  : raw.slice(colonIdx + 1).trim();
   const errorKey = PG_ERROR_MAP[code] ?? "genericError";
-  return { errorKey, detail: detail || undefined };
+  const full = detail ? `${code}:${detail}` : raw;
+  if (full.includes("cardcom_") && full.includes("does not exist")) {
+    return {
+      errorKey: "cardPaymentSetupFailed",
+      detail: "Run Supabase migration 20260613120000_order_cardcom.sql",
+    };
+  }
+  if (full.includes("SUPABASE_SERVICE_ROLE_KEY") || full.includes("Missing Supabase server")) {
+    return {
+      errorKey: "cardPaymentSetupFailed",
+      detail: "SUPABASE_SERVICE_ROLE_KEY missing on server",
+    };
+  }
+  return { errorKey, detail: detail || raw };
 }
 
 // ── Server function ───────────────────────────────────────────────────────────
@@ -99,19 +111,25 @@ export const createOrder = createServerFn({ method: "POST" })
     const isCard = data.paymentMethod === "credit_card";
 
     if (isCard && isCardcomEnabled()) {
-      const payment = await startCardcomPaymentForOrder(orderId);
-      if (!payment.ok) {
-        console.error("[createOrder] CardCom:", payment.message);
-        return { ok: false, errorKey: "cardPaymentSetupFailed", detail: payment.message };
-      }
+      try {
+        const payment = await startCardcomPaymentForOrder(orderId);
+        if (!payment.ok) {
+          console.error("[createOrder] CardCom:", payment.message);
+          return { ok: false, errorKey: "cardPaymentSetupFailed", detail: payment.message };
+        }
 
-      return {
-        ok: true,
-        orderId,
-        idempotent: res.idempotent ?? false,
-        requiresPayment: true,
-        paymentRedirectUrl: payment.redirectUrl,
-      };
+        return {
+          ok: true,
+          orderId,
+          idempotent: res.idempotent ?? false,
+          requiresPayment: true,
+          paymentRedirectUrl: payment.redirectUrl,
+        };
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        console.error("[createOrder] CardCom exception:", message);
+        return { ok: false, errorKey: "cardPaymentSetupFailed", detail: message };
+      }
     }
 
     if (isCard && !isCardcomEnabled()) {

@@ -40,11 +40,12 @@ export async function startCardcomPaymentForOrder(orderId: string): Promise<
   | { ok: true; redirectUrl: string; lowProfileId: string }
   | { ok: false; message: string }
 > {
-  if (!isCardcomEnabled()) {
-    return { ok: false, message: "CardCom is not configured" };
-  }
+  try {
+    if (!isCardcomEnabled()) {
+      return { ok: false, message: "CardCom is not configured" };
+    }
 
-  const { data: order, error } = await supabaseAdmin
+    const { data: order, error } = await supabaseAdmin
     .from("orders")
     .select(
       "id, user_id, payment_method, payment_status, total_amount, customer_name, customer_email, customer_locale, cardcom_low_profile_id, cardcom_payment_fetched",
@@ -53,7 +54,7 @@ export async function startCardcomPaymentForOrder(orderId: string): Promise<
     .maybeSingle();
 
   if (error || !order) {
-    return { ok: false, message: "Order not found" };
+    return { ok: false, message: error?.message ?? "Order not found" };
   }
 
   const row = order as OrderRow;
@@ -97,6 +98,11 @@ export async function startCardcomPaymentForOrder(orderId: string): Promise<
   }
 
   return { ok: true, redirectUrl: created.url, lowProfileId: created.lowProfileId };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    console.error("[cardcom] startCardcomPaymentForOrder:", message);
+    return { ok: false, message };
+  }
 }
 
 export type ConfirmCardcomResult = "paid" | "failed" | "pending" | "not_found" | "already_paid";
