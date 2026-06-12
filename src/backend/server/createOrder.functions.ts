@@ -4,6 +4,8 @@ import { z } from "zod";
 import type { Database, Json } from "@/backend/db/types";
 import { requireSupabaseAuth } from "@/backend/db/auth-middleware";
 import { dispatchOrderEmails } from "@/backend/server/orderEmail.helpers";
+import { isCardcomEnabled } from "@/backend/config/cardcom";
+import { startCardcomPaymentForOrder } from "@/backend/server/cardcomPayment.helpers";
 
 // ── Input schema ──────────────────────────────────────────────────────────────
 const createOrderInput = z.object({
@@ -23,7 +25,13 @@ export type CreateOrderInput = z.infer<typeof createOrderInput>;
 
 // ── Return type ───────────────────────────────────────────────────────────────
 export type CreateOrderResult =
-  | { ok: true;  orderId: string; idempotent: boolean }
+  | {
+      ok: true;
+      orderId: string;
+      idempotent: boolean;
+      requiresPayment?: boolean;
+      paymentRedirectUrl?: string;
+    }
   | { ok: false; errorKey: string; detail?: string };
 
 // ── Map PostgreSQL error codes → i18n keys already present in the frontend ───
@@ -87,14 +95,37 @@ export const createOrder = createServerFn({ method: "POST" })
       return { ok: false, errorKey: "genericError" };
     }
 
-    // Send emails server-side (await so Vercel does not kill the function early).
+    const orderId = res.order_id;
+    const isCard = data.paymentMethod === "credit_card";
+
+    if (isCard && isCardcomEnabled()) {
+      const payment = await startCardcomPaymentForOrder(orderId);
+      if (!payment.ok) {
+        console.error("[createOrder] CardCom:", payment.message);
+        return { ok: false, errorKey: "cardPaymentSetupFailed", detail: payment.message };
+      }
+
+      return {
+        ok: true,
+        orderId,
+        idempotent: res.idempotent ?? false,
+        requiresPayment: true,
+        paymentRedirectUrl: payment.redirectUrl,
+      };
+    }
+
+    if (isCard && !isCardcomEnabled()) {
+      return { ok: false, errorKey: "cardPaymentUnavailable" };
+    }
+
+    // Cash — send confirmation emails once the order is committed.
     if (!res.idempotent) {
       try {
-        await dispatchOrderEmails(supabase, res.order_id, userId);
+        await dispatchOrderEmails(supabase, orderId, userId);
       } catch (e: unknown) {
         console.error("[createOrder] Order emails:", e);
       }
     }
 
-    return { ok: true, orderId: res.order_id, idempotent: res.idempotent ?? false };
+    return { ok: true, orderId, idempotent: res.idempotent ?? false };
   });

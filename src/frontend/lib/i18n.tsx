@@ -119,6 +119,41 @@ export const dict: Dict = {
     he: "תשלום בכרטיס אשראי יהיה זמין בקרוב.",
     ar: "الدفع بالبطاقة سيتوفر قريبًا.",
   },
+  creditCardDesc: {
+    en: "Secure payment via CardCom. You will be redirected to complete payment.",
+    he: "תשלום מאובטח דרך CardCom. תועבר/י לדף תשלום להשלמת העסקה.",
+    ar: "دفع آمن عبر CardCom. سيتم تحويلك لصفحة الدفع لإتمام العملية.",
+  },
+  cardPaymentRedirect: {
+    en: "Redirecting to secure payment…",
+    he: "מעביר לדף תשלום מאובטח…",
+    ar: "جارٍ التحويل إلى صفحة الدفع الآمنة…",
+  },
+  cardPaymentFailed: {
+    en: "Card payment was not completed. Please try again or choose cash.",
+    he: "התשלום בכרטיס לא הושלם. נסה/י שוב או בחר/י מזומן.",
+    ar: "لم يكتمل الدفع بالبطاقة. حاول مرة أخرى أو اختر الدفع نقدًا.",
+  },
+  cardPaymentSetupFailed: {
+    en: "Could not open the payment page. Please try again or contact us.",
+    he: "לא ניתן לפתוח את דף התשלום. נסה/י שוב או צור/י קשר.",
+    ar: "تعذر فتح صفحة الدفع. حاول مرة أخرى أو تواصل معنا.",
+  },
+  cardPaymentUnavailable: {
+    en: "Card payment is temporarily unavailable.",
+    he: "תשלום בכרטיס אינו זמין כרגע.",
+    ar: "الدفع بالبطاقة غير متاح حالياً.",
+  },
+  cardPaymentPending: {
+    en: "Confirming your payment…",
+    he: "מאשרים את התשלום…",
+    ar: "جارٍ تأكيد الدفع…",
+  },
+  cardPaymentConfirmed: {
+    en: "Payment confirmed. Thank you!",
+    he: "התשלום אושר. תודה!",
+    ar: "تم تأكيد الدفع. شكرًا لك!",
+  },
   comingSoon: { en: "Coming soon", he: "בקרוב", ar: "قريبًا" },
   couponAppliedSuccess: {
     en: "Coupon applied successfully",

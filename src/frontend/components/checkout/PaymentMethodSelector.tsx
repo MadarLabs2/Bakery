@@ -3,14 +3,12 @@ import { cn } from "@/frontend/lib/utils";
 import { useI18n } from "@/frontend/lib/i18n";
 import { CheckoutSection } from "./CheckoutSection";
 
-/** Card payments are not integrated — only cash is selectable. */
-export const CARD_PAYMENT_AVAILABLE = false;
-
 export type PaymentMethod = "cash" | "card";
 
 type PaymentMethodSelectorProps = {
   value: PaymentMethod;
   onChange: (method: PaymentMethod) => void;
+  cardPaymentAvailable?: boolean;
 };
 
 function PayCard({
@@ -81,7 +79,11 @@ function PayCard({
   );
 }
 
-export function PaymentMethodSelector({ value, onChange }: PaymentMethodSelectorProps) {
+export function PaymentMethodSelector({
+  value,
+  onChange,
+  cardPaymentAvailable = false,
+}: PaymentMethodSelectorProps) {
   const { t } = useI18n();
 
   return (
@@ -96,14 +98,16 @@ export function PaymentMethodSelector({ value, onChange }: PaymentMethodSelector
         />
         <PayCard
           selected={value === "card"}
-          disabled={!CARD_PAYMENT_AVAILABLE}
+          disabled={!cardPaymentAvailable}
           onSelect={() => {
-            if (CARD_PAYMENT_AVAILABLE) onChange("card");
+            if (cardPaymentAvailable) onChange("card");
           }}
           icon={<CreditCard className="h-5 w-5" aria-hidden />}
           title={t("creditCard")}
-          description={t("cardPaymentComingSoon")}
-          badge={t("comingSoon")}
+          description={
+            cardPaymentAvailable ? t("creditCardDesc") : t("cardPaymentComingSoon")
+          }
+          badge={cardPaymentAvailable ? undefined : t("comingSoon")}
         />
       </div>
     </CheckoutSection>

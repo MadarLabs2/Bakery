@@ -6,6 +6,7 @@ import { useI18n } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
 import { generateUUID } from "@/frontend/lib/uuid";
 import { createOrder } from "@/backend/server/createOrder.functions";
+import { getPaymentConfig } from "@/backend/server/getPaymentConfig.functions";
 import { useCart } from "@/frontend/lib/cart";
 import { supabase } from "@/backend/db/client";
 import { Label } from "@/frontend/components/ui/label";
@@ -36,6 +37,7 @@ function CheckoutPage() {
   const { t, lang } = useI18n();
   const { user, session } = useAuth();
   const createOrderFn = useServerFn(createOrder);
+  const getPaymentConfigFn = useServerFn(getPaymentConfig);
   const { items, subtotal, refresh } = useCart();
   const { deliveryFee: configuredDeliveryFee } = useDeliveryFee();
   const nav = useNavigate();
@@ -64,6 +66,20 @@ function CheckoutPage() {
     null,
   );
   const [submitting, setSubmitting] = useState(false);
+  const [cardPaymentAvailable, setCardPaymentAvailable] = useState(false);
+
+  useEffect(() => {
+    void getPaymentConfigFn()
+      .then((cfg) => setCardPaymentAvailable(cfg.cardPaymentAvailable))
+      .catch(() => setCardPaymentAvailable(false));
+  }, [getPaymentConfigFn]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") === "failed") {
+      toast.error(t("cardPaymentFailed"));
+    }
+  }, [t]);
 
   useEffect(() => {
     if (!user) {
@@ -201,7 +217,7 @@ function CheckoutPage() {
           customerEmail:   email.trim(),
           deliveryMethod:  recv,
           deliveryAddress: deliveryAddress,
-          paymentMethod:   pay,
+          paymentMethod:   pay === "card" ? "credit_card" : "cash",
           notes:           notes.trim() || null,
           couponCode:      couponCode,
           idempotencyKey:  idempotencyKey,
@@ -219,8 +235,13 @@ function CheckoutPage() {
         return;
       }
 
-      // Cart rotation was performed server-side; just refresh the local state.
       await refresh();
+
+      if (result.requiresPayment && result.paymentRedirectUrl) {
+        toast.info(t("cardPaymentRedirect"));
+        window.location.href = result.paymentRedirectUrl;
+        return;
+      }
 
       toast.success(t("orderConfirmedWithEmail"));
       nav({ to: "/checkout/success", search: { orderId: result.orderId } });
@@ -282,7 +303,11 @@ function CheckoutPage() {
               deliveryFee={configuredDeliveryFee}
             />
 
-            <PaymentMethodSelector value={pay} onChange={setPay} />
+            <PaymentMethodSelector
+              value={pay}
+              onChange={setPay}
+              cardPaymentAvailable={cardPaymentAvailable}
+            />
 
             <CouponBox
               code={code}
