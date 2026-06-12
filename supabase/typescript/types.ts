@@ -399,6 +399,7 @@ export type Database = {
           customer_name: string;
           customer_email: string;
           customer_phone: string;
+          customer_locale: string;
           delivery_method: string;
           payment_method: string;
           payment_status: string;
@@ -420,6 +421,7 @@ export type Database = {
           customer_name: string;
           customer_email: string;
           customer_phone: string;
+          customer_locale: string;
           delivery_method: string;
           payment_method: string;
           payment_status?: string;
@@ -441,6 +443,7 @@ export type Database = {
           customer_name?: string;
           customer_email?: string;
           customer_phone?: string;
+          customer_locale?: string;
           delivery_method?: string;
           payment_method?: string;
           payment_status?: string;
@@ -608,6 +611,7 @@ export type Database = {
           p_notes:            string;
           p_coupon_code:      string;
           p_idempotency_key:  string;
+          p_customer_locale?: string;
         };
         Returns: Json;
       };

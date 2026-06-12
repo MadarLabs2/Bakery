@@ -16,6 +16,7 @@ const createOrderInput = z.object({
   notes:           z.string().max(1000).nullable(),
   couponCode:      z.string().max(100).nullable(),
   idempotencyKey:  z.string().uuid(),
+  customerLocale:  z.enum(["en", "he", "ar"]).optional().default("he"),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderInput>;
@@ -72,6 +73,7 @@ export const createOrder = createServerFn({ method: "POST" })
       p_notes:            data.notes           ?? "",
       p_coupon_code:      data.couponCode       ?? "",
       p_idempotency_key:  data.idempotencyKey,
+      p_customer_locale:  data.customerLocale,
     });
 
     if (error) {

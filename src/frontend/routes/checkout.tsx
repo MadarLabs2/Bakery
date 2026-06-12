@@ -33,7 +33,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
 
 function CheckoutPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { user, session } = useAuth();
   const createOrderFn = useServerFn(createOrder);
   const { items, subtotal, refresh } = useCart();
@@ -205,6 +205,7 @@ function CheckoutPage() {
           notes:           notes.trim() || null,
           couponCode:      couponCode,
           idempotencyKey:  idempotencyKey,
+          customerLocale:  lang,
         },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });

@@ -5,6 +5,7 @@
  *   RESEND_FROM_EMAIL=Al-Nour Bakery <orders@alnourbakery.com>
  *   EMAIL_TEST_MODE=false
  *   APP_BASE_URL=https://yoursite.com
+ *   SUPABASE_SERVICE_ROLE_KEY=...  (required for customer order_confirmation emails)
  *
  * DEVELOPMENT (no verified domain): Use Resend sandbox sender:
  *   RESEND_FROM_EMAIL=Al-Nour Bakery <onboarding@resend.dev>
@@ -116,15 +117,43 @@ function getFromAddress(): string | null {
   return from;
 }
 
+export function isSupabaseAdminConfigured(): boolean {
+  return Boolean(
+    process.env.SUPABASE_URL?.trim() &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
+  );
+}
+
+/** Run a DB operation with the service-role client; never throw — returns null on failure. */
+async function withSupabaseAdmin<T>(
+  fn: (client: typeof supabaseAdmin) => Promise<T>,
+): Promise<T | null> {
+  if (!isSupabaseAdminConfigured()) {
+    console.warn(
+      "[emailService] SUPABASE_SERVICE_ROLE_KEY is not set — email dedup/logging disabled.",
+    );
+    return null;
+  }
+  try {
+    return await fn(supabaseAdmin);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[emailService] Supabase admin error:", msg);
+    return null;
+  }
+}
+
 export function getEmailConfigStatus(): {
   hasApiKey: boolean;
   hasFrom: boolean;
+  hasServiceRole: boolean;
   testMode: boolean;
   testRecipient: string;
 } {
   return {
     hasApiKey: Boolean(process.env.RESEND_API_KEY?.trim()),
     hasFrom: Boolean(getFromAddress()),
+    hasServiceRole: isSupabaseAdminConfigured(),
     testMode: isEmailTestMode(),
     testRecipient: getTestRecipientEmail(),
   };
@@ -181,21 +210,23 @@ export type LogEmailParams = {
 
 /** Insert a new log row. Used for offer/campaign emails and legacy callers. */
 export async function logEmailResult(params: LogEmailParams): Promise<void> {
-  const { error } = await supabaseAdmin.from("email_logs").insert({
-    campaign_id:         params.campaignId ?? null,
-    order_id:            params.orderId ?? null,
-    recipient_email:     params.recipientEmail,
-    email_type:          params.emailType,
-    subject:             params.subject,
-    status:              params.status,
-    provider_message_id: params.providerMessageId ?? null,
-    error_message:       params.errorMessage ?? null,
-    attempt_count:       params.attemptCount ?? 1,
-    sent_at:             params.sentAt ?? null,
+  await withSupabaseAdmin(async (db) => {
+    const { error } = await db.from("email_logs").insert({
+      campaign_id:         params.campaignId ?? null,
+      order_id:            params.orderId ?? null,
+      recipient_email:     params.recipientEmail,
+      email_type:          params.emailType,
+      subject:             params.subject,
+      status:              params.status,
+      provider_message_id: params.providerMessageId ?? null,
+      error_message:       params.errorMessage ?? null,
+      attempt_count:       params.attemptCount ?? 1,
+      sent_at:             params.sentAt ?? null,
+    });
+    if (error) {
+      console.error("[emailService] Failed to log email:", error.code, error.message);
+    }
   });
-  if (error) {
-    console.error("[emailService] Failed to log email:", error.code);
-  }
 }
 
 /**
@@ -220,13 +251,20 @@ async function sendAndLogOrderEmail(opts: {
 
   // ── Duplicate-send guard (same order + type + recipient) ─────────────────
   if (!forceResend) {
-    const { data: sent } = await supabaseAdmin
-      .from("email_logs")
-      .select("id, recipient_email")
-      .eq("order_id", orderId)
-      .eq("email_type", emailType)
-      .eq("status", "sent")
-      .maybeSingle();
+    const sent = await withSupabaseAdmin(async (db) => {
+      const { data, error } = await db
+        .from("email_logs")
+        .select("id, recipient_email")
+        .eq("order_id", orderId)
+        .eq("email_type", emailType)
+        .eq("status", "sent")
+        .maybeSingle();
+      if (error) {
+        console.error("[emailService] Dedup lookup failed:", error.message);
+        return null;
+      }
+      return data;
+    });
 
     if (
       sent &&
@@ -236,44 +274,58 @@ async function sendAndLogOrderEmail(opts: {
     }
   }
 
-  // ── Send ──────────────────────────────────────────────────────────────────
+  // ── Send (always runs — DB must not block delivery) ───────────────────────
   const result = await sendHtmlEmail(recipientEmail, subject, html);
   const now = new Date().toISOString();
 
   // ── Log: update existing (any status) or insert new ───────────────────────
-  const { data: existing } = await supabaseAdmin
-    .from("email_logs")
-    .select("id, attempt_count")
-    .eq("order_id", orderId)
-    .eq("email_type", emailType)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (existing) {
-    await supabaseAdmin
+  await withSupabaseAdmin(async (db) => {
+    const { data: existing, error: lookupError } = await db
       .from("email_logs")
-      .update({
-        status:              result.ok ? "sent" : "failed",
-        attempt_count:       existing.attempt_count + 1,
-        sent_at:             result.ok ? now : null,
-        provider_message_id: result.providerMessageId ?? null,
-        error_message:       result.ok ? null : (result.error ?? null),
-      })
-      .eq("id", existing.id);
-  } else {
-    await supabaseAdmin.from("email_logs").insert({
-      order_id:            orderId,
+      .select("id, attempt_count")
+      .eq("order_id", orderId)
+      .eq("email_type", emailType)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lookupError) {
+      console.error("[emailService] Log lookup failed:", lookupError.message);
+      return;
+    }
+
+    const logFields = {
       recipient_email:     recipientEmail,
-      email_type:          emailType,
       subject,
-      status:              result.ok ? "sent" : "failed",
-      attempt_count:       1,
+      status:              (result.ok ? "sent" : "failed") as EmailLogStatus,
       sent_at:             result.ok ? now : null,
       provider_message_id: result.providerMessageId ?? null,
       error_message:       result.ok ? null : (result.error ?? null),
-    });
-  }
+    };
+
+    if (existing) {
+      const { error: updateError } = await db
+        .from("email_logs")
+        .update({
+          ...logFields,
+          attempt_count: existing.attempt_count + 1,
+        })
+        .eq("id", existing.id);
+      if (updateError) {
+        console.error("[emailService] Log update failed:", updateError.message);
+      }
+    } else {
+      const { error: insertError } = await db.from("email_logs").insert({
+        order_id: orderId,
+        email_type: emailType,
+        attempt_count: 1,
+        ...logFields,
+      });
+      if (insertError) {
+        console.error("[emailService] Log insert failed:", insertError.message);
+      }
+    }
+  });
 
   return { ...result, alreadySent: false };
 }
@@ -284,6 +336,16 @@ export async function sendOrderConfirmationEmail(
   orderData: OrderConfirmationData,
 ): Promise<SendEmailResult & { alreadySent: boolean }> {
   const { to, testModeNote } = resolveRecipient(orderData.customerEmail);
+  console.info(
+    "[emailService] order_confirmation intended=",
+    orderData.customerEmail.trim(),
+    "→ to=",
+    to,
+    "testMode=",
+    isEmailTestMode(),
+    "hasServiceRole=",
+    isSupabaseAdminConfigured(),
+  );
   const { subject, html } = orderConfirmationTemplate({ ...orderData, testModeNote });
   return sendAndLogOrderEmail({
     orderId: orderData.orderId,

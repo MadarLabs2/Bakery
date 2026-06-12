@@ -52,7 +52,7 @@ export const sendOrderStatusEmailFn = createServerFn({ method: "POST" })
     // Fetch order data server-side via service role
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("id, customer_name, customer_email, delivery_method, delivery_address")
+      .select("id, customer_name, customer_email, delivery_method, delivery_address, customer_locale")
       .eq("id", orderId)
       .maybeSingle();
 
@@ -69,6 +69,7 @@ export const sendOrderStatusEmailFn = createServerFn({ method: "POST" })
         deliveryMethod:  order.delivery_method ?? "pickup",
         deliveryAddress: order.delivery_address ?? null,
         status:          newStatus,
+        locale:          order.customer_locale,
       });
 
       if (result.noEmail)     return { ok: true, emailSent: false, noEmail: true };
