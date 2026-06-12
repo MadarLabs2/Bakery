@@ -41,6 +41,7 @@ import { formatOrderDate, formatOrderDateDisplay } from "@/frontend/lib/formatDa
 import { adminOrderStatusLabel, adminOrderStatusPillClass } from "@/frontend/lib/adminLabels";
 import { resolveImage } from "@/frontend/lib/images";
 import { cn } from "@/frontend/lib/utils";
+import { ADMIN_VISIBLE_ORDERS_FILTER } from "@/frontend/lib/orderPayment";
 
 type DictKey = keyof typeof dict;
 type Translate = (key: DictKey) => string;
@@ -288,6 +289,7 @@ function AdminOrders() {
         )
       `,
       )
+      .or(ADMIN_VISIBLE_ORDERS_FILTER)
       .order("created_at", { ascending: false })
       .then(({ data }) => setOrders(data ?? []));
 

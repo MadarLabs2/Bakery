@@ -32,7 +32,7 @@ export type GetLpResultPayload = {
   [key: string]: unknown;
 };
 
-function readResponseCode(payload: GetLpResultPayload | null | undefined): number | null {
+export function readResponseCode(payload: GetLpResultPayload | null | undefined): number | null {
   if (!payload || typeof payload.ResponseCode !== "number") return null;
   return payload.ResponseCode;
 }
@@ -93,25 +93,48 @@ export async function createCardcomLowProfile(
   }
 }
 
+async function parseLpResultResponse(res: Response): Promise<GetLpResultPayload | null> {
+  if (!res.ok) {
+    console.error("[cardcom] GetLpResult HTTP", res.status);
+    return null;
+  }
+  try {
+    return (await res.json()) as GetLpResultPayload;
+  } catch (e) {
+    console.error("[cardcom] GetLpResult JSON error:", e);
+    return null;
+  }
+}
+
 export async function getCardcomLpResult(lowProfileId: string): Promise<GetLpResultPayload | null> {
   if (!isCardcomEnabled()) return null;
 
   const { terminalNumber, apiUsername, apiBase } = getCardcomConfig();
-  const url = new URL(`${apiBase}/LowProfile/GetLpResult`);
-  url.searchParams.set("TerminalNumber", String(terminalNumber));
-  url.searchParams.set("ApiName", apiUsername);
-  url.searchParams.set("LowProfileId", lowProfileId);
+  const requestBody = {
+    TerminalNumber: terminalNumber,
+    ApiName: apiUsername,
+    LowProfileId: lowProfileId,
+  };
 
   try {
-    const res = await fetch(url.toString(), {
+    const getUrl = new URL(`${apiBase}/LowProfile/GetLpResult`);
+    getUrl.searchParams.set("TerminalNumber", String(terminalNumber));
+    getUrl.searchParams.set("ApiName", apiUsername);
+    getUrl.searchParams.set("LowProfileId", lowProfileId);
+
+    const getRes = await fetch(getUrl.toString(), {
       method: "GET",
       headers: { Accept: "application/json" },
     });
-    if (!res.ok) {
-      console.error("[cardcom] GetLpResult HTTP", res.status);
-      return null;
-    }
-    return (await res.json()) as GetLpResultPayload;
+    const getPayload = await parseLpResultResponse(getRes);
+    if (getPayload) return getPayload;
+
+    const postRes = await fetch(`${apiBase}/LowProfile/GetLpResult`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    return await parseLpResultResponse(postRes);
   } catch (e) {
     console.error("[cardcom] GetLpResult error:", e);
     return null;
@@ -119,7 +142,17 @@ export async function getCardcomLpResult(lowProfileId: string): Promise<GetLpRes
 }
 
 export function isCardcomChargeSuccessful(payload: GetLpResultPayload | null): boolean {
-  return readResponseCode(payload) === 0;
+  if (readResponseCode(payload) !== 0) return false;
+
+  const txId = payload?.TranzactionId ?? payload?.TransactionId;
+  if (txId == null || Number(txId) <= 0) return false;
+
+  const tranzInfo = payload?.TranzactionInfo as { ResponseCode?: number } | undefined;
+  if (tranzInfo && typeof tranzInfo.ResponseCode === "number" && tranzInfo.ResponseCode !== 0) {
+    return false;
+  }
+
+  return true;
 }
 
 export { toCardcomLanguage };

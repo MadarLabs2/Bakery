@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "@/backend/db/client";
+import type { Database } from "@/backend/db/types";
 import { useAuth } from "@/frontend/lib/auth";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
@@ -57,9 +58,14 @@ export const Route = createFileRoute("/admin/products")({ component: AdminProduc
 
 const CREAM = "#F8F4E9";
 
+type ProductInsert = Database["public"]["Tables"]["products"]["Insert"];
+type ProductUpdate = Database["public"]["Tables"]["products"]["Update"];
+
 const empty = {
   category_id: "",
-  name: "",
+  name_en: "",
+  name_he: "",
+  name_ar: "",
   description_en: "",
   description_he: "",
   description_ar: "",
@@ -89,6 +95,7 @@ function dedupeImageUrls(image_url: string, gallery_urls: string[] | undefined):
 }
 
 function productToForm(p: Record<string, unknown>) {
+  const legacyName = typeof p.name === "string" ? p.name : "";
   const legacyDesc = typeof p.description === "string" ? p.description : "";
   const legacyIngredients = typeof p.ingredients === "string" ? p.ingredients : "";
   const legacyAllergens = typeof p.allergens === "string" ? p.allergens : "";
@@ -100,6 +107,9 @@ function productToForm(p: Record<string, unknown>) {
     ...empty,
     ...p,
     gallery_urls,
+    name_en: (p.name_en as string | undefined) ?? legacyName,
+    name_he: (p.name_he as string | undefined) ?? legacyName,
+    name_ar: (p.name_ar as string | undefined) ?? legacyName,
     description_en: (p.description_en as string | undefined) ?? legacyDesc,
     description_he: (p.description_he as string | undefined) ?? legacyDesc,
     description_ar: (p.description_ar as string | undefined) ?? legacyDesc,
@@ -194,6 +204,14 @@ function AdminProducts() {
   };
 
   const save = async () => {
+    const name_en = String(editing.name_en ?? "").trim();
+    const name_he = String(editing.name_he ?? "").trim();
+    const name_ar = String(editing.name_ar ?? "").trim();
+    if (!name_en && !name_he && !name_ar) {
+      toast.error(t("adminCategoryNamesRequired"));
+      return;
+    }
+    const name = name_he || name_en || name_ar;
     const dEn = String(editing.description_en ?? "").trim();
     const dHe = String(editing.description_he ?? "").trim();
     const dAr = String(editing.description_ar ?? "").trim();
@@ -226,8 +244,11 @@ function AdminProducts() {
       compare_at_price = c;
     }
     const gallery_urls = (editing.gallery_urls ?? []).filter((u: string) => typeof u === "string" && u.length > 0);
-    const payloadBase = {
-      name: editing.name,
+    const payloadBase: ProductUpdate = {
+      name,
+      name_en: name_en || null,
+      name_he: name_he || null,
+      name_ar: name_ar || null,
       description: descriptionLegacy,
       description_en: dEn || null,
       description_he: dHe || null,
@@ -251,17 +272,17 @@ function AdminProducts() {
           ? null
           : Number(editing.stock_quantity),
     };
-    const payloadWithGallery = { ...payloadBase, gallery_urls };
+    const payloadWithGallery: ProductUpdate = { ...payloadBase, gallery_urls };
 
     const isGalleryColumnError = (msg: string) => {
       const m = msg.toLowerCase();
       return m.includes("gallery_urls") && (m.includes("schema cache") || m.includes("column"));
     };
 
-    const runSave = async (payload: typeof payloadWithGallery | typeof payloadBase) =>
+    const runSave = async (payload: ProductUpdate) =>
       editing.id
         ? supabase.from("products").update(payload).eq("id", editing.id)
-        : supabase.from("products").insert(payload as typeof payloadWithGallery);
+        : supabase.from("products").insert(payload as ProductInsert);
 
     let { error } = await runSave(payloadWithGallery);
     if (error && isGalleryColumnError(error.message)) {
@@ -319,6 +340,10 @@ function AdminProducts() {
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
+      const nameBlob = [p.name, p.name_en, p.name_he, p.name_ar]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
       const descBlob = [
         p.description,
         p.description_en,
@@ -337,7 +362,7 @@ function AdminProducts() {
         .join(" ")
         .toLowerCase();
       return (
-        String(p.name).toLowerCase().includes(q) ||
+        nameBlob.includes(q) ||
         cat.includes(q) ||
         descBlob.includes(q) ||
         String(p.id).toLowerCase().includes(q) ||
@@ -539,7 +564,7 @@ function AdminProducts() {
                             {t("adminProductIdLabel")}: {p.id}
                           </p>
                           <p className="font-display text-base font-semibold leading-snug sm:text-lg">
-                            {p.name}
+                            {pickName(p, lang)}
                           </p>
                           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                             <ProductPriceRow
@@ -743,16 +768,44 @@ function AdminProducts() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="pf-name" className="text-sm font-semibold text-[#2a2a2a]">
-                    {t("adminThName")}
-                  </Label>
-                  <Input
-                    id="pf-name"
-                    value={editing.name}
-                    onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-                    className={cn("h-11", fieldClass)}
-                  />
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="pn-he" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("adminThName")} ({t("adminCategoryLangHe")})
+                    </Label>
+                    <Input
+                      id="pn-he"
+                      value={editing.name_he ?? ""}
+                      onChange={(e) => setEditing({ ...editing, name_he: e.target.value })}
+                      className={cn("h-11", fieldClass)}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pn-en" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("adminThName")} ({t("adminCategoryLangEn")})
+                    </Label>
+                    <Input
+                      id="pn-en"
+                      value={editing.name_en ?? ""}
+                      onChange={(e) => setEditing({ ...editing, name_en: e.target.value })}
+                      className={cn("h-11", fieldClass)}
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pn-ar" className="text-sm font-semibold text-[#2a2a2a]">
+                      {t("adminThName")} ({t("adminCategoryLangAr")})
+                    </Label>
+                    <Input
+                      id="pn-ar"
+                      dir="rtl"
+                      value={editing.name_ar ?? ""}
+                      onChange={(e) => setEditing({ ...editing, name_ar: e.target.value })}
+                      className={cn("h-11", fieldClass)}
+                      autoComplete="off"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -1043,7 +1096,9 @@ function AdminProducts() {
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-muted-foreground">
                 <p>{t("adminDeleteProductBody")}</p>
-                {pendingDelete && <p className="font-medium text-foreground">{pendingDelete.name}</p>}
+                {pendingDelete && (
+                  <p className="font-medium text-foreground">{pickName(pendingDelete, lang)}</p>
+                )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

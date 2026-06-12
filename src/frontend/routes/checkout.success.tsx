@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { CheckCircle2, Loader2, Package } from "lucide-react";
@@ -9,6 +9,7 @@ import { useI18n } from "@/frontend/lib/i18n";
 import { Button } from "@/frontend/components/ui/button";
 import { Skeleton } from "@/frontend/components/ui/skeleton";
 import { BAKERY_PICKUP_ADDRESS } from "@/frontend/lib/checkoutDelivery";
+import { PENDING_CARD_ORDER_STORAGE_KEY } from "@/frontend/lib/orderPayment";
 
 export const Route = createFileRoute("/checkout/success")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/checkout/success")({
 
 function CheckoutSuccessPage() {
   const { t } = useI18n();
+  const nav = useNavigate();
   const { user, loading: authLoading, session } = useAuth();
   const syncPaymentFn = useServerFn(syncCardcomPayment);
   const { orderId, payment } = Route.useSearch();
@@ -66,6 +68,7 @@ function CheckoutSuccessPage() {
               headers: { Authorization: `Bearer ${session.access_token}` },
             });
             if (sync.ok && (sync.status === "paid" || sync.status === "already_paid")) {
+              data = await loadOrder();
               break;
             }
             if (sync.ok && sync.status === "failed") {
@@ -80,16 +83,41 @@ function CheckoutSuccessPage() {
         setPaymentSyncing(false);
       }
 
+      data = await loadOrder();
+
       if (!cancelled) {
         setOrder(data);
         setLoading(false);
+
+        const isCardOrder =
+          data?.payment_method === "credit_card" || data?.payment_method === "card";
+        const paid = String(data?.payment_status ?? "").toLowerCase() === "paid";
+
+        if (isCardOrder && paid) {
+          try {
+            sessionStorage.removeItem(PENDING_CARD_ORDER_STORAGE_KEY);
+          } catch {
+            /* ignore */
+          }
+        }
+
+        if (isCardOrder && !paid) {
+          nav({
+            to: "/checkout",
+            search: {
+              payment: String(data?.payment_status ?? "").toLowerCase() === "failed" ? "failed" : "pending",
+              orderId,
+            },
+            replace: true,
+          });
+        }
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [user, authLoading, orderId, session?.access_token, syncPaymentFn, payment]);
+  }, [user, authLoading, orderId, session?.access_token, syncPaymentFn, payment, nav]);
 
   const shortId = orderId ? orderId.replace(/-/g, "").slice(0, 8).toUpperCase() : "—";
   const isPickup = String(order?.delivery_method ?? "").toLowerCase() === "pickup";

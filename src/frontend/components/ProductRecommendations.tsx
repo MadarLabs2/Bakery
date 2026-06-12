@@ -7,6 +7,9 @@ import { Skeleton } from "@/frontend/components/ui/skeleton";
 type Row = {
   id: string;
   name: string;
+  name_en?: string | null;
+  name_he?: string | null;
+  name_ar?: string | null;
   description: string | null;
   description_en?: string | null;
   description_he?: string | null;
@@ -20,7 +23,7 @@ type Row = {
 };
 
 const SELECT =
-  "id, name, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, category_id" as const;
+  "id, name, name_en, name_he, name_ar, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, category_id" as const;
 
 function pickRelated(rows: Row[], categoryId: string | null | undefined, limit: number): Row[] {
   if (!categoryId) return rows.slice(0, limit);

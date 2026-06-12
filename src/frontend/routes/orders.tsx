@@ -6,6 +6,7 @@ import { useAuth } from "@/frontend/lib/auth";
 import { useI18n } from "@/frontend/lib/i18n";
 import { OrderRefAndDate } from "@/frontend/components/OrderRefAndDate";
 import { adminOrderStatusLabel } from "@/frontend/lib/adminLabels";
+import { ADMIN_VISIBLE_ORDERS_FILTER } from "@/frontend/lib/orderPayment";
 
 export const Route = createFileRoute("/orders")({ component: OrdersPage });
 
@@ -36,6 +37,7 @@ function OrdersPage() {
         .from("orders")
         .select("*, items:order_items(*)")
         .eq("user_id", userId)
+        .or(ADMIN_VISIBLE_ORDERS_FILTER)
         .order("created_at", { ascending: false })
         .range(offset, offset + PAGE_SIZE);
 

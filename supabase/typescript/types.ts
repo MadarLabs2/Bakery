@@ -468,6 +468,9 @@ export type Database = {
           id: string;
           category_id: string | null;
           name: string;
+          name_en: string | null;
+          name_he: string | null;
+          name_ar: string | null;
           description: string | null;
           description_en: string | null;
           description_he: string | null;
@@ -494,6 +497,9 @@ export type Database = {
           id?: string;
           category_id?: string | null;
           name: string;
+          name_en?: string | null;
+          name_he?: string | null;
+          name_ar?: string | null;
           description?: string | null;
           description_en?: string | null;
           description_he?: string | null;
@@ -520,6 +526,9 @@ export type Database = {
           id?: string;
           category_id?: string | null;
           name?: string;
+          name_en?: string | null;
+          name_he?: string | null;
+          name_ar?: string | null;
           description?: string | null;
           description_en?: string | null;
           description_he?: string | null;

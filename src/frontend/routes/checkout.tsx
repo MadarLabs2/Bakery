@@ -7,10 +7,12 @@ import { useAuth } from "@/frontend/lib/auth";
 import { generateUUID } from "@/frontend/lib/uuid";
 import { createOrder } from "@/backend/server/createOrder.functions";
 import { getPaymentConfig } from "@/backend/server/getPaymentConfig.functions";
+import { resumeCardcomPayment } from "@/backend/server/resumeCardcomPayment.functions";
 import { useCart } from "@/frontend/lib/cart";
 import { supabase } from "@/backend/db/client";
 import { Label } from "@/frontend/components/ui/label";
 import { Textarea } from "@/frontend/components/ui/textarea";
+import { Button } from "@/frontend/components/ui/button";
 import { DeliveryMethodSelector, type DeliveryFieldErrors } from "@/frontend/components/DeliveryMethodSelector";
 import { CheckoutCustomerForm } from "@/frontend/components/checkout/CheckoutCustomerForm";
 import { PaymentMethodSelector, type PaymentMethod } from "@/frontend/components/checkout/PaymentMethodSelector";
@@ -30,14 +32,23 @@ import {
   type ContactFieldErrors,
 } from "@/frontend/lib/checkoutValidation";
 import { toast } from "sonner";
+import { PENDING_CARD_ORDER_STORAGE_KEY } from "@/frontend/lib/orderPayment";
 
-export const Route = createFileRoute("/checkout")({ component: CheckoutPage });
+export const Route = createFileRoute("/checkout")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    payment: typeof search.payment === "string" ? search.payment : undefined,
+    orderId: typeof search.orderId === "string" ? search.orderId : undefined,
+  }),
+  component: CheckoutPage,
+});
 
 function CheckoutPage() {
   const { t, lang } = useI18n();
+  const { payment: paymentSearch, orderId: orderIdSearch } = Route.useSearch();
   const { user, session } = useAuth();
   const createOrderFn = useServerFn(createOrder);
   const getPaymentConfigFn = useServerFn(getPaymentConfig);
+  const resumePaymentFn = useServerFn(resumeCardcomPayment);
   const { items, subtotal, refresh } = useCart();
   const { deliveryFee: configuredDeliveryFee } = useDeliveryFee();
   const nav = useNavigate();
@@ -66,7 +77,9 @@ function CheckoutPage() {
     null,
   );
   const [submitting, setSubmitting] = useState(false);
+  const [resumingPayment, setResumingPayment] = useState(false);
   const [cardPaymentAvailable, setCardPaymentAvailable] = useState(false);
+  const [pendingCardOrderId, setPendingCardOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     void getPaymentConfigFn()
@@ -75,11 +88,22 @@ function CheckoutPage() {
   }, [getPaymentConfigFn]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("payment") === "failed") {
-      toast.error(t("cardPaymentFailed"));
+    let id = orderIdSearch ?? null;
+    if (!id) {
+      try {
+        id = sessionStorage.getItem(PENDING_CARD_ORDER_STORAGE_KEY);
+      } catch {
+        id = null;
+      }
     }
-  }, [t]);
+    setPendingCardOrderId(id);
+
+    if (paymentSearch === "failed") {
+      toast.error(t("cardPaymentFailed"));
+    } else if (paymentSearch === "pending") {
+      toast.info(t("cardPaymentPending"));
+    }
+  }, [orderIdSearch, paymentSearch, t]);
 
   useEffect(() => {
     if (!user) {
@@ -238,6 +262,11 @@ function CheckoutPage() {
       await refresh();
 
       if (result.requiresPayment && result.paymentRedirectUrl) {
+        try {
+          sessionStorage.setItem(PENDING_CARD_ORDER_STORAGE_KEY, result.orderId);
+        } catch {
+          /* ignore */
+        }
         toast.info(t("cardPaymentRedirect"));
         window.location.href = result.paymentRedirectUrl;
         return;
@@ -254,6 +283,69 @@ function CheckoutPage() {
       submitLock.current = false;
     }
   };
+
+  const resumeCardPayment = async () => {
+    if (!pendingCardOrderId || !session?.access_token || resumingPayment) return;
+    setResumingPayment(true);
+    try {
+      const result = await resumePaymentFn({
+        data: { orderId: pendingCardOrderId },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!result.ok) {
+        if ("alreadyPaid" in result && result.alreadyPaid) {
+          try {
+            sessionStorage.removeItem(PENDING_CARD_ORDER_STORAGE_KEY);
+          } catch {
+            /* ignore */
+          }
+          nav({ to: "/checkout/success", search: { orderId: pendingCardOrderId, payment: "card" } });
+          return;
+        }
+        const detail = "detail" in result && result.detail ? result.detail : null;
+        toast.error(detail ? `${t("cardPaymentSetupFailed")} (${detail})` : t("cardPaymentSetupFailed"));
+        return;
+      }
+      toast.info(t("cardPaymentRedirect"));
+      window.location.href = result.paymentRedirectUrl;
+    } catch (e) {
+      console.error("[checkout] resumeCardPayment:", e);
+      toast.error(t("genericError"));
+    } finally {
+      setResumingPayment(false);
+    }
+  };
+
+  if (items.length === 0 && pendingCardOrderId) {
+    const shortId = pendingCardOrderId.replace(/-/g, "").slice(0, 8).toUpperCase();
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#faf8f4]/80 via-white to-white">
+        <div className="container mx-auto max-w-lg px-4 py-16 text-center">
+          <h1 className="font-display text-2xl font-bold text-[#1B4332] sm:text-3xl">
+            {t("cardPaymentResumeTitle")}
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground sm:text-base">{t("cardPaymentResumeBody")}</p>
+          <p className="mt-4 font-mono text-sm text-[#1B4332]" dir="ltr">
+            #{shortId}
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Button
+              type="button"
+              size="lg"
+              className="h-11"
+              disabled={resumingPayment}
+              onClick={() => void resumeCardPayment()}
+            >
+              {resumingPayment ? t("placingOrder") : t("cardPaymentResumeAction")}
+            </Button>
+            <Button asChild variant="outline" size="lg" className="h-11">
+              <Link to="/products">{t("continueShopping")}</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) return <CheckoutEmpty />;
 

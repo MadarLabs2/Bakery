@@ -4,6 +4,7 @@ import {
   createCardcomLowProfile,
   getCardcomLpResult,
   isCardcomChargeSuccessful,
+  readResponseCode,
   toCardcomLanguage,
 } from "@/backend/services/cardcomService";
 import { dispatchOrderEmails } from "@/backend/server/orderEmail.helpers";
@@ -31,9 +32,10 @@ export function cardcomSuccessRedirectUrl(orderId: string): string {
   return `${appBaseUrl}/checkout/success?orderId=${encodeURIComponent(orderId)}&payment=card`;
 }
 
-export function cardcomFailedRedirectUrl(): string {
+export function cardcomFailedRedirectUrl(orderId: string): string {
   const { appBaseUrl } = getCardcomConfig();
-  return `${appBaseUrl}/checkout?payment=failed`;
+  const params = new URLSearchParams({ payment: "failed", orderId });
+  return `${appBaseUrl}/checkout?${params.toString()}`;
 }
 
 export async function startCardcomPaymentForOrder(orderId: string): Promise<
@@ -77,7 +79,7 @@ export async function startCardcomPaymentForOrder(orderId: string): Promise<
     productName,
     webhookUrl: cardcomWebhookUrl(),
     successRedirectUrl: cardcomSuccessRedirectUrl(row.id),
-    failedRedirectUrl: cardcomFailedRedirectUrl(),
+    failedRedirectUrl: cardcomFailedRedirectUrl(row.id),
   });
 
   if (!created.ok) {
@@ -141,46 +143,47 @@ export async function confirmCardcomPayment(
     return "pending";
   }
 
-  const success = isCardcomChargeSuccessful(result);
-  const transactionId = result.TranzactionId ?? result.TransactionId;
-
-  if (success) {
-    const { error: updateError } = await supabaseAdmin
-      .from("orders")
-      .update({
-        payment_status: "paid",
-        cardcom_low_profile_id: lpId,
-        cardcom_transaction_id: transactionId != null ? String(transactionId) : null,
-        cardcom_payment_fetched: true,
-      })
-      .eq("id", orderId)
-      .eq("payment_status", "pending");
-
-    if (updateError) {
-      console.error("[cardcom] paid update failed:", updateError.message);
-      return "pending";
+  if (!isCardcomChargeSuccessful(result)) {
+    if (readResponseCode(result) != null && readResponseCode(result) !== 0) {
+      await supabaseAdmin
+        .from("orders")
+        .update({
+          payment_status: "failed",
+          cardcom_low_profile_id: lpId,
+          cardcom_payment_fetched: true,
+        })
+        .eq("id", orderId)
+        .eq("payment_status", "pending");
+      return "failed";
     }
-
-    try {
-      await dispatchOrderEmails(supabaseAdmin, orderId, row.user_id);
-    } catch (e) {
-      console.error("[cardcom] emails after payment:", e);
-    }
-
-    return "paid";
+    return "pending";
   }
 
-  await supabaseAdmin
+  const transactionId = result.TranzactionId ?? result.TransactionId;
+
+  const { error: updateError } = await supabaseAdmin
     .from("orders")
     .update({
-      payment_status: "failed",
+      payment_status: "paid",
       cardcom_low_profile_id: lpId,
+      cardcom_transaction_id: transactionId != null ? String(transactionId) : null,
       cardcom_payment_fetched: true,
     })
     .eq("id", orderId)
     .eq("payment_status", "pending");
 
-  return "failed";
+  if (updateError) {
+    console.error("[cardcom] paid update failed:", updateError.message);
+    return "pending";
+  }
+
+  try {
+    await dispatchOrderEmails(supabaseAdmin, orderId, row.user_id);
+  } catch (e) {
+    console.error("[cardcom] emails after payment:", e);
+  }
+
+  return "paid";
 }
 
 export function extractWebhookIds(input: Record<string, unknown>): {

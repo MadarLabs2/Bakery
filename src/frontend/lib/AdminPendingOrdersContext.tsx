@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/backend/db/client";
 import { playNewOrderChime } from "@/frontend/lib/orderNotificationSound";
+import { ADMIN_VISIBLE_ORDERS_FILTER } from "@/frontend/lib/orderPayment";
 
 const ACTIONABLE_STATUSES = ["pending", "confirmed"] as const;
 
@@ -8,7 +9,8 @@ async function fetchActionableOrderCount(): Promise<number> {
   const { count, error } = await supabase
     .from("orders")
     .select("id", { count: "exact", head: true })
-    .in("order_status", [...ACTIONABLE_STATUSES]);
+    .in("order_status", [...ACTIONABLE_STATUSES])
+    .or(ADMIN_VISIBLE_ORDERS_FILTER);
   if (error) {
     console.warn("[AdminPendingOrders]", error.message);
     return 0;

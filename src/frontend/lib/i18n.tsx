@@ -154,6 +154,21 @@ export const dict: Dict = {
     he: "התשלום אושר. תודה!",
     ar: "تم تأكيد الدفع. شكرًا لك!",
   },
+  cardPaymentResumeTitle: {
+    en: "Complete your card payment",
+    he: "השלמת תשלום בכרטיס אשראי",
+    ar: "إكمال الدفع بالبطاقة",
+  },
+  cardPaymentResumeBody: {
+    en: "Your order was created but payment was not completed. You can return to the secure payment page to finish.",
+    he: "ההזמנה נוצרה אך התשלום לא הושלם. ניתן לחזור לדף התשלום המאובטח ולהשלים.",
+    ar: "تم إنشاء الطلب لكن الدفع لم يكتمل. يمكنك العودة إلى صفحة الدفع الآمنة لإتمامه.",
+  },
+  cardPaymentResumeAction: {
+    en: "Continue to payment",
+    he: "המשך לתשלום",
+    ar: "متابعة إلى الدفع",
+  },
   comingSoon: { en: "Coming soon", he: "בקרוב", ar: "قريبًا" },
   couponAppliedSuccess: {
     en: "Coupon applied successfully",

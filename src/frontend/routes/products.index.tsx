@@ -61,7 +61,7 @@ function ProductsPage() {
     let query = supabase
       .from("products")
       .select(
-        "id, name, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, category_id, category:categories(id, name, name_en, name_he, name_ar)",
+        "id, name, name_en, name_he, name_ar, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, category_id, category:categories(id, name, name_en, name_he, name_ar)",
       )
       .eq("is_available", true);
     if (category) {
@@ -76,7 +76,11 @@ function ProductsPage() {
   const filtered = products.filter((p) => {
     if (!q) return true;
     const s = q.toLowerCase();
-    return p.name?.toLowerCase().includes(s);
+    const nameBlob = [p.name, p.name_en, p.name_he, p.name_ar, pickName(p, lang)]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return nameBlob.includes(s);
   });
 
   const scrollToTop = () => {
