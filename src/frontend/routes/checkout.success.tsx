@@ -60,10 +60,9 @@ function CheckoutSuccessPage() {
       let data = await loadOrder();
       if (cancelled) return;
 
-      const isCardOrder =
-        data?.payment_method === "credit_card" || data?.payment_method === "card";
       const needsSync =
-        isCardOrder && String(data?.payment_status ?? "pending") !== "paid";
+        (data?.payment_method === "credit_card" || data?.payment_method === "card") &&
+        String(data?.payment_status ?? "pending") !== "paid";
 
       if (needsSync && session?.access_token) {
         setPaymentSyncing(true);
