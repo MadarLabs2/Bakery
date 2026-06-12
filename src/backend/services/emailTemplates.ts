@@ -35,6 +35,21 @@ function formatMoney(n: number): string {
   return `₪${n.toFixed(2)}`;
 }
 
+const BAKERY_PHONE_1 = "053-763-6011";
+const BAKERY_PHONE_2 = "050-858-8985";
+
+/** Keeps phone numbers readable in RTL emails (Gmail Arabic/Hebrew). */
+function ltrPhone(value: string, bold = false): string {
+  const weight = bold ? "font-weight:600;" : "";
+  const color = bold ? `color:${BROWN};` : "";
+  const tag = bold ? "strong" : "span";
+  return `<${tag} dir="ltr" style="unicode-bidi:isolate;display:inline-block;direction:ltr;${weight}${color}">${escapeHtml(value)}</${tag}>`;
+}
+
+function helpPhoneLine(helpBody: string, orWord: string): string {
+  return `${escapeHtml(helpBody)} ${ltrPhone(BAKERY_PHONE_1, true)} ${escapeHtml(orWord)} ${ltrPhone(BAKERY_PHONE_2, true)}`;
+}
+
 function testModeBanner(note: string): string {
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
     <tr><td style="padding:14px 18px;background:#FFFBF0;border:1px solid ${GOLD};border-radius:10px;">
@@ -79,12 +94,12 @@ function emailFooter(): string {
             <p style="margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${MUTED};line-height:1.5;">${TAGLINE}</p>
             <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 14px;">
               <tr>
-                <td style="padding:0 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${BROWN};">
-                  <a href="tel:0537636011" style="color:${GREEN};text-decoration:none;font-weight:600;">053-763-6011</a>
+                <td dir="ltr" style="padding:0 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${BROWN};text-align:center;">
+                  <a href="tel:0537636011" dir="ltr" style="unicode-bidi:isolate;color:${GREEN};text-decoration:none;font-weight:600;">${BAKERY_PHONE_1}</a>
                 </td>
                 <td style="color:${GOLD};font-size:10px;">●</td>
-                <td style="padding:0 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${BROWN};">
-                  <a href="tel:0508588985" style="color:${GREEN};text-decoration:none;font-weight:600;">050-858-8985</a>
+                <td dir="ltr" style="padding:0 12px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${BROWN};text-align:center;">
+                  <a href="tel:0508588985" dir="ltr" style="unicode-bidi:isolate;color:${GREEN};text-decoration:none;font-weight:600;">${BAKERY_PHONE_2}</a>
                 </td>
               </tr>
             </table>
@@ -156,7 +171,7 @@ function detailRow(label: string, value: string): string {
 /** Stacked label/value rows — reliable in Gmail RTL (avoids collapsed columns). */
 function detailRowHe(label: string, value: string, ltrValue = false): string {
   const valueHtml = ltrValue
-    ? `<span dir="ltr" style="unicode-bidi:isolate;display:inline-block;text-align:left;">${escapeHtml(value)}</span>`
+    ? `<span dir="ltr" style="unicode-bidi:isolate;display:inline-block;direction:ltr;text-align:left;">${escapeHtml(value)}</span>`
     : escapeHtml(value);
   return `<tr>
     <td style="padding:10px 0;border-bottom:1px solid ${BORDER};">
@@ -494,7 +509,7 @@ export function orderConfirmationTemplate(data: OrderConfirmationData): { subjec
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr><td style="padding:20px 22px;background:linear-gradient(135deg,${CREAM} 0%,${CREAM_DARK} 100%);border-radius:12px;border:1px solid ${BORDER};text-align:center;">
         <p style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:bold;color:${GREEN};">${labels.helpTitle}</p>
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};line-height:1.7;">${labels.helpBody} <strong style="color:${BROWN};">053-763-6011</strong> ${labels.or} <strong style="color:${BROWN};">050-858-8985</strong></p>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:${MUTED};line-height:1.7;">${helpPhoneLine(labels.helpBody, labels.or)}</p>
       </td></tr>
     </table>`;
 
@@ -983,7 +998,7 @@ export function orderStatusTemplate(data: OrderStatusEmailData): { subject: stri
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:24px;">
       <tr><td style="padding:16px 20px;background:${CREAM_DARK};border-radius:10px;text-align:center;">
         <p style="margin:0 0 4px;font-family:Georgia,'Times New Roman',serif;font-size:15px;font-weight:bold;color:${GREEN};">${labels.helpTitle}</p>
-        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${MUTED};line-height:1.6;">${labels.helpBody} <strong style="color:${BROWN};">053-763-6011</strong> ${orWord} <strong style="color:${BROWN};">050-858-8985</strong></p>
+        <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${MUTED};line-height:1.6;">${helpPhoneLine(labels.helpBody, orWord)}</p>
       </td></tr>
     </table>`;
 
