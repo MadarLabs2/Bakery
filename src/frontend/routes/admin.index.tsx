@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
   BarChart3,
+  Calendar,
   FolderTree,
   Mail,
   Package,
@@ -30,7 +31,8 @@ type TileTitleKey =
   | "adminDashOrdersTitle"
   | "adminDashCouponsTitle"
   | "adminDashEmailOffersTitle"
-  | "adminDashSettingsTitle";
+  | "adminDashSettingsTitle"
+  | "adminDashAvailabilityTitle";
 
 type TileDescKey =
   | "adminDashReportsDesc"
@@ -39,7 +41,8 @@ type TileDescKey =
   | "adminDashOrdersDesc"
   | "adminDashCouponsDesc"
   | "adminDashEmailOffersDesc"
-  | "adminDashSettingsDesc";
+  | "adminDashSettingsDesc"
+  | "adminDashAvailabilityDesc";
 
 type TileLinkKey =
   | "adminResourceLinkProducts"
@@ -48,7 +51,8 @@ type TileLinkKey =
   | "adminResourceLinkCoupons"
   | "adminResourceLinkOffers"
   | "adminResourceLinkReports"
-  | "adminResourceLinkSettings";
+  | "adminResourceLinkSettings"
+  | "adminResourceLinkAvailability";
 
 type ResourceTile = {
   to: string;
@@ -131,6 +135,16 @@ const resourceTiles: ResourceTile[] = [
     iconClass: "bg-[#1B4332] text-white shadow-sm ring-1 ring-white/15",
     glowClass: "bg-[#1B4332]",
     linkClass: "text-[#1B4332]",
+  },
+  {
+    to: "/admin/availability",
+    icon: Calendar,
+    titleKey: "adminDashAvailabilityTitle",
+    descKey: "adminDashAvailabilityDesc",
+    linkKey: "adminResourceLinkAvailability",
+    iconClass: "bg-[#3d6b5a] text-white shadow-sm ring-1 ring-white/15",
+    glowClass: "bg-[#3d6b5a]",
+    linkClass: "text-[#3d6b5a]",
   },
 ];
 

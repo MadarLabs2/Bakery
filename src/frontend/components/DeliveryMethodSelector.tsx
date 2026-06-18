@@ -25,6 +25,10 @@ type DeliveryMethodSelectorProps = {
   onAddressChange: (patch: Partial<DeliveryAddressFields>) => void;
   fieldErrors?: DeliveryFieldErrors;
   deliveryFee: number;
+  onPickupSelected?: () => void;
+  onDeliveryAddressConfirmed?: () => void;
+  addressDialogOpen?: boolean;
+  onAddressDialogOpenChange?: (open: boolean) => void;
 };
 
 function OptionCard({
@@ -93,9 +97,15 @@ export function DeliveryMethodSelector({
   onAddressChange,
   fieldErrors,
   deliveryFee,
+  onPickupSelected,
+  onDeliveryAddressConfirmed,
+  addressDialogOpen,
+  onAddressDialogOpenChange,
 }: DeliveryMethodSelectorProps) {
   const { t } = useI18n();
-  const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false);
+  const deliveryDialogOpen = addressDialogOpen ?? internalDialogOpen;
+  const setDeliveryDialogOpen = onAddressDialogOpenChange ?? setInternalDialogOpen;
   const [dialogErrors, setDialogErrors] = useState<DeliveryFieldErrors>({});
   const [addressConfirmed, setAddressConfirmed] = useState(false);
 
@@ -125,6 +135,7 @@ export function DeliveryMethodSelector({
     onMethodChange("pickup");
     setDeliveryDialogOpen(false);
     setDialogErrors({});
+    onPickupSelected?.();
   };
 
   const confirmDeliveryAddress = () => {
@@ -136,6 +147,7 @@ export function DeliveryMethodSelector({
     setDialogErrors({});
     setAddressConfirmed(true);
     setDeliveryDialogOpen(false);
+    onDeliveryAddressConfirmed?.();
   };
 
   const handleDialogOpenChange = (open: boolean) => {

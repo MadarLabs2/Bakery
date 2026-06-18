@@ -83,16 +83,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     if (!user) {
       setItems([]);
+      setLoading(false);
       return;
     }
     setLoading(true);
-    const cartId = await getOrCreateActiveCartId(user.id);
-    const { data } = await supabase
-      .from("cart_items")
-      .select(`id, product_id, quantity, product:products(${PRODUCT_EMBED})`)
-      .eq("cart_id", cartId);
-    setItems((data as CartItem[]) ?? []);
-    setLoading(false);
+    const safetyTimeout = window.setTimeout(() => setLoading(false), 10_000);
+    try {
+      const cartId = await getOrCreateActiveCartId(user.id);
+      const { data, error } = await supabase
+        .from("cart_items")
+        .select(`id, product_id, quantity, product:products(${PRODUCT_EMBED})`)
+        .eq("cart_id", cartId);
+      if (error) {
+        console.error("[cart] refresh:", error.message);
+        setItems([]);
+        return;
+      }
+      setItems((data as CartItem[]) ?? []);
+    } catch (e) {
+      console.error("[cart] refresh:", e);
+      setItems([]);
+    } finally {
+      window.clearTimeout(safetyTimeout);
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => {

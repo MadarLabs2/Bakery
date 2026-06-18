@@ -128,6 +128,63 @@ export type Database = {
         };
         Relationships: [];
       };
+      fulfillment_available_days: {
+        Row: {
+          id: string;
+          fulfillment_type: string;
+          day_of_week: number;
+          enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          fulfillment_type: string;
+          day_of_week: number;
+          enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          fulfillment_type?: string;
+          day_of_week?: number;
+          enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      fulfillment_time_slots: {
+        Row: {
+          id: string;
+          fulfillment_type: string;
+          day_of_week: number;
+          time_value: string;
+          enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          fulfillment_type: string;
+          day_of_week: number;
+          time_value: string;
+          enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          fulfillment_type?: string;
+          day_of_week?: number;
+          time_value?: string;
+          enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       categories: {
         Row: {
           id: string;
@@ -411,6 +468,10 @@ export type Database = {
           delivery_address: string | null;
           notes: string | null;
           idempotency_key: string | null;
+          selected_fulfillment_date: string | null;
+          selected_fulfillment_day_of_week: number | null;
+          selected_fulfillment_label: string | null;
+          selected_fulfillment_time: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -433,6 +494,10 @@ export type Database = {
           delivery_address?: string | null;
           notes?: string | null;
           idempotency_key?: string | null;
+          selected_fulfillment_date?: string | null;
+          selected_fulfillment_day_of_week?: number | null;
+          selected_fulfillment_label?: string | null;
+          selected_fulfillment_time?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -455,6 +520,10 @@ export type Database = {
           delivery_address?: string | null;
           notes?: string | null;
           idempotency_key?: string | null;
+          selected_fulfillment_date?: string | null;
+          selected_fulfillment_day_of_week?: number | null;
+          selected_fulfillment_label?: string | null;
+          selected_fulfillment_time?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -611,16 +680,20 @@ export type Database = {
       };
       create_order_secure: {
         Args: {
-          p_customer_name:    string;
-          p_customer_phone:   string;
-          p_customer_email:   string;
-          p_delivery_method:  string;
-          p_delivery_address: string;
-          p_payment_method:   string;
-          p_notes:            string;
-          p_coupon_code:      string;
-          p_idempotency_key:  string;
-          p_customer_locale?: string;
+          p_customer_name:             string;
+          p_customer_phone:            string;
+          p_customer_email:            string;
+          p_delivery_method:           string;
+          p_delivery_address:          string;
+          p_payment_method:            string;
+          p_notes:                     string;
+          p_coupon_code:               string;
+          p_idempotency_key:           string;
+          p_customer_locale?:          string;
+          p_fulfillment_date?:         string;
+          p_fulfillment_day_of_week?:  number;
+          p_fulfillment_label?:        string;
+          p_fulfillment_time?:         string;
         };
         Returns: Json;
       };

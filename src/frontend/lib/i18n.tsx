@@ -3,6 +3,7 @@ import { legalSharedDict } from "@/frontend/lib/legalShared.i18n";
 import { cookieConsentDict } from "@/frontend/lib/cookieConsent.i18n";
 import { privacyDict } from "@/frontend/lib/privacyPolicy.i18n";
 import { termsDict } from "@/frontend/lib/termsPolicy.i18n";
+import { fulfillmentDaysDict } from "@/frontend/lib/fulfillmentDays.i18n";
 import {
   allowsPreferencesStorage,
   PREFERENCES_REVOKED_EVENT,
@@ -17,6 +18,7 @@ export const dict: Dict = {
   ...cookieConsentDict,
   ...privacyDict,
   ...termsDict,
+  ...fulfillmentDaysDict,
   brand: {
     en: "Al-nour Gluten-free Bakery",
     he: "מאפיית אלנור ללא גלוטן",
@@ -481,6 +483,11 @@ export const dict: Dict = {
     en: "Order placed successfully. A confirmation email will be sent if email service is available.",
     he: "ההזמנה התקבלה בהצלחה. מייל אישור יישלח אם שירות הדוא\"ל זמין.",
     ar: "تم تأكيد الطلب بنجاح. سيتم إرسال بريد تأكيد إذا كانت خدمة البريد متاحة.",
+  },
+  orderRedirectingHome: {
+    en: "Order confirmed — taking you home…",
+    he: "ההזמנה אושרה — מעבירים אותך לדף הבית…",
+    ar: "تم تأكيد الطلب — جارٍ نقلك إلى الصفحة الرئيسية…",
   },
   subscribeTitle: {
     en: "Get sweet offers in your inbox",

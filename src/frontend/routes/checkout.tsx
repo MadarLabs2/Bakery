@@ -18,7 +18,7 @@ import { CouponBox } from "@/frontend/components/checkout/CouponBox";
 import { OrderSummary } from "@/frontend/components/checkout/OrderSummary";
 import { CheckoutEmpty } from "@/frontend/components/checkout/CheckoutEmpty";
 import { CheckoutSection } from "@/frontend/components/checkout/CheckoutSection";
-import { emptyDeliveryAddress, formatDeliveryAddress, type DeliveryMethod } from "@/frontend/lib/checkoutDelivery";
+import { emptyDeliveryAddress, formatDeliveryAddress, isDeliveryAddressComplete, type DeliveryMethod } from "@/frontend/lib/checkoutDelivery";
 import { useDeliveryFee } from "@/frontend/hooks/useDeliveryFee";
 import {
   validateCouponForSubtotal,
@@ -30,6 +30,9 @@ import {
   type ContactFieldErrors,
 } from "@/frontend/lib/checkoutValidation";
 import { toast } from "sonner";
+import { FulfillmentSchedulingModal } from "@/frontend/components/checkout/FulfillmentSchedulingModal";
+import { FulfillmentScheduleSummary } from "@/frontend/components/checkout/FulfillmentScheduleSummary";
+import type { FulfillmentScheduleSelection } from "@/frontend/lib/fulfillmentDays";
 import { PENDING_CARD_ORDER_STORAGE_KEY } from "@/frontend/lib/orderPayment";
 import { useReleasePendingCardOrder } from "@/frontend/lib/useReleasePendingCardOrder";
 
@@ -77,8 +80,13 @@ function CheckoutPage() {
   );
   const [submitting, setSubmitting] = useState(false);
   const [restoringCart, setRestoringCart] = useState(false);
+  const [orderRedirecting, setOrderRedirecting] = useState(false);
   const [cardPaymentAvailable, setCardPaymentAvailable] = useState(false);
   const [pendingCardOrderId, setPendingCardOrderId] = useState<string | null>(null);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [addressDialogOpen, setAddressDialogOpen] = useState(false);
+  const [fulfillmentSchedule, setFulfillmentSchedule] = useState<FulfillmentScheduleSelection | null>(null);
+  const [fulfillmentError, setFulfillmentError] = useState<string | null>(null);
 
   useEffect(() => {
     void getPaymentConfigFn()
@@ -87,16 +95,24 @@ function CheckoutPage() {
   }, [getPaymentConfigFn]);
 
   useEffect(() => {
-    let id = orderIdSearch ?? null;
-    if (!id) {
+    // Only track pending card orders when explicitly returning from a payment flow.
+    if (paymentSearch === "failed" && orderIdSearch) {
+      setPendingCardOrderId(orderIdSearch);
+      return;
+    }
+    if (orderIdSearch && paymentSearch === "card") {
+      setPendingCardOrderId(orderIdSearch);
+      return;
+    }
+    setPendingCardOrderId(null);
+    if (!paymentSearch && !orderIdSearch) {
       try {
-        id = sessionStorage.getItem(PENDING_CARD_ORDER_STORAGE_KEY);
+        sessionStorage.removeItem(PENDING_CARD_ORDER_STORAGE_KEY);
       } catch {
-        id = null;
+        /* ignore */
       }
     }
-    setPendingCardOrderId(id);
-  }, [orderIdSearch]);
+  }, [orderIdSearch, paymentSearch]);
 
   useEffect(() => {
     if (authLoading || !pendingCardOrderId) return;
@@ -124,11 +140,13 @@ function CheckoutPage() {
       };
     }
 
-    nav({
-      to: "/checkout/success",
-      search: { orderId: pendingCardOrderId, payment: "card" },
-      replace: true,
-    });
+    if (paymentSearch === "card" && orderIdSearch) {
+      nav({
+        to: "/checkout/success",
+        search: { orderId: pendingCardOrderId, payment: "card" },
+        replace: true,
+      });
+    }
   }, [
     authLoading,
     session?.access_token,
@@ -256,6 +274,12 @@ function CheckoutPage() {
       }
     }
     setDeliveryErrors({});
+    if (!fulfillmentSchedule) {
+      setFulfillmentError(t("fulfillmentDateTimeRequired"));
+      toast.error(t("fulfillmentDateTimeRequired"));
+      return false;
+    }
+    setFulfillmentError(null);
     return true;
   };
 
@@ -280,8 +304,12 @@ function CheckoutPage() {
           paymentMethod:   pay === "card" ? "credit_card" : "cash",
           notes:           notes.trim() || null,
           couponCode:      couponCode,
-          idempotencyKey:  idempotencyKey,
-          customerLocale:  lang,
+          idempotencyKey:       idempotencyKey,
+          customerLocale:       lang,
+          fulfillmentDate:      fulfillmentSchedule.isoDate,
+          fulfillmentDayOfWeek: fulfillmentSchedule.dayOfWeek,
+          fulfillmentLabel:     fulfillmentSchedule.summaryLabel,
+          fulfillmentTime:      fulfillmentSchedule.timeValue,
         },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
@@ -295,7 +323,12 @@ function CheckoutPage() {
         return;
       }
 
-      await refresh();
+      try {
+        sessionStorage.removeItem(PENDING_CARD_ORDER_STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
+      setPendingCardOrderId(null);
 
       if (result.requiresPayment && result.paymentRedirectUrl) {
         try {
@@ -308,8 +341,10 @@ function CheckoutPage() {
         return;
       }
 
+      setOrderRedirecting(true);
       toast.success(t("orderConfirmedWithEmail"));
-      nav({ to: "/checkout/success", search: { orderId: result.orderId } });
+      await refresh();
+      nav({ to: "/", replace: true });
     } catch (e) {
       console.error("[checkout] placeOrder:", e);
       const message = e instanceof Error ? e.message : t("genericError");
@@ -320,7 +355,17 @@ function CheckoutPage() {
     }
   };
 
-  if (restoringCart || (items.length === 0 && pendingCardOrderId)) {
+  if (orderRedirecting) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#faf8f4]/80 via-white to-white">
+        <div className="container mx-auto max-w-lg px-4 py-16 text-center">
+          <p className="font-display text-xl font-semibold text-[#1B4332]">{t("orderRedirectingHome")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (restoringCart) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#faf8f4]/80 via-white to-white">
         <div className="container mx-auto max-w-lg px-4 py-16 text-center">
@@ -366,6 +411,8 @@ function CheckoutPage() {
               onMethodChange={(m) => {
                 setRecv(m);
                 setDeliveryErrors({});
+                setFulfillmentSchedule(null);
+                setFulfillmentError(null);
               }}
               address={deliveryFields}
               onAddressChange={(patch) => {
@@ -377,9 +424,35 @@ function CheckoutPage() {
                   }
                   return next;
                 });
+                setFulfillmentSchedule(null);
               }}
               fieldErrors={deliveryErrors}
               deliveryFee={configuredDeliveryFee}
+              onPickupSelected={() => setScheduleModalOpen(true)}
+              onDeliveryAddressConfirmed={() => setScheduleModalOpen(true)}
+              addressDialogOpen={addressDialogOpen}
+              onAddressDialogOpenChange={setAddressDialogOpen}
+            />
+
+            <FulfillmentScheduleSummary
+              method={recv}
+              schedule={fulfillmentSchedule}
+              deliveryAddress={deliveryFields}
+              addressComplete={isDeliveryAddressComplete(deliveryFields)}
+              error={fulfillmentError}
+              onChangeSchedule={() => setScheduleModalOpen(true)}
+              onChangeAddress={() => setAddressDialogOpen(true)}
+            />
+
+            <FulfillmentSchedulingModal
+              open={scheduleModalOpen}
+              onOpenChange={setScheduleModalOpen}
+              fulfillmentType={recv}
+              initialSelection={fulfillmentSchedule}
+              onConfirm={(selection) => {
+                setFulfillmentSchedule(selection);
+                setFulfillmentError(null);
+              }}
             />
 
             <PaymentMethodSelector
@@ -423,6 +496,7 @@ function CheckoutPage() {
               total={total}
               deliveryMethod={recv}
               paymentMethod={pay}
+              scheduledDateLabel={fulfillmentSchedule?.summaryLabel ?? null}
               submitting={submitting}
               onPlaceOrder={placeOrder}
             />

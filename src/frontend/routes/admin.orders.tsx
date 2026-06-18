@@ -42,6 +42,7 @@ import { adminOrderStatusLabel, adminOrderStatusPillClass } from "@/frontend/lib
 import { resolveImage } from "@/frontend/lib/images";
 import { cn } from "@/frontend/lib/utils";
 import { ADMIN_VISIBLE_ORDERS_FILTER } from "@/frontend/lib/orderPayment";
+import { fulfillmentLabelFromOrder } from "@/frontend/lib/fulfillmentDays";
 
 type DictKey = keyof typeof dict;
 type Translate = (key: DictKey) => string;
@@ -466,6 +467,16 @@ function AdminOrders() {
     </div>
   );
 
+  const selectedScheduledLabel = selected
+    ? fulfillmentLabelFromOrder(
+        selected.selected_fulfillment_date,
+        selected.selected_fulfillment_day_of_week,
+        selected.selected_fulfillment_label,
+        lang,
+        selected.selected_fulfillment_time,
+      )
+    : null;
+
   return (
     <div className="admin-page-enter mx-auto max-w-6xl space-y-5 px-4 py-6 md:space-y-6 md:px-8 md:py-8">
       <div className="md:hidden">{brandHero}</div>
@@ -661,6 +672,15 @@ function AdminOrders() {
                     <span className="font-medium text-neutral-700">{t("adminOrderDetailPaymentStatus")}:</span>{" "}
                     {String(selected.payment_status ?? "—")}
                   </p>
+                  {selectedScheduledLabel ? (
+                    <p className="mt-2 flex items-start gap-2 rounded-lg border border-[#1B4332]/15 bg-[#faf8f4]/80 px-2.5 py-2 text-xs text-[#1B4332]">
+                      <Calendar className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
+                      <span>
+                        <span className="font-semibold">{t("adminOrderScheduledDate")}: </span>
+                        {selectedScheduledLabel}
+                      </span>
+                    </p>
+                  ) : null}
                   {isPickupOrder(selected.delivery_method) ? (
                     <div className="mt-3 rounded-lg border border-[#c9a227]/25 bg-gradient-to-br from-[#faf8f4] to-white p-2.5 text-xs leading-relaxed text-neutral-800">
                       <p className="font-semibold text-[#1B4332]">{t("adminOrderPickupLocation")}</p>

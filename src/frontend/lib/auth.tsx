@@ -31,6 +31,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
+    // Safety net: never block the app if getSession hangs (e.g. auth storage contention).
+    const loadingTimeout = window.setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 3000);
+
     async function applyProfileRole(userId: string | undefined) {
       if (!userId) {
         if (!cancelled) setIsAdmin(false);
@@ -44,6 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
+      // Unblock the UI immediately — do not wait for getSession() to finish.
+      setLoading(false);
       if (!sess?.user) {
         setIsAdmin(false);
         return;
@@ -69,7 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const sess = data.session;
         setSession(sess);
         setUser(sess?.user ?? null);
-        await applyProfileRole(sess?.user?.id);
+        if (sess?.user?.id) {
+          // Do not await Supabase queries here — same deadlock risk as onAuthStateChange.
+          queueMicrotask(() => {
+            void applyProfileRole(sess.user.id);
+          });
+        } else {
+          setIsAdmin(false);
+        }
       } catch (e) {
         console.error(e);
         if (!cancelled) {
@@ -84,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(loadingTimeout);
       sub.subscription.unsubscribe();
     };
   }, []);

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/cart")({ component: CartPage });
 
 function CartPage() {
   const { t, lang } = useI18n();
-  const { items, subtotal, updateQty, remove, loading } = useCart();
+  const { items, subtotal, updateQty, remove, loading: cartLoading } = useCart();
   const { user } = useAuth();
   const nav = useNavigate();
   const { releaseIfNeeded } = useReleasePendingCardOrder();
@@ -21,26 +21,32 @@ function CartPage() {
   const restoreAttemptedRef = useRef(false);
 
   useEffect(() => {
-    if (!user || loading || items.length > 0 || restoreAttemptedRef.current) return;
+    if (!user || cartLoading || items.length > 0 || restoreAttemptedRef.current) return;
     restoreAttemptedRef.current = true;
     let cancelled = false;
     void (async () => {
       setRestoringCart(true);
-      const outcome = await releaseIfNeeded();
-      if (cancelled) return;
-      setRestoringCart(false);
-      if (outcome === "already_paid") {
-        nav({ to: "/orders" });
-      } else if (outcome === "released") {
-        toast.info(t("cardCartRestored"));
+      try {
+        const outcome = await releaseIfNeeded();
+        if (cancelled) return;
+        if (outcome === "already_paid") {
+          nav({ to: "/orders" });
+        } else if (outcome === "released") {
+          toast.info(t("cardCartRestored"));
+        }
+      } finally {
+        if (!cancelled) setRestoringCart(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [user, loading, items.length, releaseIfNeeded, nav, t]);
+  }, [user, cartLoading, items.length, releaseIfNeeded, nav, t]);
 
-  if (loading || restoringCart) {
+  // Only block when actively fetching cart data for a signed-in user — never wait on auth bootstrap.
+  const showLoading = (Boolean(user) && cartLoading) || restoringCart;
+
+  if (showLoading) {
     return (
       <div className="admin-page-enter container mx-auto px-4 py-20 text-center">
         <p className="text-muted-foreground">{t("loading")}</p>

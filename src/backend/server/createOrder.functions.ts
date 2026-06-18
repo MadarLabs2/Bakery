@@ -19,6 +19,10 @@ const createOrderInput = z.object({
   couponCode:      z.string().max(100).nullable(),
   idempotencyKey:  z.string().uuid(),
   customerLocale:  z.enum(["en", "he", "ar"]),
+  fulfillmentDate:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  fulfillmentDayOfWeek:  z.number().int().min(0).max(6),
+  fulfillmentLabel:      z.string().min(1).max(200),
+  fulfillmentTime:       z.string().regex(/^\d{2}:\d{2}$/),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderInput>;
@@ -50,6 +54,14 @@ const PG_ERROR_MAP: Record<string, string> = {
   ERR_COUPON_EXPIRED:            "couponExpired",
   ERR_COUPON_EXHAUSTED:          "couponExhausted",
   ERR_COUPON_MIN_ORDER:          "couponMinOrderLabel",
+  ERR_MISSING_FULFILLMENT_DATE:  "fulfillmentDateTimeRequired",
+  ERR_INVALID_FULFILLMENT_DAY:   "fulfillmentDateTimeRequired",
+  ERR_FULFILLMENT_DAY_MISMATCH:  "fulfillmentDateTimeRequired",
+  ERR_FULFILLMENT_DATE_PAST:     "fulfillmentDateTimeRequired",
+  ERR_FULFILLMENT_DAY_NOT_AVAILABLE: "fulfillmentDateTimeRequired",
+  ERR_MISSING_FULFILLMENT_TIME:  "fulfillmentDateTimeRequired",
+  ERR_INVALID_FULFILLMENT_TIME:  "fulfillmentDateTimeRequired",
+  ERR_FULFILLMENT_TIME_NOT_AVAILABLE: "fulfillmentDateTimeRequired",
 };
 
 function parseDbError(raw: string): { errorKey: string; detail?: string } {
@@ -92,8 +104,12 @@ export const createOrder = createServerFn({ method: "POST" })
       p_payment_method:   data.paymentMethod,
       p_notes:            data.notes           ?? "",
       p_coupon_code:      data.couponCode       ?? "",
-      p_idempotency_key:  data.idempotencyKey,
-      p_customer_locale:  data.customerLocale,
+      p_idempotency_key:           data.idempotencyKey,
+      p_customer_locale:           data.customerLocale,
+      p_fulfillment_date:          data.fulfillmentDate,
+      p_fulfillment_day_of_week:   data.fulfillmentDayOfWeek,
+      p_fulfillment_label:         data.fulfillmentLabel,
+      p_fulfillment_time:          data.fulfillmentTime,
     });
 
     if (error) {
