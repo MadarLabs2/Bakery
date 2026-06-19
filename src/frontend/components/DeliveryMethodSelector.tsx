@@ -13,9 +13,11 @@ import {
 import { validateDeliveryAddress as validateDeliveryFields } from "@/frontend/lib/checkoutValidation";
 import { CheckoutSection } from "@/frontend/components/checkout/CheckoutSection";
 import { DeliveryAddressDialog } from "@/frontend/components/checkout/DeliveryAddressDialog";
+import { DeliveryPlaceSelector } from "@/frontend/components/checkout/DeliveryPlaceSelector";
+import { minDeliveryPlacePrice, type DeliveryPlaceRow } from "@/frontend/lib/deliveryPlaces";
 
 export type DeliveryFieldErrors = Partial<
-  Record<keyof DeliveryAddressFields | "method", string>
+  Record<keyof DeliveryAddressFields | "method" | "deliveryPlace", string>
 >;
 
 type DeliveryMethodSelectorProps = {
@@ -25,6 +27,11 @@ type DeliveryMethodSelectorProps = {
   onAddressChange: (patch: Partial<DeliveryAddressFields>) => void;
   fieldErrors?: DeliveryFieldErrors;
   deliveryFee: number;
+  deliveryPlaces: DeliveryPlaceRow[];
+  placesLoading: boolean;
+  deliveryUnavailable: boolean;
+  selectedPlaceId: string | null;
+  onPlaceSelect: (id: string) => void;
   onPickupSelected?: () => void;
   onDeliveryAddressConfirmed?: () => void;
   addressDialogOpen?: boolean;
@@ -97,6 +104,11 @@ export function DeliveryMethodSelector({
   onAddressChange,
   fieldErrors,
   deliveryFee,
+  deliveryPlaces,
+  placesLoading,
+  deliveryUnavailable,
+  selectedPlaceId,
+  onPlaceSelect,
   onPickupSelected,
   onDeliveryAddressConfirmed,
   addressDialogOpen,
@@ -127,8 +139,8 @@ export function DeliveryMethodSelector({
   }, [fieldErrors, method]);
 
   const selectDelivery = () => {
+    if (deliveryUnavailable) return;
     onMethodChange("delivery");
-    setDeliveryDialogOpen(true);
   };
 
   const selectPickup = () => {
@@ -155,6 +167,14 @@ export function DeliveryMethodSelector({
     if (!open) setDialogErrors({});
   };
 
+  const minPlacePrice = minDeliveryPlacePrice(deliveryPlaces);
+  const deliveryBadge =
+    deliveryUnavailable || minPlacePrice == null
+      ? undefined
+      : selectedPlaceId
+        ? `+ ₪${deliveryFee.toFixed(0)} · ${t("deliveryFeeShort")}`
+        : `${t("deliveryFromPrice")} ₪${minPlacePrice.toFixed(0)}`;
+
   return (
     <CheckoutSection icon={<Truck className="h-5 w-5" />} title={t("deliveryMethodTitle")}>
       {fieldErrors?.method ? (
@@ -173,8 +193,10 @@ export function DeliveryMethodSelector({
           onSelect={selectDelivery}
           icon={<Truck className="h-5 w-5" aria-hidden />}
           title={t("deliveryOptionTitle")}
-          description={t("deliveryOptionDesc")}
-          badge={`+ ₪${deliveryFee.toFixed(0)} · ${t("deliveryFeeShort")}`}
+          description={
+            deliveryUnavailable ? t("deliveryUnavailable") : t("deliveryOptionDesc")
+          }
+          badge={deliveryBadge}
         />
         <OptionCard
           selected={method === "pickup"}
@@ -185,7 +207,7 @@ export function DeliveryMethodSelector({
         />
       </div>
 
-      {/* Delivery: saved address summary or prompt to open dialog */}
+      {/* Delivery: place selector + address */}
       <div
         className={cn(
           "grid transition-[grid-template-rows,opacity,margin] duration-[550ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
@@ -193,9 +215,19 @@ export function DeliveryMethodSelector({
         )}
         aria-hidden={method !== "delivery"}
       >
-        <div className="overflow-hidden">
-          {addressConfirmed && addressComplete ? (
-            <button
+        <div className="overflow-hidden space-y-4">
+          <DeliveryPlaceSelector
+            places={deliveryPlaces}
+            loading={placesLoading}
+            unavailable={deliveryUnavailable}
+            selectedId={selectedPlaceId}
+            onSelect={onPlaceSelect}
+            error={fieldErrors?.deliveryPlace ?? null}
+          />
+
+          {selectedPlaceId && !deliveryUnavailable ? (
+            addressConfirmed && addressComplete ? (
+              <button
               type="button"
               onClick={() => setDeliveryDialogOpen(true)}
               className={cn(
@@ -219,8 +251,8 @@ export function DeliveryMethodSelector({
                 {t("editDeliveryAddress")}
               </span>
             </button>
-          ) : (
-            <button
+            ) : (
+              <button
               type="button"
               onClick={() => setDeliveryDialogOpen(true)}
               className={cn(
@@ -233,8 +265,9 @@ export function DeliveryMethodSelector({
                 <span className="text-sm font-medium text-[#1B4332]">{t("addDeliveryAddress")}</span>
               </span>
               <ChevronDown className="h-5 w-5 rotate-[-90deg] text-[#1B4332]/60 transition-transform duration-300 group-hover:translate-x-[-2px]" aria-hidden />
-            </button>
-          )}
+              </button>
+            )
+          ) : null}
         </div>
       </div>
 

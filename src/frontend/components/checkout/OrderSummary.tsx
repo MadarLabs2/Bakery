@@ -19,6 +19,7 @@ type OrderSummaryProps = {
   deliveryMethod: DeliveryMethod;
   paymentMethod: PaymentMethod;
   scheduledDateLabel?: string | null;
+  deliveryAreaLabel?: string | null;
   submitting: boolean;
   placeOrderDisabled?: boolean;
   onPlaceOrder: () => void;
@@ -34,6 +35,7 @@ export function OrderSummary({
   deliveryMethod,
   paymentMethod,
   scheduledDateLabel,
+  deliveryAreaLabel,
   submitting,
   placeOrderDisabled = false,
   onPlaceOrder,
@@ -97,6 +99,12 @@ export function OrderSummary({
           <span className="text-muted-foreground">{t("paymentMethod")}</span>
           <span className="text-end font-medium">{paymentLabel}</span>
         </div>
+        {deliveryMethod === "delivery" && deliveryAreaLabel ? (
+          <div className="flex justify-between gap-2 border-t border-[#1B4332]/10 pt-2">
+            <span className="text-muted-foreground">{t("checkoutSummaryDeliveryArea")}</span>
+            <span className="text-end font-medium text-[#1B4332]">{deliveryAreaLabel}</span>
+          </div>
+        ) : null}
         {scheduledDateLabel ? (
           <div className="flex justify-between gap-2 border-t border-[#1B4332]/10 pt-2">
             <span className="text-muted-foreground">{t("checkoutSummaryScheduledDate")}</span>

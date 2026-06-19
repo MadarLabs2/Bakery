@@ -215,6 +215,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      delivery_places: {
+        Row: {
+          id: string;
+          name_he: string;
+          name_ar: string;
+          name_en: string;
+          price: number;
+          is_active: boolean;
+          sort_order: number;
+          description: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name_he: string;
+          name_ar: string;
+          name_en: string;
+          price?: number;
+          is_active?: boolean;
+          sort_order?: number;
+          description?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name_he?: string;
+          name_ar?: string;
+          name_en?: string;
+          price?: number;
+          is_active?: boolean;
+          sort_order?: number;
+          description?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       categories: {
         Row: {
           id: string;
@@ -496,6 +535,8 @@ export type Database = {
           delivery_fee: number;
           total_amount: number;
           delivery_address: string | null;
+          delivery_place_id: string | null;
+          delivery_place_name: string | null;
           notes: string | null;
           idempotency_key: string | null;
           selected_fulfillment_date: string | null;
@@ -522,6 +563,8 @@ export type Database = {
           delivery_fee?: number;
           total_amount: number;
           delivery_address?: string | null;
+          delivery_place_id?: string | null;
+          delivery_place_name?: string | null;
           notes?: string | null;
           idempotency_key?: string | null;
           selected_fulfillment_date?: string | null;
@@ -548,6 +591,8 @@ export type Database = {
           delivery_fee?: number;
           total_amount?: number;
           delivery_address?: string | null;
+          delivery_place_id?: string | null;
+          delivery_place_name?: string | null;
           notes?: string | null;
           idempotency_key?: string | null;
           selected_fulfillment_date?: string | null;
@@ -723,6 +768,7 @@ export type Database = {
           p_fulfillment_date?:         string;
           p_fulfillment_day_of_week?:  number;
           p_fulfillment_label?:        string;
+          p_delivery_place_id?:        string;
         };
         Returns: Json;
       };

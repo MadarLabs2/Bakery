@@ -19,7 +19,11 @@ import { OrderSummary } from "@/frontend/components/checkout/OrderSummary";
 import { CheckoutEmpty } from "@/frontend/components/checkout/CheckoutEmpty";
 import { CheckoutSection } from "@/frontend/components/checkout/CheckoutSection";
 import { emptyDeliveryAddress, formatDeliveryAddress, isDeliveryAddressComplete, type DeliveryMethod } from "@/frontend/lib/checkoutDelivery";
-import { useDeliveryFee } from "@/frontend/hooks/useDeliveryFee";
+import { useDeliveryPlaces } from "@/frontend/hooks/useDeliveryPlaces";
+import {
+  calculateDeliveryFeeFromSelectedPlace,
+  pickDeliveryPlaceName,
+} from "@/frontend/lib/deliveryPlaces";
 import {
   validateCouponForSubtotal,
   type CouponRow,
@@ -58,7 +62,7 @@ function CheckoutPage() {
   const getPaymentConfigFn = useServerFn(getPaymentConfig);
   const { releaseIfNeeded } = useReleasePendingCardOrder();
   const { items, subtotal, refresh } = useCart();
-  const { deliveryFee: configuredDeliveryFee } = useDeliveryFee();
+  const { places: deliveryPlaces, loading: placesLoading, deliveryAvailable } = useDeliveryPlaces();
   const { restDays, isTodayRestDay: bakeryClosedToday } = useRestDays();
   const nav = useNavigate();
   const submitLock = useRef(false);
@@ -94,6 +98,7 @@ function CheckoutPage() {
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [fulfillmentDate, setFulfillmentDate] = useState<FulfillmentDateSelection | null>(null);
   const [fulfillmentError, setFulfillmentError] = useState<string | null>(null);
+  const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
   useEffect(() => {
     void getPaymentConfigFn()
@@ -244,7 +249,18 @@ function CheckoutPage() {
   const checkoutBlockedToday = REST_DAY_BLOCKS_CHECKOUT_TODAY && bakeryClosedToday;
   const placeOrderDisabled = checkoutBlockedToday || selectedDateIsRestDay;
 
-  const deliveryFee = recv === "delivery" ? configuredDeliveryFee : 0;
+  useEffect(() => {
+    if (!placesLoading && recv === "delivery" && !deliveryAvailable) {
+      setRecv("pickup");
+      setSelectedPlaceId(null);
+    }
+  }, [placesLoading, deliveryAvailable, recv]);
+
+  const selectedPlace = deliveryPlaces.find((p) => p.id === selectedPlaceId) ?? null;
+  const deliveryFee = calculateDeliveryFeeFromSelectedPlace(recv, selectedPlace);
+  const deliveryAreaLabel =
+    recv === "delivery" && selectedPlace ? pickDeliveryPlaceName(selectedPlace, lang) : null;
+  const deliveryUnavailable = !placesLoading && !deliveryAvailable;
   const total = Math.max(0, subtotal - discount) + deliveryFee;
 
   const applyCoupon = async () => {
@@ -286,6 +302,15 @@ function CheckoutPage() {
     setContactErrors({});
 
     if (recv === "delivery") {
+      if (deliveryUnavailable) {
+        toast.error(t("deliveryUnavailable"));
+        return false;
+      }
+      if (!selectedPlaceId) {
+        setDeliveryErrors((prev) => ({ ...prev, deliveryPlace: t("deliveryPlaceRequired") }));
+        toast.error(t("deliveryPlaceRequired"));
+        return false;
+      }
       const addr = validateDeliveryAddress(deliveryFields, t);
       if (!addr.ok) {
         setDeliveryErrors(addr.errors);
@@ -330,6 +355,7 @@ function CheckoutPage() {
           customerEmail:   email.trim(),
           deliveryMethod:  recv,
           deliveryAddress: deliveryAddress,
+          deliveryPlaceId:   recv === "delivery" ? selectedPlaceId : null,
           paymentMethod:   pay === "card" ? "credit_card" : "cash",
           notes:           notes.trim() || null,
           couponCode:      couponCode,
@@ -443,6 +469,7 @@ function CheckoutPage() {
                 setDeliveryErrors({});
                 setFulfillmentDate(null);
                 setFulfillmentError(null);
+                if (m === "pickup") setSelectedPlaceId(null);
               }}
               address={deliveryFields}
               onAddressChange={(patch) => {
@@ -457,7 +484,19 @@ function CheckoutPage() {
                 setFulfillmentDate(null);
               }}
               fieldErrors={deliveryErrors}
-              deliveryFee={configuredDeliveryFee}
+              deliveryFee={deliveryFee}
+              deliveryPlaces={deliveryPlaces}
+              placesLoading={placesLoading}
+              deliveryUnavailable={deliveryUnavailable}
+              selectedPlaceId={selectedPlaceId}
+              onPlaceSelect={(id) => {
+                setSelectedPlaceId(id);
+                setDeliveryErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.deliveryPlace;
+                  return next;
+                });
+              }}
               onPickupSelected={() => setDateModalOpen(true)}
               onDeliveryAddressConfirmed={() => setDateModalOpen(true)}
               addressDialogOpen={addressDialogOpen}
@@ -527,6 +566,7 @@ function CheckoutPage() {
               deliveryMethod={recv}
               paymentMethod={pay}
               scheduledDateLabel={fulfillmentDate?.summaryLabel ?? null}
+              deliveryAreaLabel={deliveryAreaLabel}
               submitting={submitting}
               placeOrderDisabled={placeOrderDisabled}
               onPlaceOrder={placeOrder}

@@ -5,6 +5,7 @@ import { privacyDict } from "@/frontend/lib/privacyPolicy.i18n";
 import { termsDict } from "@/frontend/lib/termsPolicy.i18n";
 import { fulfillmentDaysDict } from "@/frontend/lib/fulfillmentDays.i18n";
 import { restDaysDict } from "@/frontend/lib/restDays.i18n";
+import { deliveryPlacesDict } from "@/frontend/lib/deliveryPlaces.i18n";
 import {
   allowsPreferencesStorage,
   PREFERENCES_REVOKED_EVENT,
@@ -21,6 +22,7 @@ export const dict: Dict = {
   ...termsDict,
   ...fulfillmentDaysDict,
   ...restDaysDict,
+  ...deliveryPlacesDict,
   brand: {
     en: "Al-nour Gluten-free Bakery",
     he: "מאפיית אלנור ללא גלוטן",
@@ -927,9 +929,9 @@ export const dict: Dict = {
     ar: "أدخل رقمًا صالحًا (0 أو أكثر)",
   },
   adminDeliverySettingsNote: {
-    en: "Changes apply to new checkouts immediately. Orders already placed keep the delivery fee from when they were created.",
-    he: "השינוי חל על הזמנות חדשות מיד. הזמנות קיימות שומרות את דמי המשלוח מרגע ביצוען.",
-    ar: "تُطبَّق التغييرات على الطلبات الجديدة فورًا. الطلبات السابقة تحتفظ برسوم التوصيل وقت إنشائها.",
+    en: "Delivery place prices apply to new checkouts immediately. Each order stores the area name and fee charged at checkout.",
+    he: "מחירי אזורי המשלוח חלים על הזמנות חדשות מיד. כל הזמנה שומרת את שם האזור ודמי המשלוח שנגבו בקופה.",
+    ar: "تُطبَّق أسعار مناطق التوصيل على الطلبات الجديدة فورًا. كل طلب يحفظ اسم المنطقة ورسوم التوصيل وقت الدفع.",
   },
   carouselPrev: { en: "Previous products", he: "מוצרים קודמים", ar: "المنتجات السابقة" },
   carouselNext: { en: "Next products", he: "מוצרים הבאים", ar: "المنتجات التالية" },

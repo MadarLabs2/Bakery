@@ -686,10 +686,17 @@ function AdminOrders() {
                       <p className="font-semibold text-[#1B4332]">{t("adminOrderPickupLocation")}</p>
                       <p className="mt-1">{BAKERY_PICKUP_ADDRESS}</p>
                     </div>
-                  ) : selected.delivery_address ? (
+                  ) : selected.delivery_address || selected.delivery_place_name ? (
                     <div className="mt-3 rounded-lg bg-stone-50 p-2.5 text-xs leading-relaxed text-neutral-700">
-                      <p className="mb-1 font-semibold text-[#1B4332]">{t("address")}</p>
-                      <p className="whitespace-pre-wrap">{selected.delivery_address}</p>
+                      {selected.delivery_place_name ? (
+                        <p className="mb-2 font-medium text-[#1B4332]">{selected.delivery_place_name}</p>
+                      ) : null}
+                      {selected.delivery_address ? (
+                        <>
+                          <p className="mb-1 font-semibold text-[#1B4332]">{t("address")}</p>
+                          <p className="whitespace-pre-wrap">{selected.delivery_address}</p>
+                        </>
+                      ) : null}
                     </div>
                   ) : null}
                   {selected.notes ? (
