@@ -1,186 +1,71 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CalendarDays, Clock, Loader2, Plus, Trash2, Truck } from "lucide-react";
+import { CalendarDays, Loader2, Truck } from "lucide-react";
 import { useI18n } from "@/frontend/lib/i18n";
 import {
-  defaultDeliveryConfig,
-  defaultPickupConfig,
-  fetchFullAvailability,
-  formatTimeDisplay,
-  getTimeSlotsForDay,
-  normalizeTimeValue,
-  saveFullAvailability,
-  sortTimeValues,
-  type DaySlotsState,
-  type FulfillmentTypeConfig,
+  fetchFulfillmentDays,
+  rowsToWeekdayMap,
+  saveFulfillmentAvailability,
+  type WeekdayAvailability,
 } from "@/frontend/lib/fulfillmentDays";
 import { WEEKDAY_DICT_KEYS } from "@/frontend/lib/fulfillmentDays.i18n";
 import { Button } from "@/frontend/components/ui/button";
-import { Input } from "@/frontend/components/ui/input";
 import { toast } from "sonner";
 import { cn } from "@/frontend/lib/utils";
 
 export const Route = createFileRoute("/admin/availability")({ component: AdminAvailabilityPage });
 
-function FulfillmentTypeSection({
+const EMPTY_WEEK: WeekdayAvailability = { 0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false };
+
+function WeekdayToggleGrid({
   title,
   description,
-  config,
+  values,
   onChange,
 }: {
   title: string;
   description: string;
-  config: FulfillmentTypeConfig;
-  onChange: (next: FulfillmentTypeConfig) => void;
+  values: WeekdayAvailability;
+  onChange: (next: WeekdayAvailability) => void;
 }) {
   const { t } = useI18n();
-  const [draftTimes, setDraftTimes] = useState<Record<number, string>>({});
-
-  const toggleDay = (dayOfWeek: number) => {
-    onChange({
-      ...config,
-      days: { ...config.days, [dayOfWeek]: !config.days[dayOfWeek] },
-    });
-  };
-
-  const removeSlot = (dayOfWeek: number, time: string) => {
-    const nextSlots: DaySlotsState = { ...config.slots };
-    nextSlots[dayOfWeek] = getTimeSlotsForDay(nextSlots, dayOfWeek).filter((slot) => slot !== time);
-    onChange({ ...config, slots: nextSlots });
-  };
-
-  const addSlot = (dayOfWeek: number) => {
-    const raw = draftTimes[dayOfWeek] ?? "09:00";
-    const normalized = normalizeTimeValue(raw);
-    if (!normalized) {
-      toast.error(t("adminInvalidTimeSlot"));
-      return;
-    }
-    const existing = getTimeSlotsForDay(config.slots, dayOfWeek);
-    if (existing.includes(normalized)) {
-      toast.error(t("adminDuplicateTimeSlot"));
-      return;
-    }
-    const nextSlots: DaySlotsState = { ...config.slots };
-    nextSlots[dayOfWeek] = sortTimeValues([...existing, normalized]);
-    onChange({ ...config, slots: nextSlots });
-    setDraftTimes((prev) => ({ ...prev, [dayOfWeek]: normalized }));
-  };
-
-  const enabledDays = WEEKDAY_DICT_KEYS.map((key, dayOfWeek) => ({
-    key,
-    dayOfWeek,
-    enabled: config.days[dayOfWeek] ?? false,
-    slots: getTimeSlotsForDay(config.slots, dayOfWeek),
-  })).filter((d) => d.enabled);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div>
-        <h3 className="font-display text-sm font-semibold text-[#1B4332] sm:text-base">{title}</h3>
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+        <h3 className="font-display text-base font-semibold text-[#1B4332]">{title}</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
       </div>
-
-      {/* Compact weekday toggles — single row */}
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {WEEKDAY_DICT_KEYS.map((key, dayOfWeek) => {
-          const enabled = config.days[dayOfWeek] ?? false;
-          const shortLabel = t(key).replace(/^יום\s/, "").slice(0, 3);
+          const enabled = values[dayOfWeek] ?? false;
           return (
             <button
               key={key}
               type="button"
               aria-pressed={enabled}
-              title={t(key)}
-              onClick={() => toggleDay(dayOfWeek)}
+              onClick={() => onChange({ ...values, [dayOfWeek]: !enabled })}
               className={cn(
-                "rounded-lg border px-0.5 py-1.5 text-center text-[10px] font-semibold leading-tight transition-all sm:py-2 sm:text-[11px]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B4332]/40",
+                "rounded-xl border-2 px-3 py-3 text-center text-sm font-medium transition-all",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B4332]/50 focus-visible:ring-offset-2",
                 enabled
                   ? "border-[#1B4332] bg-[#1B4332] text-white shadow-sm"
-                  : "border-stone-200/90 bg-white text-[#1B4332]/55 hover:border-[#1B4332]/30 hover:bg-[#faf8f4]",
+                  : "border-[#1B4332]/15 bg-white text-[#1B4332]/70 hover:border-[#1B4332]/35 hover:bg-[#faf8f4]",
               )}
             >
-              <span className="hidden sm:inline">{t(key)}</span>
-              <span className="sm:hidden">{shortLabel}</span>
+              {t(key)}
             </button>
           );
         })}
       </div>
-
-      {/* Time slots — only for enabled days, compact rows */}
-      {enabledDays.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-stone-200 bg-stone-50/80 px-3 py-2 text-xs text-muted-foreground">
-          {t("availabilityMinOneDay")}
-        </p>
-      ) : (
-        <div className="divide-y divide-[#1B4332]/8 rounded-xl border border-[#1B4332]/12 bg-[#faf8f4]/40">
-          {enabledDays.map(({ key, dayOfWeek, slots }) => (
-            <div key={key} className="px-2.5 py-2 sm:px-3 sm:py-2.5">
-              <div className="mb-1.5 flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-[#1B4332]">{t(key)}</span>
-                <span className="text-[10px] tabular-nums text-muted-foreground">
-                  {slots.length} {t("timeSlotsTitle").toLowerCase()}
-                </span>
-              </div>
-
-              {slots.length === 0 ? (
-                <p className="mb-1.5 text-[11px] text-amber-800">{t("adminEnabledDayNeedsSlot")}</p>
-              ) : (
-                <ul className="mb-1.5 flex flex-wrap gap-1">
-                  {slots.map((time) => (
-                    <li key={time}>
-                      <span className="inline-flex h-6 items-center gap-0.5 rounded-md border border-[#1B4332]/15 bg-white pe-0.5 ps-1.5 text-[11px] font-semibold tabular-nums text-[#1B4332]">
-                        <Clock className="h-2.5 w-2.5 opacity-50" aria-hidden />
-                        <span dir="ltr">{formatTimeDisplay(time)}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeSlot(dayOfWeek, time)}
-                          className="rounded p-0.5 text-muted-foreground/70 hover:bg-destructive/10 hover:text-destructive"
-                          aria-label={t("removeTimeSlot")}
-                        >
-                          <Trash2 className="h-2.5 w-2.5" aria-hidden />
-                        </button>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <div className="flex items-center gap-1.5">
-                <Input
-                  type="time"
-                  value={draftTimes[dayOfWeek] ?? "09:00"}
-                  onChange={(e) =>
-                    setDraftTimes((prev) => ({ ...prev, [dayOfWeek]: e.target.value }))
-                  }
-                  className="h-7 w-[5.5rem] shrink-0 px-1.5 text-[11px] sm:h-8 sm:w-24"
-                  dir="ltr"
-                  aria-label={t("addTimeSlot")}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 gap-1 border-[#1B4332]/20 px-2 text-[11px] sm:h-8"
-                  onClick={() => addSlot(dayOfWeek)}
-                >
-                  <Plus className="h-3 w-3" aria-hidden />
-                  {t("addTimeSlot")}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
 function AdminAvailabilityPage() {
   const { t } = useI18n();
-  const [pickup, setPickup] = useState<FulfillmentTypeConfig>(defaultPickupConfig());
-  const [delivery, setDelivery] = useState<FulfillmentTypeConfig>(defaultDeliveryConfig());
+  const [pickup, setPickup] = useState<WeekdayAvailability>({ ...EMPTY_WEEK, 2: true, 5: true });
+  const [delivery, setDelivery] = useState<WeekdayAvailability>({ ...EMPTY_WEEK, 2: true, 5: true });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -189,28 +74,20 @@ function AdminAvailabilityPage() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const result = await fetchFullAvailability();
+      const result = await fetchFulfillmentDays();
       if (cancelled) return;
       if (!result.ok) {
-        const msg = result.message;
-        const missingDays = msg.includes("fulfillment_available_days");
-        const missingSlots = msg.includes("fulfillment_time_slots");
-        setNeedsMigration(missingDays || missingSlots);
-        setLoadError(
-          missingSlots
-            ? t("adminOrderAvailabilityMigrationHintTime")
-            : missingDays
-              ? t("adminOrderAvailabilityMigrationHint")
-              : msg,
-        );
+        const missingTable = result.message.includes("fulfillment_available_days");
+        setNeedsMigration(missingTable);
+        setLoadError(missingTable ? t("adminOrderAvailabilityMigrationHint") : result.message);
         toast.error(t("adminOrderAvailabilityLoadError"));
         setLoading(false);
         return;
       }
       setLoadError(null);
       setNeedsMigration(false);
-      setPickup(result.config.pickup);
-      setDelivery(result.config.delivery);
+      setPickup(rowsToWeekdayMap(result.rows, "pickup"));
+      setDelivery(rowsToWeekdayMap(result.rows, "delivery"));
       setLoading(false);
     })();
     return () => {
@@ -220,14 +97,12 @@ function AdminAvailabilityPage() {
 
   const save = async () => {
     setSaving(true);
-    const result = await saveFullAvailability({ pickup, delivery });
+    const result = await saveFulfillmentAvailability(pickup, delivery);
     setSaving(false);
 
     if (!result.ok) {
       if (result.message === "MIN_ONE_DAY_REQUIRED") {
         toast.error(t("availabilityMinOneDay"));
-      } else if (result.message === "ENABLED_DAY_NEEDS_SLOT") {
-        toast.error(t("adminEnabledDayNeedsSlot"));
       } else {
         toast.error(result.message);
       }
@@ -260,7 +135,7 @@ function AdminAvailabilityPage() {
           </div>
         </div>
 
-        <div className="space-y-6 p-4 sm:p-5">
+        <div className="space-y-8 p-5 sm:p-6">
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -281,25 +156,25 @@ function AdminAvailabilityPage() {
             </div>
           ) : (
             <>
-              <FulfillmentTypeSection
+              <WeekdayToggleGrid
                 title={t("pickupAvailabilityTitle")}
                 description={t("choosePickupDay")}
-                config={pickup}
+                values={pickup}
                 onChange={setPickup}
               />
 
-              <div className="border-t border-[#1B4332]/10 pt-5">
-                <FulfillmentTypeSection
+              <div className="border-t border-[#1B4332]/10 pt-8">
+                <WeekdayToggleGrid
                   title={t("deliveryAvailabilityTitle")}
                   description={t("chooseDeliveryDay")}
-                  config={delivery}
+                  values={delivery}
                   onChange={setDelivery}
                 />
               </div>
 
               <Button
                 type="button"
-                className="h-9 bg-[#1B4332] px-5 text-sm hover:bg-[#1B4332]/90"
+                className="h-11 bg-[#1B4332] px-6 hover:bg-[#1B4332]/90"
                 onClick={() => void save()}
                 disabled={saving}
               >

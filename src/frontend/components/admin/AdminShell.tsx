@@ -69,7 +69,10 @@ const navItems: NavItem[] = [
   },
   {
     to: "/admin/settings",
-    match: (p) => p.startsWith("/admin/settings") || p.startsWith("/admin/availability"),
+    match: (p) =>
+      p.startsWith("/admin/settings") ||
+      p.startsWith("/admin/availability") ||
+      p.startsWith("/admin/rest-days"),
     labelKey: "adminNavSettings",
     icon: SlidersHorizontal,
   },

@@ -155,6 +155,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      bakery_rest_days: {
+        Row: {
+          id: string;
+          start_date: string;
+          end_date: string | null;
+          reason: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          start_date: string;
+          end_date?: string | null;
+          reason?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          start_date?: string;
+          end_date?: string | null;
+          reason?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       fulfillment_time_slots: {
         Row: {
           id: string;
@@ -693,7 +723,6 @@ export type Database = {
           p_fulfillment_date?:         string;
           p_fulfillment_day_of_week?:  number;
           p_fulfillment_label?:        string;
-          p_fulfillment_time?:         string;
         };
         Returns: Json;
       };

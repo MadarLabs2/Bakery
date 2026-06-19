@@ -20,6 +20,7 @@ type OrderSummaryProps = {
   paymentMethod: PaymentMethod;
   scheduledDateLabel?: string | null;
   submitting: boolean;
+  placeOrderDisabled?: boolean;
   onPlaceOrder: () => void;
   className?: string;
 };
@@ -34,6 +35,7 @@ export function OrderSummary({
   paymentMethod,
   scheduledDateLabel,
   submitting,
+  placeOrderDisabled = false,
   onPlaceOrder,
   className,
 }: OrderSummaryProps) {
@@ -142,7 +144,7 @@ export function OrderSummary({
         size="lg"
         className="mt-5 h-12 w-full text-base font-semibold shadow-md"
         onClick={onPlaceOrder}
-        disabled={submitting}
+        disabled={submitting || placeOrderDisabled}
       >
         {submitting ? (
           <>

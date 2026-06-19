@@ -24,15 +24,50 @@ export const fulfillmentDaysDict = {
     he: "בחר יום משלוח",
     ar: "اختر يوم التوصيل",
   },
+  choosePickupDate: {
+    en: "Choose pickup date",
+    he: "בחר תאריך איסוף",
+    ar: "اختر تاريخ الاستلام",
+  },
+  chooseDeliveryDate: {
+    en: "Choose delivery date",
+    he: "בחר תאריך משלוח",
+    ar: "اختر تاريخ التوصيل",
+  },
   availableDatesTitle: {
     en: "Available dates",
     he: "תאריכים זמינים",
     ar: "التواريخ المتاحة",
   },
+  selectDate: {
+    en: "Select date",
+    he: "בחר תאריך",
+    ar: "اختر التاريخ",
+  },
+  changeDate: {
+    en: "Change date",
+    he: "שנה תאריך",
+    ar: "تغيير التاريخ",
+  },
+  changeAddress: {
+    en: "Change address",
+    he: "שנה כתובת",
+    ar: "تغيير العنوان",
+  },
+  pickupScheduledFor: {
+    en: "Pickup",
+    he: "איסוף נקבע ל־",
+    ar: "تم تحديد الاستلام في",
+  },
+  deliveryScheduledFor: {
+    en: "Delivery",
+    he: "משלוח נקבע ל־",
+    ar: "تم تحديد التوصيل في",
+  },
   fulfillmentDateRequired: {
-    en: "Please choose an available date before placing the order",
-    he: "יש לבחור תאריך זמין לפני ביצוע ההזמנה",
-    ar: "يجب اختيار تاريخ متاح قبل إتمام الطلب",
+    en: "Please choose a date before placing the order",
+    he: "יש לבחור תאריך לפני ביצוע ההזמנה",
+    ar: "يجب اختيار تاريخ قبل إتمام الطلب",
   },
   availabilitySavedSuccess: {
     en: "Availability saved successfully",
@@ -55,51 +90,10 @@ export const fulfillmentDaysDict = {
     ar: "توفر الاستلام والتوصيل",
   },
   adminOrderAvailabilitySubtitle: {
-    en: "Configure available weekdays and time slots for customer scheduling.",
-    he: "הגדרת ימי שבוע ושעות זמינות לקביעת הזמנות.",
-    ar: "تكوين أيام الأسبوع والأوقات المتاحة لجدولة الطلبات.",
+    en: "Configure available weekdays for customer scheduling.",
+    he: "הגדרת ימי שבוע זמינים לקביעת הזמנות.",
+    ar: "تكوين أيام الأسبوع المتاحة لجدولة الطلبات.",
   },
-  choosePickupTime: {
-    en: "Choose pickup time",
-    he: "בחר שעת איסוף",
-    ar: "اختر وقت الاستلام",
-  },
-  chooseDeliveryTime: {
-    en: "Choose delivery time",
-    he: "בחר שעת משלוח",
-    ar: "اختر وقت التوصيل",
-  },
-  selectDate: { en: "Select date", he: "בחר תאריך", ar: "اختر التاريخ" },
-  selectTime: { en: "Select time", he: "בחר שעה", ar: "اختر الساعة" },
-  availableTimesTitle: {
-    en: "Available times",
-    he: "שעות זמינות",
-    ar: "الأوقات المتاحة",
-  },
-  changeTime: { en: "Change time", he: "שנה שעה", ar: "تغيير الوقت" },
-  changeAddress: { en: "Change address", he: "שנה כתובת", ar: "تغيير العنوان" },
-  pickupScheduledFor: {
-    en: "Pickup scheduled for",
-    he: "איסוף נקבע ל־",
-    ar: "تم تحديد الاستلام في",
-  },
-  deliveryScheduledFor: {
-    en: "Delivery scheduled for",
-    he: "משלוח נקבע ל־",
-    ar: "تم تحديد التوصيل في",
-  },
-  fulfillmentDateTimeRequired: {
-    en: "Please choose a date and time",
-    he: "יש לבחור תאריך ושעה",
-    ar: "يجب اختيار التاريخ والساعة",
-  },
-  noAvailableTimes: {
-    en: "No available times for this date",
-    he: "אין שעות זמינות לתאריך זה",
-    ar: "لا توجد أوقات متاحة لهذا التاريخ",
-  },
-  addTimeSlot: { en: "Add time slot", he: "הוסף שעה", ar: "إضافة وقت" },
-  removeTimeSlot: { en: "Remove time slot", he: "הסר שעה", ar: "حذف وقت" },
   pickupAvailabilityTitle: {
     en: "Pickup availability",
     he: "זמינות איסוף",
@@ -110,43 +104,15 @@ export const fulfillmentDaysDict = {
     he: "זמינות משלוחים",
     ar: "توفر التوصيل",
   },
-  timeSlotsTitle: {
-    en: "Time slots",
-    he: "שעות זמינות",
-    ar: "الأوقات المتاحة",
-  },
-  schedulingConfirm: { en: "Confirm", he: "אישור", ar: "تأكيد" },
-  schedulingBack: { en: "Back", he: "חזרה", ar: "رجوع" },
-  schedulingChoosePrompt: {
+  dateChoosePrompt: {
     en: "Choose when you would like to receive your order.",
     he: "בחרו מתי תרצו לקבל את ההזמנה.",
     ar: "اختر متى تريد استلام طلبك.",
   },
-  changeSchedule: { en: "Change", he: "שנה", ar: "تغيير" },
-  scheduleNotSelected: {
-    en: "No date or time selected yet",
-    he: "טרם נבחרו תאריך ושעה",
-    ar: "لم يتم اختيار التاريخ والساعة بعد",
-  },
-  adminEnabledDayNeedsSlot: {
-    en: "Every enabled day must have at least one time slot",
-    he: "לכל יום מופעל חייבת להיות לפחות שעה אחת",
-    ar: "يجب أن يحتوي كل يوم مفعّل على وقت واحد على الأقل",
-  },
-  adminDuplicateTimeSlot: {
-    en: "This time already exists for this day",
-    he: "שעה זו כבר קיימת ליום זה",
-    ar: "هذا الوقت موجود بالفعل لهذا اليوم",
-  },
-  adminInvalidTimeSlot: {
-    en: "Enter a valid time (HH:MM)",
-    he: "יש להזין שעה תקינה (HH:MM)",
-    ar: "أدخل وقتًا صالحًا (HH:MM)",
-  },
-  adminOrderAvailabilityMigrationHintTime: {
-    en: "Run supabase/apply_fulfillment_time_slots.sql in Supabase SQL Editor, then refresh.",
-    he: "הריצו את supabase/apply_fulfillment_time_slots.sql ב-Supabase SQL Editor ורעננו.",
-    ar: "شغّل supabase/apply_fulfillment_time_slots.sql في Supabase SQL Editor ثم حدّث.",
+  dateNotSelected: {
+    en: "No date selected yet",
+    he: "טרם נבחר תאריך",
+    ar: "لم يتم اختيار التاريخ بعد",
   },
   adminOrderAvailabilitySave: {
     en: "Save availability",

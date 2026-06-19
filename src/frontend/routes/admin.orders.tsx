@@ -473,7 +473,7 @@ function AdminOrders() {
         selected.selected_fulfillment_day_of_week,
         selected.selected_fulfillment_label,
         lang,
-        selected.selected_fulfillment_time,
+        selected.delivery_method,
       )
     : null;
 

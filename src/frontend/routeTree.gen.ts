@@ -29,6 +29,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ProductsIdRouteImport } from './routes/products.$id'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminRestDaysRouteImport } from './routes/admin.rest-days'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminOrdersRouteImport } from './routes/admin.orders'
@@ -137,6 +138,11 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminRestDaysRoute = AdminRestDaysRouteImport.update({
+  id: '/rest-days',
+  path: '/rest-days',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/rest-days': typeof AdminRestDaysRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/products/$id': typeof ProductsIdRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/rest-days': typeof AdminRestDaysRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/products/$id': typeof ProductsIdRoute
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/rest-days': typeof AdminRestDaysRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/products/$id': typeof ProductsIdRoute
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/products'
     | '/admin/reports'
+    | '/admin/rest-days'
     | '/admin/settings'
     | '/checkout/success'
     | '/products/$id'
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/products'
     | '/admin/reports'
+    | '/admin/rest-days'
     | '/admin/settings'
     | '/checkout/success'
     | '/products/$id'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/products'
     | '/admin/reports'
+    | '/admin/rest-days'
     | '/admin/settings'
     | '/checkout/success'
     | '/products/$id'
@@ -507,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/rest-days': {
+      id: '/admin/rest-days'
+      path: '/rest-days'
+      fullPath: '/admin/rest-days'
+      preLoaderRoute: typeof AdminRestDaysRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/reports': {
       id: '/admin/reports'
       path: '/reports'
@@ -567,6 +586,7 @@ interface AdminRouteChildren {
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminProductsRoute: typeof AdminProductsRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminRestDaysRoute: typeof AdminRestDaysRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -579,6 +599,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminOrdersRoute: AdminOrdersRoute,
   AdminProductsRoute: AdminProductsRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminRestDaysRoute: AdminRestDaysRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

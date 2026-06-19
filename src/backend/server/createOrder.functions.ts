@@ -22,7 +22,6 @@ const createOrderInput = z.object({
   fulfillmentDate:       z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   fulfillmentDayOfWeek:  z.number().int().min(0).max(6),
   fulfillmentLabel:      z.string().min(1).max(200),
-  fulfillmentTime:       z.string().regex(/^\d{2}:\d{2}$/),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderInput>;
@@ -54,14 +53,12 @@ const PG_ERROR_MAP: Record<string, string> = {
   ERR_COUPON_EXPIRED:            "couponExpired",
   ERR_COUPON_EXHAUSTED:          "couponExhausted",
   ERR_COUPON_MIN_ORDER:          "couponMinOrderLabel",
-  ERR_MISSING_FULFILLMENT_DATE:  "fulfillmentDateTimeRequired",
-  ERR_INVALID_FULFILLMENT_DAY:   "fulfillmentDateTimeRequired",
-  ERR_FULFILLMENT_DAY_MISMATCH:  "fulfillmentDateTimeRequired",
-  ERR_FULFILLMENT_DATE_PAST:     "fulfillmentDateTimeRequired",
-  ERR_FULFILLMENT_DAY_NOT_AVAILABLE: "fulfillmentDateTimeRequired",
-  ERR_MISSING_FULFILLMENT_TIME:  "fulfillmentDateTimeRequired",
-  ERR_INVALID_FULFILLMENT_TIME:  "fulfillmentDateTimeRequired",
-  ERR_FULFILLMENT_TIME_NOT_AVAILABLE: "fulfillmentDateTimeRequired",
+  ERR_MISSING_FULFILLMENT_DATE:  "fulfillmentDateRequired",
+  ERR_INVALID_FULFILLMENT_DAY:   "fulfillmentDateRequired",
+  ERR_FULFILLMENT_DAY_MISMATCH:  "fulfillmentDateRequired",
+  ERR_FULFILLMENT_DATE_PAST:     "fulfillmentDateRequired",
+  ERR_FULFILLMENT_DAY_NOT_AVAILABLE: "fulfillmentDateRequired",
+  ERR_FULFILLMENT_REST_DAY:          "fulfillmentDateNoLongerAvailable",
 };
 
 function parseDbError(raw: string): { errorKey: string; detail?: string } {
@@ -109,7 +106,6 @@ export const createOrder = createServerFn({ method: "POST" })
       p_fulfillment_date:          data.fulfillmentDate,
       p_fulfillment_day_of_week:   data.fulfillmentDayOfWeek,
       p_fulfillment_label:         data.fulfillmentLabel,
-      p_fulfillment_time:          data.fulfillmentTime,
     });
 
     if (error) {

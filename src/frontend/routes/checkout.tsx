@@ -30,11 +30,17 @@ import {
   type ContactFieldErrors,
 } from "@/frontend/lib/checkoutValidation";
 import { toast } from "sonner";
-import { FulfillmentSchedulingModal } from "@/frontend/components/checkout/FulfillmentSchedulingModal";
-import { FulfillmentScheduleSummary } from "@/frontend/components/checkout/FulfillmentScheduleSummary";
-import type { FulfillmentScheduleSelection } from "@/frontend/lib/fulfillmentDays";
+import { FulfillmentDateModal } from "@/frontend/components/checkout/FulfillmentDateModal";
+import { FulfillmentDateSummary } from "@/frontend/components/checkout/FulfillmentDateSummary";
+import type { FulfillmentDateSelection } from "@/frontend/lib/fulfillmentDays";
 import { PENDING_CARD_ORDER_STORAGE_KEY } from "@/frontend/lib/orderPayment";
 import { useReleasePendingCardOrder } from "@/frontend/lib/useReleasePendingCardOrder";
+import { useRestDays } from "@/frontend/hooks/useRestDays";
+import {
+  isDateRestDay,
+  REST_DAY_BLOCKS_CHECKOUT_TODAY,
+} from "@/frontend/lib/restDays";
+import { CheckoutRestDayBanner } from "@/frontend/components/checkout/CheckoutRestDayBanner";
 
 export const Route = createFileRoute("/checkout")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -53,6 +59,7 @@ function CheckoutPage() {
   const { releaseIfNeeded } = useReleasePendingCardOrder();
   const { items, subtotal, refresh } = useCart();
   const { deliveryFee: configuredDeliveryFee } = useDeliveryFee();
+  const { restDays, isTodayRestDay: bakeryClosedToday } = useRestDays();
   const nav = useNavigate();
   const submitLock = useRef(false);
 
@@ -83,9 +90,9 @@ function CheckoutPage() {
   const [orderRedirecting, setOrderRedirecting] = useState(false);
   const [cardPaymentAvailable, setCardPaymentAvailable] = useState(false);
   const [pendingCardOrderId, setPendingCardOrderId] = useState<string | null>(null);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [dateModalOpen, setDateModalOpen] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
-  const [fulfillmentSchedule, setFulfillmentSchedule] = useState<FulfillmentScheduleSelection | null>(null);
+  const [fulfillmentDate, setFulfillmentDate] = useState<FulfillmentDateSelection | null>(null);
   const [fulfillmentError, setFulfillmentError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -224,6 +231,19 @@ function CheckoutPage() {
     };
   }, [subtotal, appliedCouponId, lockedCode, t, resetAppliedCoupon]);
 
+  useEffect(() => {
+    if (!fulfillmentDate || restDays.length === 0) return;
+    if (isDateRestDay(fulfillmentDate.isoDate, restDays)) {
+      setFulfillmentDate(null);
+      setFulfillmentError(t("fulfillmentDateNoLongerAvailable"));
+    }
+  }, [restDays, fulfillmentDate, t]);
+
+  const selectedDateIsRestDay =
+    fulfillmentDate !== null && isDateRestDay(fulfillmentDate.isoDate, restDays);
+  const checkoutBlockedToday = REST_DAY_BLOCKS_CHECKOUT_TODAY && bakeryClosedToday;
+  const placeOrderDisabled = checkoutBlockedToday || selectedDateIsRestDay;
+
   const deliveryFee = recv === "delivery" ? configuredDeliveryFee : 0;
   const total = Math.max(0, subtotal - discount) + deliveryFee;
 
@@ -274,9 +294,18 @@ function CheckoutPage() {
       }
     }
     setDeliveryErrors({});
-    if (!fulfillmentSchedule) {
-      setFulfillmentError(t("fulfillmentDateTimeRequired"));
-      toast.error(t("fulfillmentDateTimeRequired"));
+    if (!fulfillmentDate) {
+      setFulfillmentError(t("fulfillmentDateRequired"));
+      toast.error(t("fulfillmentDateRequired"));
+      return false;
+    }
+    if (checkoutBlockedToday) {
+      toast.error(t("bakeryClosedToday"));
+      return false;
+    }
+    if (isDateRestDay(fulfillmentDate.isoDate, restDays)) {
+      setFulfillmentError(t("fulfillmentDateNoLongerAvailable"));
+      toast.error(t("fulfillmentDateNoLongerAvailable"));
       return false;
     }
     setFulfillmentError(null);
@@ -306,10 +335,9 @@ function CheckoutPage() {
           couponCode:      couponCode,
           idempotencyKey:       idempotencyKey,
           customerLocale:       lang,
-          fulfillmentDate:      fulfillmentSchedule.isoDate,
-          fulfillmentDayOfWeek: fulfillmentSchedule.dayOfWeek,
-          fulfillmentLabel:     fulfillmentSchedule.summaryLabel,
-          fulfillmentTime:      fulfillmentSchedule.timeValue,
+          fulfillmentDate:      fulfillmentDate.isoDate,
+          fulfillmentDayOfWeek: fulfillmentDate.dayOfWeek,
+          fulfillmentLabel:     fulfillmentDate.summaryLabel,
         },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
@@ -396,6 +424,8 @@ function CheckoutPage() {
 
         <div className="grid gap-8 lg:grid-cols-3 lg:items-start">
           <div className="space-y-5 lg:col-span-2">
+            {bakeryClosedToday ? <CheckoutRestDayBanner /> : null}
+
             <CheckoutCustomerForm
               name={name}
               phone={phone}
@@ -411,7 +441,7 @@ function CheckoutPage() {
               onMethodChange={(m) => {
                 setRecv(m);
                 setDeliveryErrors({});
-                setFulfillmentSchedule(null);
+                setFulfillmentDate(null);
                 setFulfillmentError(null);
               }}
               address={deliveryFields}
@@ -424,33 +454,33 @@ function CheckoutPage() {
                   }
                   return next;
                 });
-                setFulfillmentSchedule(null);
+                setFulfillmentDate(null);
               }}
               fieldErrors={deliveryErrors}
               deliveryFee={configuredDeliveryFee}
-              onPickupSelected={() => setScheduleModalOpen(true)}
-              onDeliveryAddressConfirmed={() => setScheduleModalOpen(true)}
+              onPickupSelected={() => setDateModalOpen(true)}
+              onDeliveryAddressConfirmed={() => setDateModalOpen(true)}
               addressDialogOpen={addressDialogOpen}
               onAddressDialogOpenChange={setAddressDialogOpen}
             />
 
-            <FulfillmentScheduleSummary
+            <FulfillmentDateSummary
               method={recv}
-              schedule={fulfillmentSchedule}
+              selection={fulfillmentDate}
               deliveryAddress={deliveryFields}
               addressComplete={isDeliveryAddressComplete(deliveryFields)}
               error={fulfillmentError}
-              onChangeSchedule={() => setScheduleModalOpen(true)}
+              onChangeDate={() => setDateModalOpen(true)}
               onChangeAddress={() => setAddressDialogOpen(true)}
             />
 
-            <FulfillmentSchedulingModal
-              open={scheduleModalOpen}
-              onOpenChange={setScheduleModalOpen}
+            <FulfillmentDateModal
+              open={dateModalOpen}
+              onOpenChange={setDateModalOpen}
               fulfillmentType={recv}
-              initialSelection={fulfillmentSchedule}
+              initialSelection={fulfillmentDate}
               onConfirm={(selection) => {
-                setFulfillmentSchedule(selection);
+                setFulfillmentDate(selection);
                 setFulfillmentError(null);
               }}
             />
@@ -496,8 +526,9 @@ function CheckoutPage() {
               total={total}
               deliveryMethod={recv}
               paymentMethod={pay}
-              scheduledDateLabel={fulfillmentSchedule?.summaryLabel ?? null}
+              scheduledDateLabel={fulfillmentDate?.summaryLabel ?? null}
               submitting={submitting}
+              placeOrderDisabled={placeOrderDisabled}
               onPlaceOrder={placeOrder}
             />
           </div>

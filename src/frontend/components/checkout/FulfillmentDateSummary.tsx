@@ -1,35 +1,35 @@
-import { CalendarClock, MapPin, Pencil } from "lucide-react";
+import { CalendarDays, MapPin, Pencil } from "lucide-react";
 import { cn } from "@/frontend/lib/utils";
 import { useI18n } from "@/frontend/lib/i18n";
 import { CheckoutSection } from "@/frontend/components/checkout/CheckoutSection";
 import { formatDeliveryAddressShort, type DeliveryAddressFields, type DeliveryMethod } from "@/frontend/lib/checkoutDelivery";
-import type { FulfillmentScheduleSelection } from "@/frontend/lib/fulfillmentDays";
+import type { FulfillmentDateSelection } from "@/frontend/lib/fulfillmentDays";
 
-type FulfillmentScheduleSummaryProps = {
+type FulfillmentDateSummaryProps = {
   method: DeliveryMethod;
-  schedule: FulfillmentScheduleSelection | null;
+  selection: FulfillmentDateSelection | null;
   deliveryAddress?: DeliveryAddressFields;
   addressComplete?: boolean;
   error?: string | null;
-  onChangeSchedule: () => void;
+  onChangeDate: () => void;
   onChangeAddress?: () => void;
 };
 
-export function FulfillmentScheduleSummary({
+export function FulfillmentDateSummary({
   method,
-  schedule,
+  selection,
   deliveryAddress,
   addressComplete,
   error,
-  onChangeSchedule,
+  onChangeDate,
   onChangeAddress,
-}: FulfillmentScheduleSummaryProps) {
+}: FulfillmentDateSummaryProps) {
   const { t } = useI18n();
 
   return (
     <CheckoutSection
-      icon={<CalendarClock className="h-5 w-5" aria-hidden />}
-      title={method === "pickup" ? t("choosePickupTime") : t("chooseDeliveryTime")}
+      icon={<CalendarDays className="h-5 w-5" aria-hidden />}
+      title={method === "pickup" ? t("choosePickupDate") : t("chooseDeliveryDate")}
     >
       {error ? (
         <p className="mb-3 text-sm text-destructive" role="alert">
@@ -61,29 +61,29 @@ export function FulfillmentScheduleSummary({
         </div>
       ) : null}
 
-      {schedule ? (
+      {selection ? (
         <div
           className={cn(
             "flex flex-col gap-3 rounded-2xl border border-[#1B4332]/20 bg-gradient-to-br from-[#faf8f4] to-white p-4 sm:flex-row sm:items-center sm:justify-between",
           )}
         >
-          <p className="text-sm font-medium leading-relaxed text-[#1B4332]">{schedule.summaryLabel}</p>
+          <p className="text-sm font-medium leading-relaxed text-[#1B4332]">{selection.summaryLabel}</p>
           <button
             type="button"
-            onClick={onChangeSchedule}
+            onClick={onChangeDate}
             className="inline-flex shrink-0 items-center gap-1 self-start text-sm font-medium text-[#2f6a4f] hover:underline sm:self-center"
           >
             <Pencil className="h-3.5 w-3.5" aria-hidden />
-            {t("changeTime")}
+            {t("changeDate")}
           </button>
         </div>
       ) : (
         <button
           type="button"
-          onClick={onChangeSchedule}
+          onClick={onChangeDate}
           className="w-full rounded-2xl border-2 border-dashed border-[#1B4332]/35 bg-[#faf8f4]/80 px-4 py-4 text-sm font-medium text-[#1B4332] transition-colors hover:border-[#1B4332] hover:bg-[#1B4332]/5"
         >
-          {t("scheduleNotSelected")}
+          {t("dateNotSelected")}
         </button>
       )}
     </CheckoutSection>

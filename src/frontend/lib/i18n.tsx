@@ -4,6 +4,7 @@ import { cookieConsentDict } from "@/frontend/lib/cookieConsent.i18n";
 import { privacyDict } from "@/frontend/lib/privacyPolicy.i18n";
 import { termsDict } from "@/frontend/lib/termsPolicy.i18n";
 import { fulfillmentDaysDict } from "@/frontend/lib/fulfillmentDays.i18n";
+import { restDaysDict } from "@/frontend/lib/restDays.i18n";
 import {
   allowsPreferencesStorage,
   PREFERENCES_REVOKED_EVENT,
@@ -19,6 +20,7 @@ export const dict: Dict = {
   ...privacyDict,
   ...termsDict,
   ...fulfillmentDaysDict,
+  ...restDaysDict,
   brand: {
     en: "Al-nour Gluten-free Bakery",
     he: "מאפיית אלנור ללא גלוטן",
