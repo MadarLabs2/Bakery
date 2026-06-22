@@ -91,7 +91,7 @@ function ContactPage() {
         className="section-card-enter mt-10 space-y-4 rounded-2xl border bg-card p-8"
         style={{ animationDelay: "0.24s" }}
       >
-        <h2 className="font-display text-xl font-semibold">Send a message</h2>
+        <h2 className="font-display text-xl font-semibold">{t("contactSendMessage")}</h2>
 
         {/* Honeypot — hidden from real users; bots fill it automatically */}
         <input
@@ -136,7 +136,7 @@ function ContactPage() {
           />
         </div>
         <div>
-          <Label htmlFor="cmsg">Message</Label>
+          <Label htmlFor="cmsg">{t("contactMessageLabel")}</Label>
           <Textarea
             id="cmsg"
             required
@@ -147,7 +147,7 @@ function ContactPage() {
           />
         </div>
         <Button type="submit" disabled={sending} className="w-full transition-opacity duration-200">
-          {sending ? "Sending…" : "Send"}
+          {sending ? t("contactSending") : t("contactSend")}
         </Button>
       </form>
     </div>

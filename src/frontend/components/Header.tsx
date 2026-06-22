@@ -299,8 +299,9 @@ export function Header() {
             size="icon"
             onClick={() => nav({ to: "/cart" })}
             className={cn("relative", headerIconGhost)}
+            aria-label={count > 0 ? `${t("cart")} (${count})` : t("cart")}
           >
-            <ShoppingBag className="h-5 w-5" />
+            <ShoppingBag className="h-5 w-5" aria-hidden />
             {count > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
                 {count}
@@ -310,8 +311,13 @@ export function Header() {
 
           <DropdownMenu dir={isRTL(lang) ? "rtl" : "ltr"}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className={profileTouchCream}>
-                <UserIcon className="h-5 w-5" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className={profileTouchCream}
+                aria-label={user ? t("accountMenu") : t("login")}
+              >
+                <UserIcon className="h-5 w-5" aria-hidden />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align={headerDropdownAlign}>

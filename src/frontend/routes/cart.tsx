@@ -86,13 +86,25 @@ function CartPage() {
               <h3 className="font-semibold">{pickName(i.product, lang)}</h3>
               <p className="text-sm text-muted-foreground">₪{Number(i.product.price).toFixed(2)}</p>
               <div className="mt-auto flex items-center justify-between">
-                <div className="flex items-center rounded-md border">
-                  <button className="px-3 py-1.5" onClick={() => updateQty(i.id, i.quantity - 1)}>
-                    <Minus className="h-3 w-3" />
+                <div className="flex items-center rounded-md border" role="group" aria-label={t("quantityLabel")}>
+                  <button
+                    type="button"
+                    className="px-3 py-1.5"
+                    onClick={() => updateQty(i.id, i.quantity - 1)}
+                    aria-label={t("decreaseQuantity")}
+                  >
+                    <Minus className="h-3 w-3" aria-hidden />
                   </button>
-                  <span className="w-10 text-center text-sm">{i.quantity}</span>
-                  <button className="px-3 py-1.5" onClick={() => updateQty(i.id, i.quantity + 1)}>
-                    <Plus className="h-3 w-3" />
+                  <span className="w-10 text-center text-sm" aria-live="polite">
+                    {i.quantity}
+                  </span>
+                  <button
+                    type="button"
+                    className="px-3 py-1.5"
+                    onClick={() => updateQty(i.id, i.quantity + 1)}
+                    aria-label={t("increaseQuantity")}
+                  >
+                    <Plus className="h-3 w-3" aria-hidden />
                   </button>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => remove(i.id)}>

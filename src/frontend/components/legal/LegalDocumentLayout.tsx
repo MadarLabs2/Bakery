@@ -17,6 +17,7 @@ type LegalDocumentLayoutProps = {
   shell: LegalShellCopy;
   children: React.ReactNode;
   className?: string;
+  effectiveDate?: string;
 };
 
 export function LegalDocumentLayout({
@@ -25,9 +26,11 @@ export function LegalDocumentLayout({
   shell,
   children,
   className,
+  effectiveDate: effectiveDateOverride,
 }: LegalDocumentLayoutProps) {
   const { lang, t } = useI18n();
   const { email, phone, address, websiteUrl, effectiveDate } = LEGAL_PLACEHOLDERS;
+  const displayEffectiveDate = effectiveDateOverride ?? effectiveDate;
 
   return (
     <div className={cn("bg-gradient-to-b from-secondary/30 to-background", className)}>
@@ -49,7 +52,7 @@ export function LegalDocumentLayout({
                 <span className="font-medium text-foreground">
                   {legalSharedT("legalEffectiveDate", lang)}
                 </span>{" "}
-                {effectiveDate}
+                {displayEffectiveDate}
               </p>
             </div>
           </div>

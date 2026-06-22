@@ -174,20 +174,25 @@ export function ProductDetailView({
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <div
               className="flex items-center overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
-              aria-label="Quantity"
+              role="group"
+              aria-label={t("quantityLabel")}
             >
               <button
                 type="button"
                 className="pd-qty-btn px-4 py-2.5 text-lg leading-none hover:bg-muted"
                 onClick={() => setQty(Math.max(1, qty - 1))}
+                aria-label={t("decreaseQuantity")}
               >
                 −
               </button>
-              <span className="min-w-[2.5rem] text-center text-base font-semibold tabular-nums">{qty}</span>
+              <span className="min-w-[2.5rem] text-center text-base font-semibold tabular-nums" aria-live="polite">
+                {qty}
+              </span>
               <button
                 type="button"
                 className="pd-qty-btn px-4 py-2.5 text-lg leading-none hover:bg-muted"
                 onClick={() => setQty(qty + 1)}
+                aria-label={t("increaseQuantity")}
               >
                 +
               </button>

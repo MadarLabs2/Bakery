@@ -44,7 +44,11 @@ export function CheckoutCustomerForm({
             className={cn(errors?.name && "border-destructive")}
             aria-invalid={!!errors?.name}
           />
-          {errors?.name ? <p className="mt-1 text-xs text-destructive">{errors.name}</p> : null}
+          {errors?.name ? (
+            <p className="mt-1 text-xs text-destructive" role="alert">
+              {errors.name}
+            </p>
+          ) : null}
         </div>
         <div>
           <Label htmlFor="checkout-phone">{t("phone")}</Label>
@@ -57,7 +61,11 @@ export function CheckoutCustomerForm({
             className={cn(errors?.phone && "border-destructive")}
             aria-invalid={!!errors?.phone}
           />
-          {errors?.phone ? <p className="mt-1 text-xs text-destructive">{errors.phone}</p> : null}
+          {errors?.phone ? (
+            <p className="mt-1 text-xs text-destructive" role="alert">
+              {errors.phone}
+            </p>
+          ) : null}
         </div>
         <div className="sm:col-span-2">
           <Label htmlFor="checkout-email">{t("email")}</Label>
@@ -70,7 +78,11 @@ export function CheckoutCustomerForm({
             className={cn(errors?.email && "border-destructive")}
             aria-invalid={!!errors?.email}
           />
-          {errors?.email ? <p className="mt-1 text-xs text-destructive">{errors.email}</p> : null}
+          {errors?.email ? (
+            <p className="mt-1 text-xs text-destructive" role="alert">
+              {errors.email}
+            </p>
+          ) : null}
         </div>
       </div>
     </CheckoutSection>

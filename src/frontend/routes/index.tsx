@@ -6,6 +6,7 @@ import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { supabase } from "@/backend/db/client";
 import { subscribeEmail } from "@/backend/server/subscribeEmail.functions";
 import { Button } from "@/frontend/components/ui/button";
+import { Label } from "@/frontend/components/ui/label";
 import { Skeleton } from "@/frontend/components/ui/skeleton";
 import { ProductCard } from "@/frontend/components/ProductCard";
 import { CategoryProductRail } from "@/frontend/components/CategoryProductRail";
@@ -279,7 +280,11 @@ function HomePage() {
               onSubmit={subscribe}
               className="mx-auto mt-6 flex max-w-md flex-col gap-2 sm:flex-row"
             >
+              <Label htmlFor="subscribe-email" className="sr-only">
+                {t("email")}
+              </Label>
               <input
+                id="subscribe-email"
                 type="email"
                 required
                 value={email}

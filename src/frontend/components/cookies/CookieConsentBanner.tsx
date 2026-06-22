@@ -18,6 +18,7 @@ export function CookieConsentBanner() {
     <>
       <div
         role="dialog"
+        aria-modal="true"
         aria-labelledby="cookie-notice-title"
         aria-describedby="cookie-notice-desc"
         className="fixed bottom-3 start-0 end-0 z-40 mx-auto w-[min(calc(100%-2rem),25rem)] max-w-[25rem] overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-b from-card to-secondary/50 shadow-[0_8px_32px_rgba(27,67,50,0.14)] backdrop-blur-md sm:bottom-4 md:bottom-6 md:w-full md:max-w-[36rem] md:rounded-2xl lg:max-w-[40rem]"

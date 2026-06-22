@@ -2,13 +2,15 @@ import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/frontend/lib/i18n";
 import { Wheat, Phone, Mail, MapPin } from "lucide-react";
 import { SocialLinks } from "@/frontend/components/SocialLinks";
-import { getContactPhoneDisplay, hasAnySocialLink } from "@/config/socialLinks";
+import { getContactPhoneDisplay, getWhatsAppE164, hasAnySocialLink } from "@/config/socialLinks";
 import { useCookieConsent } from "@/frontend/lib/cookieConsentContext";
 
 export function Footer() {
   const { t } = useI18n();
   const { openPreferences } = useCookieConsent();
   const phoneDisplay = getContactPhoneDisplay();
+  const phoneTel = getWhatsAppE164() ? `+${getWhatsAppE164()}` : "";
+  const contactEmail = "hello@alnour-bakery.com";
   return (
     <footer className="mt-20 border-t bg-secondary/40">
       <div className="container mx-auto grid gap-8 px-4 py-12 md:grid-cols-3">
@@ -23,12 +25,20 @@ export function Footer() {
           {phoneDisplay ? (
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 shrink-0" aria-hidden />
-              <span>{phoneDisplay}</span>
+              {phoneTel ? (
+                <a href={`tel:${phoneTel}`} className="hover:text-primary hover:underline">
+                  {phoneDisplay}
+                </a>
+              ) : (
+                <span>{phoneDisplay}</span>
+              )}
             </div>
           ) : null}
           <div className="flex items-center gap-2">
             <Mail className="h-4 w-4 shrink-0" aria-hidden />
-            <span>hello@alnour-bakery.com</span>
+            <a href={`mailto:${contactEmail}`} className="hover:text-primary hover:underline">
+              {contactEmail}
+            </a>
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 shrink-0" aria-hidden />
@@ -37,7 +47,7 @@ export function Footer() {
           {hasAnySocialLink() ? (
             <div className="pt-3">
               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Social
+                {t("footerSocial")}
               </div>
               <SocialLinks size="sm" />
             </div>
@@ -57,6 +67,10 @@ export function Footer() {
         <span className="mx-2 text-border">·</span>
         <Link to="/privacy" className="hover:text-primary hover:underline">
           {t("privacyPolicy")}
+        </Link>
+        <span className="mx-2 text-border">·</span>
+        <Link to="/accessibility" className="hover:text-primary hover:underline">
+          {t("accessibilityStatement")}
         </Link>
         <span className="mx-2 text-border">·</span>
         <button

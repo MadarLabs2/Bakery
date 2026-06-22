@@ -3,6 +3,7 @@ import { legalSharedDict } from "@/frontend/lib/legalShared.i18n";
 import { cookieConsentDict } from "@/frontend/lib/cookieConsent.i18n";
 import { privacyDict } from "@/frontend/lib/privacyPolicy.i18n";
 import { termsDict } from "@/frontend/lib/termsPolicy.i18n";
+import { accessibilityDict } from "@/frontend/lib/accessibilityPolicy.i18n";
 import { fulfillmentDaysDict } from "@/frontend/lib/fulfillmentDays.i18n";
 import { restDaysDict } from "@/frontend/lib/restDays.i18n";
 import { deliveryPlacesDict } from "@/frontend/lib/deliveryPlaces.i18n";
@@ -20,6 +21,7 @@ export const dict: Dict = {
   ...cookieConsentDict,
   ...privacyDict,
   ...termsDict,
+  ...accessibilityDict,
   ...fulfillmentDaysDict,
   ...restDaysDict,
   ...deliveryPlacesDict,
@@ -44,6 +46,58 @@ export const dict: Dict = {
   products: { en: "Products", he: "מוצרים", ar: "المنتجات" },
   categories: { en: "Categories", he: "קטגוריות", ar: "الفئات" },
   cart: { en: "Cart", he: "סל", ar: "السلة" },
+  skipToMain: {
+    en: "Skip to main content",
+    he: "דלג לתוכן הראשי",
+    ar: "تخطّ إلى المحتوى الرئيسي",
+  },
+  splashSkip: { en: "Skip", he: "דלג", ar: "تخطّ" },
+  accountMenu: { en: "Account menu", he: "תפריט חשבון", ar: "قائمة الحساب" },
+  contactSendMessage: {
+    en: "Send a message",
+    he: "שליחת הודעה",
+    ar: "إرسال رسالة",
+  },
+  contactMessageLabel: { en: "Message", he: "הודעה", ar: "الرسالة" },
+  contactSending: { en: "Sending…", he: "שולח…", ar: "جارٍ الإرسال…" },
+  contactSend: { en: "Send", he: "שלח", ar: "إرسال" },
+  decreaseQuantity: {
+    en: "Decrease quantity",
+    he: "הפחת כמות",
+    ar: "تقليل الكمية",
+  },
+  increaseQuantity: {
+    en: "Increase quantity",
+    he: "הוסף כמות",
+    ar: "زيادة الكمية",
+  },
+  quantityLabel: { en: "Quantity", he: "כמות", ar: "الكمية" },
+  heroCarouselLabel: {
+    en: "Bakery showcase images",
+    he: "תמונות תצוגה מהמאפייה",
+    ar: "صور عرض من المخبز",
+  },
+  heroSlideAlt1: {
+    en: "Fresh gluten-free baked goods display",
+    he: "תצוגת מאפים טריים ללא גלוטן",
+    ar: "عرض مخبوزات طازجة خالية من الغلوتين",
+  },
+  heroSlideAlt2: {
+    en: "Assorted gluten-free breads and pastries",
+    he: "מבחר לחמים ומאפים ללא גלוטן",
+    ar: "تشكيلة أرغفة ومعجنات خالية من الغلوتين",
+  },
+  heroPreviousSlide: {
+    en: "Previous image",
+    he: "תמונה קודמת",
+    ar: "الصورة السابقة",
+  },
+  heroNextSlide: {
+    en: "Next image",
+    he: "תמונה הבאה",
+    ar: "الصورة التالية",
+  },
+  footerSocial: { en: "Social", he: "רשתות חברתיות", ar: "التواصل الاجتماعي" },
   myOrders: { en: "My Orders", he: "ההזמנות שלי", ar: "طلباتي" },
   myOrdersEmpty: {
     en: "No orders yet.",

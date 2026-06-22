@@ -3,13 +3,15 @@
  * Used by legal pages (Privacy Policy, Terms, etc.).
  */
 export const LEGAL_PLACEHOLDERS = {
-  bakeryName: "[Your Bakery Name]",
-  email: "[privacy@yourbakery.com]",
-  phone: "[+1 (000) 000-0000]",
-  address: "[Street Address, City, State/Region, Country]",
-  websiteUrl: "[https://www.yourbakery.com]",
+  bakeryName: "Al-Nour Gluten-Free Bakery",
+  email: "hello@alnour-bakery.com",
+  phone: "053-7636011",
+  address: "Israel",
+  websiteUrl: "https://al-nour-bakery.com",
   /** Shown at top of legal documents */
   effectiveDate: "May 24, 2026",
+  /** Accessibility statement last updated */
+  accessibilityEffectiveDate: "June 2026",
   /** Governing law section — set to your jurisdiction */
-  jurisdiction: "[Israel / your jurisdiction]",
+  jurisdiction: "Israel",
 } as const;

@@ -15,6 +15,9 @@ import { Header } from "@/frontend/components/Header";
 import { Footer } from "@/frontend/components/Footer";
 import { FloatingSocialLinks } from "@/frontend/components/FloatingSocialLinks";
 import { CookieConsentBanner } from "@/frontend/components/cookies/CookieConsentBanner";
+import { SplashScreen } from "@/frontend/components/SplashScreen";
+import { SkipToMain } from "@/frontend/components/SkipToMain";
+import { EnableAccessibility } from "@/frontend/components/EnableAccessibility";
 import { ResponsiveToaster } from "@/frontend/components/ui/sonner";
 import { CookieConsentProvider } from "@/frontend/lib/cookieConsentContext";
 
@@ -79,8 +82,15 @@ function RootComponent() {
       <CookieConsentProvider>
         <AuthProvider>
           <CartProvider>
+            {!isAdmin && <EnableAccessibility />}
+            {!isAdmin && <SkipToMain />}
+            {!isAdmin && <SplashScreen />}
             {!isAdmin && <Header />}
-            <main className={isAdmin ? "min-h-screen" : "min-h-[60vh] pb-28 sm:pb-24"}>
+            <main
+              id="main-content"
+              tabIndex={-1}
+              className={isAdmin ? "min-h-screen" : "min-h-[60vh] pb-28 sm:pb-24"}
+            >
               <Outlet />
             </main>
             {!isAdmin && <Footer />}

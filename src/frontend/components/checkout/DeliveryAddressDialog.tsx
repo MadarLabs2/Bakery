@@ -59,7 +59,11 @@ export function DeliveryAddressFormFields({
             fieldErrors?.city && "border-destructive",
           )}
         />
-        {fieldErrors?.city ? <p className="mt-1 text-xs text-destructive">{fieldErrors.city}</p> : null}
+        {fieldErrors?.city ? (
+          <p className="mt-1 text-xs text-destructive" role="alert">
+            {fieldErrors.city}
+          </p>
+        ) : null}
       </div>
       <div>
         <Label htmlFor={`${idPrefix}-street`} className="text-xs sm:text-sm">
@@ -75,7 +79,11 @@ export function DeliveryAddressFormFields({
             fieldErrors?.street && "border-destructive",
           )}
         />
-        {fieldErrors?.street ? <p className="mt-1 text-xs text-destructive">{fieldErrors.street}</p> : null}
+        {fieldErrors?.street ? (
+          <p className="mt-1 text-xs text-destructive" role="alert">
+            {fieldErrors.street}
+          </p>
+        ) : null}
       </div>
       <div>
         <Label htmlFor={`${idPrefix}-house`} className="text-xs sm:text-sm">
@@ -92,7 +100,9 @@ export function DeliveryAddressFormFields({
           )}
         />
         {fieldErrors?.houseNumber ? (
-          <p className="mt-1 text-xs text-destructive">{fieldErrors.houseNumber}</p>
+          <p className="mt-1 text-xs text-destructive" role="alert">
+            {fieldErrors.houseNumber}
+          </p>
         ) : null}
       </div>
       <div className="sm:col-span-2">

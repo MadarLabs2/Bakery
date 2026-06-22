@@ -5,6 +5,7 @@ import { supabase } from "@/backend/db/client";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { ProductCard } from "@/frontend/components/ProductCard";
 import { Input } from "@/frontend/components/ui/input";
+import { Label } from "@/frontend/components/ui/label";
 import { Button } from "@/frontend/components/ui/button";
 import { cn } from "@/frontend/lib/utils";
 import { hasAnySocialLink } from "@/config/socialLinks";
@@ -100,8 +101,12 @@ function ProductsPage() {
 
       <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between products-filters-enter">
         <div className="relative max-w-sm flex-1">
-          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Label htmlFor="product-search" className="sr-only">
+            {t("searchProducts")}
+          </Label>
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
+            id="product-search"
             placeholder={t("searchProducts")}
             value={q}
             onChange={(e) =>

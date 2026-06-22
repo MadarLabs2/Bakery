@@ -9,7 +9,7 @@ import {
   type SetStateAction,
 } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/frontend/lib/utils";
 import { useI18n } from "@/frontend/lib/i18n";
 
@@ -17,10 +17,7 @@ import heroBakeryLogo from "@/images/alnoor_bakery_profesional/BakeryLogo.png";
 import heroImg1 from "@/images/ChatGPT Image May 3, 2026, 06_00_08 PM.png";
 import heroImg2 from "@/images/C63D6C00-533B-4C81-A2E0-1E1E0962BA54_1_201_a.jpeg";
 
-const SLIDES = [
-  { src: heroImg1, alt: "" },
-  { src: heroImg2, alt: "" },
-] as const;
+const SLIDE_SOURCES = [heroImg1, heroImg2] as const;
 
 /** Cream tile: emblem + compact CTAs (same widths as the former square tile). */
 function HeroDomeLogoBadge({ className }: { className?: string }) {
@@ -265,11 +262,17 @@ type HeroImageShowcaseProps = {
  * Images only inside that mask; corners above the dome stay `bg-primary` (green).
  */
 export function HeroImageShowcase({ className, activeIndex, onActiveIndexChange }: HeroImageShowcaseProps) {
+  const { t } = useI18n();
   const clipIdRaw = useId();
   const clipId = `hero-dome-${clipIdRaw.replace(/:/g, "")}`;
   const [paused, setPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const touchStartX = useRef<number | null>(null);
+
+  const slides = [
+    { src: SLIDE_SOURCES[0], alt: t("heroSlideAlt1") },
+    { src: SLIDE_SOURCES[1], alt: t("heroSlideAlt2") },
+  ];
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -281,18 +284,18 @@ export function HeroImageShowcase({ className, activeIndex, onActiveIndexChange 
 
   const go = useCallback(
     (dir: -1 | 1) => {
-      onActiveIndexChange((prev) => (prev + dir + SLIDES.length) % SLIDES.length);
+      onActiveIndexChange((prev) => (prev + dir + slides.length) % slides.length);
     },
-    [onActiveIndexChange],
+    [onActiveIndexChange, slides.length],
   );
 
   useEffect(() => {
     if (paused || reduceMotion) return;
     const id = window.setInterval(() => {
-      onActiveIndexChange((prev) => (prev + 1) % SLIDES.length);
+      onActiveIndexChange((prev) => (prev + 1) % slides.length);
     }, INTERVAL_MS);
     return () => window.clearInterval(id);
-  }, [paused, reduceMotion, onActiveIndexChange]);
+  }, [paused, reduceMotion, onActiveIndexChange, slides.length]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0]?.clientX ?? null;
@@ -312,7 +315,11 @@ export function HeroImageShowcase({ className, activeIndex, onActiveIndexChange 
   const clipUrl = `url(#${clipId})`;
 
   return (
-    <div className={cn("pointer-events-none relative w-full bg-primary", className)} aria-roledescription="carousel" aria-label="Hero images">
+    <div
+      className={cn("pointer-events-none relative w-full bg-primary", className)}
+      aria-roledescription="carousel"
+      aria-label={t("heroCarouselLabel")}
+    >
       <HeroGreenBotanicalBackdrop />
       <svg width={1} height={1} className="pointer-events-none absolute start-0 top-0 opacity-0" aria-hidden focusable="false">
         <defs>
@@ -340,7 +347,7 @@ export function HeroImageShowcase({ className, activeIndex, onActiveIndexChange 
         onTouchEnd={onTouchEnd}
       >
         <div className="relative h-full w-full overflow-hidden bg-warm-gradient shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-1px_0_rgba(45,42,39,0.06)] md:shadow-[inset_0_1px_0_rgba(255,255,255,0.82),inset_0_-1px_0_rgba(45,42,39,0.045)]">
-          {SLIDES.map((slide, i) => {
+          {slides.map((slide, i) => {
             const isOn = i === activeIndex;
             return (
               <div
@@ -369,6 +376,27 @@ export function HeroImageShowcase({ className, activeIndex, onActiveIndexChange 
               </div>
             );
           })}
+          <div
+            className="pointer-events-none absolute inset-x-0 top-[38%] z-[12] flex -translate-y-1/2 justify-between px-2 sm:px-4"
+            aria-hidden={false}
+          >
+            <button
+              type="button"
+              className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/40 bg-black/25 text-white backdrop-blur-sm transition-colors hover:bg-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              onClick={() => go(-1)}
+              aria-label={t("heroPreviousSlide")}
+            >
+              <ChevronLeft className="size-5 rtl:rotate-180" aria-hidden />
+            </button>
+            <button
+              type="button"
+              className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/40 bg-black/25 text-white backdrop-blur-sm transition-colors hover:bg-black/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              onClick={() => go(1)}
+              aria-label={t("heroNextSlide")}
+            >
+              <ChevronRight className="size-5 rtl:rotate-180" aria-hidden />
+            </button>
+          </div>
           {/* Soft highlight rim + vignette — subtle dome sheen */}
           <div
             className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.22] via-transparent to-transparent"
