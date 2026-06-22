@@ -3,17 +3,19 @@
  * Applied via Nitro routeRules (Vercel build output) and server middleware (runtime).
  * vercel.json mirrors these for documentation; Nitro SSR uses routeRules + middleware.
  */
+const ENABLE_ORIGINS = "https://cdn.enable.co.il https://www.enable.co.il";
+
 const CSP_DIRECTIVES = [
   "default-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://*.supabase.co",
-  "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+  `script-src 'self' 'unsafe-inline' ${ENABLE_ORIGINS}`,
+  `style-src 'self' 'unsafe-inline' ${ENABLE_ORIGINS}`,
+  `img-src 'self' data: blob: https://*.supabase.co ${ENABLE_ORIGINS}`,
+  `font-src 'self' data: ${ENABLE_ORIGINS}`,
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co ${ENABLE_ORIGINS}`,
   "media-src 'none'",
   "worker-src 'self' blob:",
   "manifest-src 'self'",

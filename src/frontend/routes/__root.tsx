@@ -6,6 +6,7 @@ import {
   Scripts,
   useRouterState,
 } from "@tanstack/react-router";
+import { ENABLE_A11Y_SCRIPT_SRC } from "@/config/enableAccessibility";
 import appCss from "../styles.css?url";
 import faviconPng from "@/images/alnoor_bakery_profesional/BakeryLogo.png?url";
 import { I18nProvider } from "@/frontend/lib/i18n";
@@ -17,7 +18,6 @@ import { FloatingSocialLinks } from "@/frontend/components/FloatingSocialLinks";
 import { CookieConsentBanner } from "@/frontend/components/cookies/CookieConsentBanner";
 import { SplashScreen } from "@/frontend/components/SplashScreen";
 import { SkipToMain } from "@/frontend/components/SkipToMain";
-import { EnableAccessibility } from "@/frontend/components/EnableAccessibility";
 import { ResponsiveToaster } from "@/frontend/components/ui/sonner";
 import { CookieConsentProvider } from "@/frontend/lib/cookieConsentContext";
 
@@ -65,6 +65,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="he" dir="rtl">
       <head>
         <HeadContent />
+        <script id="enable-a11y-init" src={ENABLE_A11Y_SCRIPT_SRC} async />
       </head>
       <body>
         {children}
@@ -82,7 +83,6 @@ function RootComponent() {
       <CookieConsentProvider>
         <AuthProvider>
           <CartProvider>
-            {!isAdmin && <EnableAccessibility />}
             {!isAdmin && <SkipToMain />}
             {!isAdmin && <SplashScreen />}
             {!isAdmin && <Header />}
