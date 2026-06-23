@@ -28,7 +28,7 @@ function ProductDetail() {
     supabase
       .from("products")
       .select(
-        "id, name, name_en, name_he, name_ar, description, description_en, description_he, description_ar, ingredients, ingredients_en, ingredients_he, ingredients_ar, allergens, allergens_en, allergens_he, allergens_ar, price, compare_at_price, image_url, is_best_seller, is_available, category_id, category:categories(id, name, name_en, name_he, name_ar, description, image_url)",
+        "id, name, name_en, name_he, name_ar, description, description_en, description_he, description_ar, ingredients, ingredients_en, ingredients_he, ingredients_ar, allergens, allergens_en, allergens_he, allergens_ar, price, compare_at_price, image_url, is_best_seller, is_available, stock_quantity, category_id, category:categories(id, name, name_en, name_he, name_ar, description, image_url)",
       )
       .eq("id", id)
       .maybeSingle()

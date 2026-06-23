@@ -22,6 +22,7 @@ interface Product {
   compare_at_price?: number | null;
   image_url: string | null;
   is_best_seller: boolean;
+  stock_quantity?: number | null;
 }
 
 const LOGIN_PROMPT: Record<string, { title: string; desc: string }> = {
@@ -168,6 +169,7 @@ export function ProductCard({
   compact,
   minimal,
   rail,
+  eager,
   onProductNavigate,
   className,
 }: {
@@ -177,6 +179,8 @@ export function ProductCard({
   minimal?: boolean;
   /** Tighter layout for homepage category rails only. */
   rail?: boolean;
+  /** Load image immediately instead of lazy (for above-the-fold cards). */
+  eager?: boolean;
   /** When set, image/title open detail via callback (e.g. modal) instead of navigating away */
   onProductNavigate?: (id: string) => void;
   className?: string;
@@ -188,7 +192,13 @@ export function ProductCard({
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
   const prompt = LOGIN_PROMPT[lang] ?? LOGIN_PROMPT.en;
 
+  const outOfStock = product.stock_quantity != null && product.stock_quantity <= 0;
+
   const handleAdd = async () => {
+    if (outOfStock) {
+      toast.warning(t("outOfStock"));
+      return;
+    }
     if (!user) {
       setShowLoginPrompt(true);
       return;
@@ -239,13 +249,21 @@ export function ProductCard({
             <img
               src={resolveImage(product.image_url)!}
               alt={pickName(product, lang)}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading={eager ? "eager" : "lazy"}
+              className={cn(
+                "h-full w-full object-cover transition-transform duration-500 group-hover:scale-105",
+                outOfStock && "opacity-50 grayscale",
+              )}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               No image
             </div>
+          )}
+          {outOfStock && (
+            <span className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-center bg-black/60 py-2 text-xs font-semibold uppercase tracking-wide text-white sm:text-sm">
+              {t("outOfStock")}
+            </span>
           )}
         </button>
       ) : (
@@ -262,13 +280,21 @@ export function ProductCard({
             <img
               src={resolveImage(product.image_url)!}
               alt={pickName(product, lang)}
-              loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading={eager ? "eager" : "lazy"}
+              className={cn(
+                "h-full w-full object-cover transition-transform duration-500 group-hover:scale-105",
+                outOfStock && "opacity-50 grayscale",
+              )}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               No image
             </div>
+          )}
+          {outOfStock && (
+            <span className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-center bg-black/60 py-2 text-xs font-semibold uppercase tracking-wide text-white sm:text-sm">
+              {t("outOfStock")}
+            </span>
           )}
         </Link>
       )}
@@ -363,9 +389,10 @@ export function ProductCard({
               compact && !isRail && "h-8 w-full text-xs md:w-auto",
             )}
             onClick={handleAdd}
+            disabled={outOfStock}
           >
             <Plus className={cn("shrink-0", isRail ? "h-3 w-3" : "h-4 w-4")} />
-            {t("addToCart")}
+            {outOfStock ? t("outOfStock") : t("addToCart")}
           </Button>
         </div>
       </div>

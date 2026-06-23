@@ -8,6 +8,7 @@ import { Input } from "@/frontend/components/ui/input";
 import { Label } from "@/frontend/components/ui/label";
 import { Button } from "@/frontend/components/ui/button";
 import { cn } from "@/frontend/lib/utils";
+import { fetchHomepageCategoryOrder } from "@/frontend/lib/storeSettings";
 import { hasAnySocialLink } from "@/config/socialLinks";
 
 interface SearchParams {
@@ -42,11 +43,24 @@ function ProductsPage() {
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
-    supabase
-      .from("categories")
-      .select("*")
-      .order("name")
-      .then(({ data }) => setCategories(data ?? []));
+    Promise.all([
+      supabase.from("categories").select("*"),
+      fetchHomepageCategoryOrder(),
+    ]).then(([{ data }, savedOrder]) => {
+      const all = data ?? [];
+      if (savedOrder?.length) {
+        const rank = new Map(savedOrder.map((id, i) => [id, i]));
+        const ordered = all
+          .filter((c) => rank.has(c.id))
+          .sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
+        const rest = all
+          .filter((c) => !rank.has(c.id))
+          .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+        setCategories([...ordered, ...rest]);
+      } else {
+        setCategories(all.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")));
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -62,7 +76,7 @@ function ProductsPage() {
     let query = supabase
       .from("products")
       .select(
-        "id, name, name_en, name_he, name_ar, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, category_id, category:categories(id, name, name_en, name_he, name_ar)",
+        "id, name, name_en, name_he, name_ar, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, stock_quantity, category_id, category:categories(id, name, name_en, name_he, name_ar)",
       )
       .eq("is_available", true);
     if (category) {
@@ -150,7 +164,7 @@ function ProductsPage() {
             className="product-card-enter flex min-h-0 h-full min-w-0 w-full flex-col self-stretch"
             style={{ animationDelay: `${Math.min(idx * 55, 380)}ms` }}
           >
-            <ProductCard product={p} compact className="min-h-0 flex-1" />
+            <ProductCard product={p} compact eager={idx < 4} className="min-h-0 flex-1" />
           </div>
         ))}
       </div>

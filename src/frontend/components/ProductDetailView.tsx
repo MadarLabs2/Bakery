@@ -45,6 +45,7 @@ export type ProductDetailModel = {
   image_url: string | null;
   is_best_seller: boolean;
   is_available?: boolean | null;
+  stock_quantity?: number | null;
   category_id?: string | null;
   category?: {
     id: string;
@@ -119,7 +120,10 @@ export function ProductDetailView({
   const description = pickDesc(product, lang);
   const ingredients = pickIngredients(product, lang);
   const allergens = pickAllergens(product, lang);
-  const available = product.is_available !== false;
+  const outOfStock = product.stock_quantity != null && product.stock_quantity <= 0;
+  const available = product.is_available !== false && !outOfStock;
+  const maxQty = product.stock_quantity != null && product.stock_quantity > 0 ? product.stock_quantity : undefined;
+  const atMaxQty = maxQty != null && qty >= maxQty;
 
   const shell = (
     <div
@@ -132,7 +136,7 @@ export function ProductDetailView({
             <img
               src={resolveImage(product.image_url)!}
               alt={pickName(product, lang)}
-              className="pd-image-enter h-full w-full object-cover md:h-auto md:max-h-[min(420px,52vh)] md:w-full md:max-w-lg md:rounded-2xl md:object-contain md:object-center md:shadow-md lg:max-h-[min(460px,50vh)] lg:max-w-xl"
+              className={`pd-image-enter h-full w-full object-cover md:h-auto md:max-h-[min(420px,52vh)] md:w-full md:max-w-lg md:rounded-2xl md:object-contain md:object-center md:shadow-md lg:max-h-[min(460px,50vh)] lg:max-w-xl${outOfStock ? " opacity-50 grayscale" : ""}`}
             />
           ) : (
             <div className="pd-image-enter flex h-full min-h-[12rem] items-center justify-center text-muted-foreground md:min-h-[200px]">
@@ -164,43 +168,52 @@ export function ProductDetailView({
             </p>
           ) : null}
           {!available ? (
-            <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {t("unavailableProduct")}
+            <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm font-medium text-destructive">
+              {outOfStock ? t("outOfStock") : t("unavailableProduct")}
             </p>
           ) : null}
           <div>
             <ProductPriceRow price={Number(product.price)} compareAtPrice={product.compare_at_price} variant="hero" />
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-3">
-            <div
-              className="flex items-center overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
-              role="group"
-              aria-label={t("quantityLabel")}
-            >
-              <button
-                type="button"
-                className="pd-qty-btn px-4 py-2.5 text-lg leading-none hover:bg-muted"
-                onClick={() => setQty(Math.max(1, qty - 1))}
-                aria-label={t("decreaseQuantity")}
+          <div className="mt-1 flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <div
+                className="flex items-center overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
+                role="group"
+                aria-label={t("quantityLabel")}
               >
-                −
-              </button>
-              <span className="min-w-[2.5rem] text-center text-base font-semibold tabular-nums" aria-live="polite">
-                {qty}
-              </span>
-              <button
-                type="button"
-                className="pd-qty-btn px-4 py-2.5 text-lg leading-none hover:bg-muted"
-                onClick={() => setQty(qty + 1)}
-                aria-label={t("increaseQuantity")}
-              >
-                +
-              </button>
+                <button
+                  type="button"
+                  className="pd-qty-btn px-4 py-2.5 text-lg leading-none hover:bg-muted disabled:opacity-40"
+                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  disabled={qty <= 1}
+                  aria-label={t("decreaseQuantity")}
+                >
+                  −
+                </button>
+                <span className="min-w-[2.5rem] text-center text-base font-semibold tabular-nums" aria-live="polite">
+                  {qty}
+                </span>
+                <button
+                  type="button"
+                  className="pd-qty-btn px-4 py-2.5 text-lg leading-none hover:bg-muted disabled:opacity-40"
+                  onClick={() => setQty(qty + 1)}
+                  disabled={atMaxQty}
+                  aria-label={t("increaseQuantity")}
+                >
+                  +
+                </button>
+              </div>
+              <Button size="lg" className="pd-add-wrap gap-2 rounded-xl shadow-sm" disabled={!available} onClick={() => handleAdd(product)}>
+                <Plus className="h-4 w-4 shrink-0" />
+                {t("addToCart")}
+              </Button>
             </div>
-            <Button size="lg" className="pd-add-wrap gap-2 rounded-xl shadow-sm" disabled={!available} onClick={() => handleAdd(product)}>
-              <Plus className="h-4 w-4 shrink-0" />
-              {t("addToCart")}
-            </Button>
+            {atMaxQty && (
+              <p className="text-sm font-medium text-amber-600">
+                {t("maxStockReached").replace("{count}", String(maxQty))}
+              </p>
+            )}
           </div>
         </div>
       </div>

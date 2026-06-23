@@ -4,6 +4,7 @@ import { Wheat } from "lucide-react";
 import { supabase } from "@/backend/db/client";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { resolveImage } from "@/frontend/lib/images";
+import { fetchHomepageCategoryOrder } from "@/frontend/lib/storeSettings";
 
 export const Route = createFileRoute("/categories")({
   component: CategoriesPage,
@@ -15,11 +16,24 @@ function CategoriesPage() {
   const [cats, setCats] = useState<any[]>([]);
 
   useEffect(() => {
-    supabase
-      .from("categories")
-      .select("*")
-      .order("name")
-      .then(({ data }) => setCats(data ?? []));
+    Promise.all([
+      supabase.from("categories").select("*"),
+      fetchHomepageCategoryOrder(),
+    ]).then(([{ data }, savedOrder]) => {
+      const all = data ?? [];
+      if (savedOrder?.length) {
+        const rank = new Map(savedOrder.map((id, i) => [id, i]));
+        const ordered = all
+          .filter((c) => rank.has(c.id))
+          .sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
+        const rest = all
+          .filter((c) => !rank.has(c.id))
+          .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+        setCats([...ordered, ...rest]);
+      } else {
+        setCats(all.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")));
+      }
+    });
   }, []);
 
   return (
@@ -42,7 +56,8 @@ function CategoriesPage() {
                 <img
                   src={imgSrc}
                   alt={pickName(c, lang)}
-                  loading="lazy"
+                  loading="eager"
+                  decoding="async"
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
               ) : (

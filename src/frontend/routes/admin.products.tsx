@@ -81,7 +81,7 @@ const empty = {
   gallery_urls: [] as string[],
   is_best_seller: false,
   is_available: true,
-  stock_quantity: null as number | null | "",
+  stock_quantity: 0 as number | null | "",
 };
 
 function dedupeImageUrls(image_url: string, gallery_urls: string[] | undefined): string[] {
@@ -580,15 +580,19 @@ function AdminProducts() {
                             )}
                           </div>
                           <div className="flex flex-wrap items-center gap-2 pt-1">
-                            <span
-                              className={
-                                p.is_available
-                                  ? "inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-                                  : "inline-flex rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                              }
-                            >
-                              {p.is_available ? t("adminStatusAvailable") : t("adminStatusHidden")}
-                            </span>
+                            {p.stock_quantity != null && p.stock_quantity <= 0 ? (
+                              <span className="inline-flex rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+                                {t("outOfStock")}
+                              </span>
+                            ) : !p.is_available ? (
+                              <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                {t("adminStatusHidden")}
+                              </span>
+                            ) : (
+                              <span className="inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                {t("adminStatusAvailable")}
+                              </span>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -964,22 +968,24 @@ function AdminProducts() {
 
                 <div className="space-y-2">
                   <Label htmlFor="pf-stock" className="text-sm font-semibold text-[#2a2a2a]">
-                    {t("adminLabelStockInternal")}
+                    {t("adminLabelStock")}
                   </Label>
                   <Input
                     id="pf-stock"
                     type="number"
-                    value={editing.stock_quantity ?? ""}
-                    placeholder={t("adminOptionalPlaceholder")}
+                    min="0"
+                    value={editing.stock_quantity ?? 0}
+                    placeholder="0"
                     onChange={(e) =>
                       setEditing({
                         ...editing,
-                        stock_quantity: e.target.value === "" ? null : Number(e.target.value),
+                        stock_quantity: e.target.value === "" ? 0 : Number(e.target.value),
                       })
                     }
                     className={cn("h-11 tabular-nums", fieldClass)}
                     dir="ltr"
                   />
+                  <p className="text-xs text-muted-foreground">{t("adminStockHint")}</p>
                 </div>
 
                 <div className="space-y-2">

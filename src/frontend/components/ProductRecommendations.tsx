@@ -23,7 +23,7 @@ type Row = {
 };
 
 const SELECT =
-  "id, name, name_en, name_he, name_ar, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, category_id" as const;
+  "id, name, name_en, name_he, name_ar, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, stock_quantity, category_id" as const;
 
 function pickRelated(rows: Row[], categoryId: string | null | undefined, limit: number): Row[] {
   if (!categoryId) return rows.slice(0, limit);

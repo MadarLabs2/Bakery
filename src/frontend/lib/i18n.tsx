@@ -617,6 +617,16 @@ export const dict: Dict = {
     he: "המוצר אינו זמין כרגע.",
     ar: "هذا المنتج غير متوفر حاليًا.",
   },
+  outOfStock: {
+    en: "Out of Stock",
+    he: "אזל מהמלאי",
+    ar: "نفذ من المخزون",
+  },
+  maxStockReached: {
+    en: "Only {count} available in stock.",
+    he: "רק {count} זמינים במלאי.",
+    ar: "متوفر فقط {count} في المخزون.",
+  },
   youMayAlsoLike: {
     en: "You may also like",
     he: "אולי תאהב גם",
@@ -1372,6 +1382,16 @@ export const dict: Dict = {
     en: "Stock (internal — not shown to customers)",
     he: "מלאי (פנימי — לא מוצג ללקוחות)",
     ar: "المخزون (داخلي — لا يظهر للعملاء)",
+  },
+  adminLabelStock: {
+    en: "Stock Quantity",
+    he: "כמות במלאי",
+    ar: "الكمية في المخزون",
+  },
+  adminStockHint: {
+    en: "Set to 0 to show the product as out of stock.",
+    he: "הגדר 0 כדי להציג את המוצר כאזל מהמלאי.",
+    ar: "اضبط على 0 لعرض المنتج كنفذ من المخزون.",
   },
   adminOptionalPlaceholder: {
     en: "optional",

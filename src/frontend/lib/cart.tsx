@@ -1,10 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/backend/db/client";
 import { useAuth } from "./auth";
 
-/** Columns safe for customer UI (excludes internal stock_quantity). */
 const PRODUCT_EMBED =
-  "id, name, description, description_en, description_he, description_ar, price, image_url, is_best_seller, is_available" as const;
+  "id, name, description, description_en, description_he, description_ar, price, image_url, is_best_seller, is_available, stock_quantity" as const;
 
 export interface CartItem {
   id: string;
@@ -21,6 +20,7 @@ export interface CartItem {
     image_url: string | null;
     is_best_seller: boolean;
     is_available: boolean;
+    stock_quantity?: number | null;
   };
 }
 
@@ -79,15 +79,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const initialLoadDone = useRef(false);
 
-  const refresh = useCallback(async () => {
+  const fetchItems = useCallback(async () => {
     if (!user) {
       setItems([]);
-      setLoading(false);
       return;
     }
-    setLoading(true);
-    const safetyTimeout = window.setTimeout(() => setLoading(false), 10_000);
     try {
       const cartId = await getOrCreateActiveCartId(user.id);
       const { data, error } = await supabase
@@ -96,20 +94,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
         .eq("cart_id", cartId);
       if (error) {
         console.error("[cart] refresh:", error.message);
-        setItems([]);
         return;
       }
       setItems((data as CartItem[]) ?? []);
     } catch (e) {
       console.error("[cart] refresh:", e);
-      setItems([]);
-    } finally {
-      window.clearTimeout(safetyTimeout);
-      setLoading(false);
     }
   }, [user]);
 
+  const refresh = useCallback(async () => {
+    if (!user) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+    if (!initialLoadDone.current) {
+      setLoading(true);
+      const safetyTimeout = window.setTimeout(() => setLoading(false), 10_000);
+      try {
+        await fetchItems();
+      } finally {
+        window.clearTimeout(safetyTimeout);
+        setLoading(false);
+        initialLoadDone.current = true;
+      }
+    } else {
+      await fetchItems();
+    }
+  }, [user, fetchItems]);
+
   useEffect(() => {
+    initialLoadDone.current = false;
     refresh();
   }, [refresh]);
 
@@ -118,6 +133,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const cartId = await getOrCreateActiveCartId(user.id);
     const existing = items.find((i) => i.product_id === productId);
     if (existing) {
+      setItems((prev) =>
+        prev.map((i) => (i.id === existing.id ? { ...i, quantity: i.quantity + qty } : i)),
+      );
       await supabase
         .from("cart_items")
         .update({ quantity: existing.quantity + qty })
@@ -127,25 +145,46 @@ export function CartProvider({ children }: { children: ReactNode }) {
         .from("cart_items")
         .insert({ cart_id: cartId, product_id: productId, quantity: qty });
     }
-    await refresh();
+    await fetchItems();
   };
 
   const updateQty: CartCtx["updateQty"] = async (itemId, qty) => {
     if (qty <= 0) return remove(itemId);
-    await supabase.from("cart_items").update({ quantity: qty }).eq("id", itemId);
-    await refresh();
+    const prev = items;
+    setItems((current) =>
+      current.map((i) => (i.id === itemId ? { ...i, quantity: qty } : i)),
+    );
+    const { error } = await supabase.from("cart_items").update({ quantity: qty }).eq("id", itemId);
+    if (error) {
+      console.error("[cart] updateQty:", error.message);
+      setItems(prev);
+    }
   };
 
   const remove: CartCtx["remove"] = async (itemId) => {
-    await supabase.from("cart_items").delete().eq("id", itemId);
-    await refresh();
+    const prev = items;
+    setItems((current) => current.filter((i) => i.id !== itemId));
+    const { error } = await supabase.from("cart_items").delete().eq("id", itemId);
+    if (error) {
+      console.error("[cart] remove:", error.message);
+      setItems(prev);
+    }
   };
 
   const clear: CartCtx["clear"] = async () => {
     if (!user) return;
-    const cartId = await getOrCreateActiveCartId(user.id);
-    await supabase.from("cart_items").delete().eq("cart_id", cartId);
-    await refresh();
+    const prev = items;
+    setItems([]);
+    try {
+      const cartId = await getOrCreateActiveCartId(user.id);
+      const { error } = await supabase.from("cart_items").delete().eq("cart_id", cartId);
+      if (error) {
+        console.error("[cart] clear:", error.message);
+        setItems(prev);
+      }
+    } catch {
+      setItems(prev);
+    }
   };
 
   const count = items.reduce((s, i) => s + i.quantity, 0);

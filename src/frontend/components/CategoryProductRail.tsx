@@ -177,9 +177,9 @@ export function CategoryProductRail({ category, products }: CategoryProductRailP
             "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
           )}
         >
-          {products.map((p) => (
+          {products.map((p, idx) => (
             <div key={p.id} data-rail-card className={CARD_SLOT}>
-              <ProductCard product={p} compact minimal rail className="h-full w-full" />
+              <ProductCard product={p} compact minimal rail eager={idx < 4} className="h-full w-full" />
             </div>
           ))}
         </div>
