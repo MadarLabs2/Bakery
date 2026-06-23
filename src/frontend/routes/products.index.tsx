@@ -8,6 +8,7 @@ import { Input } from "@/frontend/components/ui/input";
 import { Label } from "@/frontend/components/ui/label";
 import { Button } from "@/frontend/components/ui/button";
 import { cn } from "@/frontend/lib/utils";
+import { ScrollReveal3D } from "@/frontend/components/ScrollReveal3D";
 import { fetchHomepageCategoryOrder } from "@/frontend/lib/storeSettings";
 import { hasAnySocialLink } from "@/config/socialLinks";
 
@@ -37,29 +38,37 @@ function ProductsPage() {
   const { t, lang } = useI18n();
   const { category, q = "" } = useSearch({ from: "/products/" });
   const navigate = useNavigate({ from: "/products/" });
-  const [products, setProducts] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [fetching, setFetching] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
     Promise.all([
       supabase.from("categories").select("*"),
+      supabase
+        .from("products")
+        .select(
+          "id, name, name_en, name_he, name_ar, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, stock_quantity, category_id, category:categories(id, name, name_en, name_he, name_ar)",
+        )
+        .eq("is_available", true),
       fetchHomepageCategoryOrder(),
-    ]).then(([{ data }, savedOrder]) => {
-      const all = data ?? [];
+    ]).then(([catRes, prodRes, savedOrder]) => {
+      const allCats = catRes.data ?? [];
       if (savedOrder?.length) {
         const rank = new Map(savedOrder.map((id, i) => [id, i]));
-        const ordered = all
+        const ordered = allCats
           .filter((c) => rank.has(c.id))
           .sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
-        const rest = all
+        const rest = allCats
           .filter((c) => !rank.has(c.id))
           .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
         setCategories([...ordered, ...rest]);
       } else {
-        setCategories(all.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")));
+        setCategories(allCats.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "")));
       }
+      setAllProducts(prodRes.data ?? []);
+      setFetching(false);
     });
   }, []);
 
@@ -70,23 +79,9 @@ function ProductsPage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    setProducts([]);
-    setFetching(true);
-    let query = supabase
-      .from("products")
-      .select(
-        "id, name, name_en, name_he, name_ar, description, description_en, description_he, description_ar, price, compare_at_price, image_url, is_best_seller, is_available, stock_quantity, category_id, category:categories(id, name, name_en, name_he, name_ar)",
-      )
-      .eq("is_available", true);
-    if (category) {
-      query = query.eq("category_id", category);
-    }
-    query.then(({ data }) => {
-      setProducts(data ?? []);
-      setFetching(false);
-    });
-  }, [category]);
+  const products = category
+    ? allProducts.filter((p) => p.category_id === category)
+    : allProducts;
 
   const filtered = products.filter((p) => {
     if (!q) return true;
@@ -159,13 +154,14 @@ function ProductsPage() {
 
       <div className="mt-8 grid grid-cols-2 items-stretch gap-3 sm:gap-4 md:grid-cols-4">
         {filtered.map((p, idx) => (
-          <div
+          <ScrollReveal3D
             key={`${p.id}-${category ?? "all"}`}
-            className="product-card-enter flex min-h-0 h-full min-w-0 w-full flex-col self-stretch"
-            style={{ animationDelay: `${Math.min(idx * 55, 380)}ms` }}
+            variant="tilt-up"
+            delayMs={Math.min(idx * 60, 300)}
+            className="flex min-h-0 h-full min-w-0 w-full flex-col self-stretch"
           >
             <ProductCard product={p} compact eager={idx < 4} className="min-h-0 flex-1" />
-          </div>
+          </ScrollReveal3D>
         ))}
       </div>
 

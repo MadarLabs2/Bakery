@@ -86,8 +86,7 @@ function CartPage() {
               <h3 className="font-semibold">{pickName(i.product, lang)}</h3>
               <p className="text-sm text-muted-foreground">₪{Number(i.product.price).toFixed(2)}</p>
               <div className="mt-auto flex items-center justify-between">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center rounded-md border" role="group" aria-label={t("quantityLabel")}>
+                <div className="flex items-center rounded-md border" role="group" aria-label={t("quantityLabel")}>
                     <button
                       type="button"
                       className="px-3 py-1.5 disabled:opacity-40"
@@ -103,25 +102,12 @@ function CartPage() {
                     <button
                       type="button"
                       className="px-3 py-1.5 disabled:opacity-40"
-                      onClick={() => {
-                        const max = i.product.stock_quantity;
-                        if (max != null && i.quantity >= max) {
-                          toast.warning(t("maxStockReached").replace("{count}", String(max)));
-                          return;
-                        }
-                        updateQty(i.id, i.quantity + 1);
-                      }}
+                      onClick={() => updateQty(i.id, i.quantity + 1)}
                       disabled={i.product.stock_quantity != null && i.quantity >= i.product.stock_quantity}
                       aria-label={t("increaseQuantity")}
                     >
                       <Plus className="h-3 w-3" aria-hidden />
                     </button>
-                  </div>
-                  {i.product.stock_quantity != null && i.quantity >= i.product.stock_quantity && (
-                    <p className="text-[11px] font-medium text-amber-600">
-                      {t("maxStockReached").replace("{count}", String(i.product.stock_quantity))}
-                    </p>
-                  )}
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => remove(i.id)}>
                   <Trash2 className="h-4 w-4" /> {t("remove")}

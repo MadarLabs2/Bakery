@@ -5,6 +5,7 @@ import { supabase } from "@/backend/db/client";
 import { useI18n } from "@/frontend/lib/i18n";
 import { ProductDetailView, type ProductDetailModel } from "@/frontend/components/ProductDetailView";
 import { ProductRecommendations } from "@/frontend/components/ProductRecommendations";
+import { ScrollReveal3D } from "@/frontend/components/ScrollReveal3D";
 
 export const Route = createFileRoute("/products/$id")({
   component: ProductDetail,
@@ -72,7 +73,9 @@ function ProductDetail() {
         }
       />
       {!loading && !error && product ? (
-        <ProductRecommendations productId={product.id} categoryId={categoryId} />
+        <ScrollReveal3D variant="tilt-up" delayMs={100}>
+          <ProductRecommendations productId={product.id} categoryId={categoryId} />
+        </ScrollReveal3D>
       ) : null}
     </div>
   );

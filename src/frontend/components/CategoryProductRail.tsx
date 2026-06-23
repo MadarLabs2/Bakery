@@ -150,6 +150,7 @@ export function CategoryProductRail({ category, products }: CategoryProductRailP
         <h2 className="font-display text-3xl font-bold md:text-4xl">{pickName(category, lang)}</h2>
       </ScrollReveal3D>
 
+      <ScrollReveal3D variant="tilt-up" delayMs={100}>
       <div className="relative w-full">
         {atStart ? (
           <RailChevron
@@ -184,6 +185,7 @@ export function CategoryProductRail({ category, products }: CategoryProductRailP
           ))}
         </div>
       </div>
+      </ScrollReveal3D>
     </section>
   );
 }

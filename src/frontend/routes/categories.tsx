@@ -5,6 +5,7 @@ import { supabase } from "@/backend/db/client";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { resolveImage } from "@/frontend/lib/images";
 import { fetchHomepageCategoryOrder } from "@/frontend/lib/storeSettings";
+import { ScrollReveal3D } from "@/frontend/components/ScrollReveal3D";
 
 export const Route = createFileRoute("/categories")({
   component: CategoriesPage,
@@ -45,12 +46,15 @@ function CategoriesPage() {
         {cats.length === 0 ? null : cats.map((c, idx) => {
           const imgSrc = c.image_url ? resolveImage(c.image_url) : null;
           return (
-            <Link
+            <ScrollReveal3D
               key={c.id}
+              variant="tilt-up"
+              delayMs={Math.min(idx * 80, 400)}
+            >
+            <Link
               to="/products"
               search={{ category: c.id } as any}
-              className="category-card-enter category-card-press group relative aspect-[4/3] min-h-[120px] overflow-hidden rounded-2xl ring-1 ring-border/60"
-              style={{ animationDelay: `${Math.min(idx * 70, 420)}ms` }}
+              className="category-card-press group relative block aspect-[4/3] min-h-[120px] overflow-hidden rounded-2xl ring-1 ring-border/60"
             >
               {imgSrc ? (
                 <img
@@ -70,6 +74,7 @@ function CategoriesPage() {
                 {pickName(c, lang)}
               </h3>
             </Link>
+            </ScrollReveal3D>
           );
         })}
       </div>

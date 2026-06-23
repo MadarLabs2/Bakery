@@ -175,8 +175,7 @@ export function ProductDetailView({
           <div>
             <ProductPriceRow price={Number(product.price)} compareAtPrice={product.compare_at_price} variant="hero" />
           </div>
-          <div className="mt-1 flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-3">
+          <div className="mt-1 flex flex-wrap items-center gap-3">
               <div
                 className="flex items-center overflow-hidden rounded-xl border border-border/80 bg-background shadow-sm"
                 role="group"
@@ -208,12 +207,6 @@ export function ProductDetailView({
                 <Plus className="h-4 w-4 shrink-0" />
                 {t("addToCart")}
               </Button>
-            </div>
-            {atMaxQty && (
-              <p className="text-sm font-medium text-amber-600">
-                {t("maxStockReached").replace("{count}", String(maxQty))}
-              </p>
-            )}
           </div>
         </div>
       </div>

@@ -245,60 +245,66 @@
 /* ——— Product detail page ——— */
 @keyframes pd-card-in {
   from {
-    transform: translateY(16px) scale(0.99);
+    opacity: 0;
+    transform: perspective(1100px) rotateX(8deg) translateY(2rem) translateZ(-30px) scale(0.97);
   }
   to {
-    transform: translateY(0) scale(1);
+    opacity: 1;
+    transform: perspective(1100px) rotateX(0deg) translateY(0) translateZ(0) scale(1);
   }
 }
 
 @keyframes pd-image-in {
   from {
-    transform: scale(1.04);
+    opacity: 0;
+    transform: perspective(1000px) scale(1.06) translateZ(-20px);
   }
   to {
-    transform: scale(1);
+    opacity: 1;
+    transform: perspective(1000px) scale(1) translateZ(0);
   }
 }
 
 @keyframes pd-content-in {
   from {
     opacity: 0;
-    transform: translateY(7px);
+    transform: perspective(800px) translateY(1.5rem) translateZ(-15px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: perspective(800px) translateY(0) translateZ(0);
   }
 }
 
 @keyframes pd-section-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: perspective(800px) translateY(1.25rem) translateZ(-12px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: perspective(800px) translateY(0) translateZ(0);
   }
 }
 
 .pd-card-enter {
-  animation: pd-card-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform;
+  animation: pd-card-in 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
 }
 
 .pd-image-enter {
-  animation: pd-image-in 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: transform;
+  animation: pd-image-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
 }
 
 .pd-content-enter {
-  animation: pd-content-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation: pd-content-in 0.75s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 .pd-section-enter {
-  animation: pd-section-in 0.48s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation: pd-section-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 /* Quantity +/− spring press */
