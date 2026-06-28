@@ -91,9 +91,9 @@ function LoginPage() {
       return;
     }
     const isAdmin = await refreshIsAdmin();
+    setBusy(false);
     toast.success(t("welcomeBack"));
     nav({ to: isAdmin ? "/admin" : "/" });
-    setBusy(false);
   };
 
   return (
@@ -132,6 +132,7 @@ function LoginPage() {
               id="login-email"
               type="email"
               inputMode="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => handleEmailChange(e.target.value)}
               onBlur={handleEmailBlur}
@@ -158,6 +159,7 @@ function LoginPage() {
               <Input
                 id="login-password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(""); }}
                 onBlur={handlePasswordBlur}

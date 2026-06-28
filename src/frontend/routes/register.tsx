@@ -4,6 +4,8 @@ import { Wheat, Clock, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import brandLogo from "@/images/alnoor_bakery_profesional/BakeryLogo.png";
 import { useI18n } from "@/frontend/lib/i18n";
 import { useAuth } from "@/frontend/lib/auth";
+import { supabase } from "@/backend/db/client";
+import { validatePasswordStrength } from "@/frontend/lib/authPassword";
 import { Button } from "@/frontend/components/ui/button";
 import { Input } from "@/frontend/components/ui/input";
 import { Label } from "@/frontend/components/ui/label";
@@ -12,9 +14,9 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/register")({ component: RegisterPage });
 
-// Israeli mobile/VoIP numbers: exactly 10 digits, starting with 05X or 07X-09X
 const ISRAEL_PHONE_RE = /^0[5-9]\d{8}$/;
 const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+const NAME_RE = /^[\p{L}\p{M}\s\-']+$/u;
 
 const REGISTER_FOOTER: Record<string, { question: string; cta: string }> = {
   en: { question: "Already have an account?", cta: "Sign in to your account" },
@@ -49,6 +51,7 @@ function RegisterPage() {
 
     if (!fields.name.trim()) errs.name = t("fieldRequired");
     else if (fields.name.trim().length < 2) errs.name = t("nameMinLength");
+    else if (!NAME_RE.test(fields.name.trim())) errs.name = t("nameInvalidChars");
 
     if (!fields.phone) errs.phone = t("fieldRequired");
     else if (!ISRAEL_PHONE_RE.test(fields.phone)) errs.phone = t("phoneInvalidIsrael");
@@ -56,8 +59,8 @@ function RegisterPage() {
     if (!fields.email.trim()) errs.email = t("fieldRequired");
     else if (!EMAIL_RE.test(fields.email.trim())) errs.email = t("invalidEmail");
 
-    if (!fields.password) errs.password = t("fieldRequired");
-    else if (fields.password.length < 8) errs.password = t("passwordMinLength");
+    const pwErr = validatePasswordStrength(fields.password);
+    if (pwErr) errs.password = t(pwErr);
 
     return errs;
   }
@@ -109,6 +112,18 @@ function RegisterPage() {
       return;
     }
     setBusy(true);
+
+    const { count: phoneCount } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("phone", form.phone);
+    if (phoneCount && phoneCount > 0) {
+      setBusy(false);
+      setErrors((prev) => ({ ...prev, phone: t("phoneAlreadyRegistered") }));
+      toast.error(t("phoneAlreadyRegistered"));
+      return;
+    }
+
     const { error } = await signUp(form.email.trim(), form.password, form.name.trim(), form.phone);
     setBusy(false);
     if (error) {
@@ -118,6 +133,9 @@ function RegisterPage() {
           : error.toLowerCase().includes("too many")
           ? t("tooManyAuthAttempts")
           : t("genericError");
+      if (msg === t("emailAlreadyRegistered")) {
+        setErrors((prev) => ({ ...prev, email: t("emailAlreadyRegistered") }));
+      }
       toast.error(msg);
     } else {
       toast.success(t("accountCreatedSuccess"));
@@ -159,6 +177,7 @@ function RegisterPage() {
             <Label htmlFor="reg-name">{t("fullName")}</Label>
             <Input
               id="reg-name"
+              autoComplete="name"
               value={form.name}
               onChange={(e) => handleNameChange(e.target.value)}
               onBlur={() => handleBlur("name")}
@@ -177,6 +196,7 @@ function RegisterPage() {
               id="reg-phone"
               type="tel"
               inputMode="numeric"
+              autoComplete="tel"
               value={form.phone}
               onChange={(e) => handlePhoneChange(e.target.value)}
               onBlur={() => handleBlur("phone")}
@@ -197,6 +217,7 @@ function RegisterPage() {
               id="reg-email"
               type="email"
               inputMode="email"
+              autoComplete="email"
               value={form.email}
               onChange={(e) => handleEmailChange(e.target.value)}
               onBlur={() => handleBlur("email")}
@@ -215,6 +236,7 @@ function RegisterPage() {
               <Input
                 id="reg-password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 value={form.password}
                 onChange={(e) => handlePasswordChange(e.target.value)}
                 onBlur={() => handleBlur("password")}
@@ -234,7 +256,7 @@ function RegisterPage() {
             {errors.password ? (
               <p className="text-xs text-destructive" role="alert">{errors.password}</p>
             ) : (
-              <p className="text-xs text-muted-foreground">{t("passwordHelp")}</p>
+              <p className="text-xs text-muted-foreground">{t("passwordStrengthHelp")}</p>
             )}
           </div>
 

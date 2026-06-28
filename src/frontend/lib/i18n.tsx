@@ -529,6 +529,31 @@ export const dict: Dict = {
     he: "הסיסמה חייבת להכיל לפחות 8 תווים.",
     ar: "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
   },
+  passwordNeedsUppercase: {
+    en: "Password must include at least one uppercase letter.",
+    he: "הסיסמה חייבת לכלול לפחות אות גדולה אחת.",
+    ar: "يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل.",
+  },
+  passwordNeedsLowercase: {
+    en: "Password must include at least one lowercase letter.",
+    he: "הסיסמה חייבת לכלול לפחות אות קטנה אחת.",
+    ar: "يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل.",
+  },
+  passwordNeedsDigit: {
+    en: "Password must include at least one number.",
+    he: "הסיסמה חייבת לכלול לפחות ספרה אחת.",
+    ar: "يجب أن تحتوي كلمة المرور على رقم واحد على الأقل.",
+  },
+  passwordStrengthHelp: {
+    en: "At least 8 characters, with uppercase, lowercase, and a number.",
+    he: "לפחות 8 תווים, עם אות גדולה, אות קטנה ומספר.",
+    ar: "8 أحرف على الأقل، مع حرف كبير وحرف صغير ورقم.",
+  },
+  nameInvalidChars: {
+    en: "Name can only contain letters and spaces.",
+    he: "השם יכול להכיל רק אותיות ורווחים.",
+    ar: "الاسم يمكن أن يحتوي فقط على حروف ومسافات.",
+  },
   passwordsMustMatch: {
     en: "Passwords do not match.",
     he: "הסיסמאות אינן תואמות.",
@@ -664,6 +689,11 @@ export const dict: Dict = {
     en: "An account with this email already exists.",
     he: "כבר קיים חשבון עם כתובת אימייל זו.",
     ar: "يوجد حساب بهذا البريد الإلكتروني بالفعل.",
+  },
+  phoneAlreadyRegistered: {
+    en: "This phone number is already registered.",
+    he: "מספר הטלפון הזה כבר רשום במערכת.",
+    ar: "رقم الهاتف هذا مسجّل بالفعل.",
   },
   tooManyAuthAttempts: {
     en: "Too many attempts. Please wait a moment and try again.",
