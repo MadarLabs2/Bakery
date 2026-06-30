@@ -35,7 +35,7 @@ export const Route = createFileRoute("/products/")({
 });
 
 function ProductsPage() {
-  const { t, lang } = useI18n();
+  const { t, lang, dir } = useI18n();
   const { category, q = "" } = useSearch({ from: "/products/" });
   const navigate = useNavigate({ from: "/products/" });
   const [allProducts, setAllProducts] = useState<any[]>([]);
@@ -108,8 +108,8 @@ function ProductsPage() {
         {t("products")}
       </h1>
 
-      <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between products-filters-enter">
-        <div className="relative max-w-sm flex-1">
+      <div className="mt-6 space-y-4 products-filters-enter">
+        <div className="relative max-w-md">
           <Label htmlFor="product-search" className="sr-only">
             {t("searchProducts")}
           </Label>
@@ -127,10 +127,23 @@ function ProductsPage() {
             className="ps-9"
           />
         </div>
-        <div className="flex flex-wrap gap-2">
+
+        <div
+          dir={dir}
+          className={cn(
+            "-mx-4 flex gap-2 overflow-x-auto px-4 pb-1",
+            "touch-pan-x overscroll-x-contain",
+            "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+          )}
+          role="tablist"
+          aria-label={t("productsAllCategoriesFilter")}
+        >
           <Button
             variant={!category ? "default" : "outline"}
             size="sm"
+            className="shrink-0"
+            role="tab"
+            aria-selected={!category}
             onClick={() =>
               void navigate({ search: (prev) => ({ ...prev, category: undefined }) })
             }
@@ -142,6 +155,9 @@ function ProductsPage() {
               key={c.id}
               variant={category === c.id ? "default" : "outline"}
               size="sm"
+              className="shrink-0"
+              role="tab"
+              aria-selected={category === c.id}
               onClick={() =>
                 void navigate({ search: (prev) => ({ ...prev, category: c.id }) })
               }

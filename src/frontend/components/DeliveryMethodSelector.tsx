@@ -30,6 +30,7 @@ type DeliveryMethodSelectorProps = {
   deliveryPlaces: DeliveryPlaceRow[];
   placesLoading: boolean;
   deliveryUnavailable: boolean;
+  deliveryBelowMinimum: boolean;
   selectedPlaceId: string | null;
   onPlaceSelect: (id: string) => void;
   onPickupSelected?: () => void;
@@ -45,6 +46,7 @@ function OptionCard({
   title,
   description,
   badge,
+  disabled = false,
 }: {
   selected: boolean;
   onSelect: () => void;
@@ -52,19 +54,25 @@ function OptionCard({
   title: string;
   description: string;
   badge?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       role="radio"
       aria-checked={selected}
+      aria-disabled={disabled}
+      disabled={disabled}
       onClick={onSelect}
       className={cn(
         "checkout-method-card group relative flex w-full flex-col items-start gap-3 rounded-2xl border-2 bg-gradient-to-br from-[#faf8f4] to-white p-4 text-start shadow-sm",
-        "hover:border-[#1B4332]/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B4332]/50 focus-visible:ring-offset-2",
-        selected
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B4332]/50 focus-visible:ring-offset-2",
+        disabled
+          ? "cursor-not-allowed border-stone-200/70 opacity-60"
+          : "hover:border-[#1B4332]/40 hover:shadow-md",
+        selected && !disabled
           ? "checkout-method-card--selected border-[#1B4332] bg-[#1B4332]/[0.06] ring-1 ring-[#1B4332]/20"
-          : "border-stone-200/90",
+          : !disabled && "border-stone-200/90",
       )}
     >
       <div className="flex w-full items-start justify-between gap-2">
@@ -107,6 +115,7 @@ export function DeliveryMethodSelector({
   deliveryPlaces,
   placesLoading,
   deliveryUnavailable,
+  deliveryBelowMinimum,
   selectedPlaceId,
   onPlaceSelect,
   onPickupSelected,
@@ -139,7 +148,7 @@ export function DeliveryMethodSelector({
   }, [fieldErrors, method]);
 
   const selectDelivery = () => {
-    if (deliveryUnavailable) return;
+    if (deliveryUnavailable || deliveryBelowMinimum) return;
     onMethodChange("delivery");
   };
 
@@ -168,8 +177,14 @@ export function DeliveryMethodSelector({
   };
 
   const minPlacePrice = minDeliveryPlacePrice(deliveryPlaces);
+  const deliveryDisabled = deliveryUnavailable || deliveryBelowMinimum;
+  const deliveryDescription = deliveryUnavailable
+    ? t("deliveryUnavailable")
+    : deliveryBelowMinimum
+      ? t("deliveryMinOrder")
+      : t("deliveryOptionDesc");
   const deliveryBadge =
-    deliveryUnavailable || minPlacePrice == null
+    deliveryDisabled || minPlacePrice == null
       ? undefined
       : selectedPlaceId
         ? `+ ₪${deliveryFee.toFixed(0)} · ${t("deliveryFeeShort")}`
@@ -191,11 +206,10 @@ export function DeliveryMethodSelector({
         <OptionCard
           selected={method === "delivery"}
           onSelect={selectDelivery}
+          disabled={deliveryDisabled}
           icon={<Truck className="h-5 w-5" aria-hidden />}
           title={t("deliveryOptionTitle")}
-          description={
-            deliveryUnavailable ? t("deliveryUnavailable") : t("deliveryOptionDesc")
-          }
+          description={deliveryDescription}
           badge={deliveryBadge}
         />
         <OptionCard
@@ -219,13 +233,13 @@ export function DeliveryMethodSelector({
           <DeliveryPlaceSelector
             places={deliveryPlaces}
             loading={placesLoading}
-            unavailable={deliveryUnavailable}
+            unavailable={deliveryDisabled}
             selectedId={selectedPlaceId}
             onSelect={onPlaceSelect}
             error={fieldErrors?.deliveryPlace ?? null}
           />
 
-          {selectedPlaceId && !deliveryUnavailable ? (
+          {selectedPlaceId && !deliveryDisabled ? (
             addressConfirmed && addressComplete ? (
               <button
               type="button"

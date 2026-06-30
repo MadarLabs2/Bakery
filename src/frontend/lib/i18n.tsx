@@ -305,6 +305,16 @@ export const dict: Dict = {
     he: "נשלח את ההזמנה טרייה עד הבית.",
     ar: "نوصّل طلبك الطازج إلى عنوانك.",
   },
+  deliveryMinOrder: {
+    en: "Delivery is available for orders of at least ₪100.",
+    he: "משלוח זמין להזמנות מ-₪100 ומעלה.",
+    ar: "التوصيل متاح للطلبات بقيمة ₪100 على الأقل.",
+  },
+  deliveryMinOrderHint: {
+    en: "Add more items to reach ₪100 for delivery.",
+    he: "הוסיפו מוצרים עד ₪100 כדי לבחור משלוח.",
+    ar: "أضف منتجات حتى ₪100 لاختيار التوصيل.",
+  },
   pickupOptionTitle: {
     en: "Pickup from bakery",
     he: "איסוף עצמי מהמאפייה",

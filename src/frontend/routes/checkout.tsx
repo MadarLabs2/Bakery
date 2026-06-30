@@ -18,7 +18,7 @@ import { CouponBox } from "@/frontend/components/checkout/CouponBox";
 import { OrderSummary } from "@/frontend/components/checkout/OrderSummary";
 import { CheckoutEmpty } from "@/frontend/components/checkout/CheckoutEmpty";
 import { CheckoutSection } from "@/frontend/components/checkout/CheckoutSection";
-import { emptyDeliveryAddress, formatDeliveryAddress, isDeliveryAddressComplete, type DeliveryMethod } from "@/frontend/lib/checkoutDelivery";
+import { emptyDeliveryAddress, formatDeliveryAddress, isDeliveryAddressComplete, meetsDeliveryMinimum, type DeliveryMethod } from "@/frontend/lib/checkoutDelivery";
 import { useDeliveryPlaces } from "@/frontend/hooks/useDeliveryPlaces";
 import {
   calculateDeliveryFeeFromSelectedPlace,
@@ -247,19 +247,21 @@ function CheckoutPage() {
     fulfillmentDate !== null && isDateRestDay(fulfillmentDate.isoDate, restDays);
   const placeOrderDisabled = selectedDateIsRestDay;
 
-  useEffect(() => {
-    if (!placesLoading && recv === "delivery" && !deliveryAvailable) {
-      setRecv("pickup");
-      setSelectedPlaceId(null);
-    }
-  }, [placesLoading, deliveryAvailable, recv]);
-
   const selectedPlace = deliveryPlaces.find((p) => p.id === selectedPlaceId) ?? null;
   const deliveryFee = calculateDeliveryFeeFromSelectedPlace(recv, selectedPlace);
   const deliveryAreaLabel =
     recv === "delivery" && selectedPlace ? pickDeliveryPlaceName(selectedPlace, lang) : null;
   const deliveryUnavailable = !placesLoading && !deliveryAvailable;
-  const total = Math.max(0, subtotal - discount) + deliveryFee;
+  const orderSubtotal = Math.max(0, subtotal - discount);
+  const deliveryBelowMinimum = !meetsDeliveryMinimum(orderSubtotal);
+  const total = orderSubtotal + deliveryFee;
+
+  useEffect(() => {
+    if (!placesLoading && recv === "delivery" && (deliveryUnavailable || deliveryBelowMinimum)) {
+      setRecv("pickup");
+      setSelectedPlaceId(null);
+    }
+  }, [placesLoading, deliveryUnavailable, deliveryBelowMinimum, recv]);
 
   const applyCoupon = async () => {
     const trimmed = code.trim();
@@ -302,6 +304,10 @@ function CheckoutPage() {
     if (recv === "delivery") {
       if (deliveryUnavailable) {
         toast.error(t("deliveryUnavailable"));
+        return false;
+      }
+      if (deliveryBelowMinimum) {
+        toast.error(t("deliveryMinOrder"));
         return false;
       }
       if (!selectedPlaceId) {
@@ -482,6 +488,7 @@ function CheckoutPage() {
               deliveryPlaces={deliveryPlaces}
               placesLoading={placesLoading}
               deliveryUnavailable={deliveryUnavailable}
+              deliveryBelowMinimum={deliveryBelowMinimum}
               selectedPlaceId={selectedPlaceId}
               onPlaceSelect={(id) => {
                 setSelectedPlaceId(id);

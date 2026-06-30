@@ -7,6 +7,13 @@ export const BAKERY_PICKUP_PHONES = ["0537636011", "0508588985"] as const;
 
 export type DeliveryMethod = "pickup" | "delivery";
 
+/** Minimum product subtotal (after coupon) required to choose home delivery. */
+export const DELIVERY_MIN_ORDER_AMOUNT = 100;
+
+export function meetsDeliveryMinimum(amount: number): boolean {
+  return amount >= DELIVERY_MIN_ORDER_AMOUNT;
+}
+
 export type DeliveryAddressFields = {
   city: string;
   street: string;

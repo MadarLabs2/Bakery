@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Trash2, Minus, Plus } from "lucide-react";
 import { useI18n, pickName } from "@/frontend/lib/i18n";
 import { useCart } from "@/frontend/lib/cart";
+import { meetsDeliveryMinimum } from "@/frontend/lib/checkoutDelivery";
 import { useAuth } from "@/frontend/lib/auth";
 import { Button } from "@/frontend/components/ui/button";
 import { resolveImage } from "@/frontend/lib/images";
@@ -130,6 +131,11 @@ function CartPage() {
           <span>{t("total")}</span>
           <span>₪{subtotal.toFixed(2)}</span>
         </div>
+        {!meetsDeliveryMinimum(subtotal) ? (
+          <p className="rounded-xl border border-amber-300/80 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-950">
+            {t("deliveryMinOrderHint")}
+          </p>
+        ) : null}
         <Button
           className="w-full"
           size="lg"
