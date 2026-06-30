@@ -45,9 +45,14 @@ export const restDaysDict = {
     ar: "المخبز مغلق في هذا التاريخ",
   },
   bakeryClosedToday: {
-    en: "The bakery is closed today. Orders are not available today.",
-    he: "המאפייה סגורה היום. לא ניתן לבצע הזמנות היום.",
-    ar: "المخبز مغلق اليوم. لا يمكن إجراء الطلبات اليوم.",
+    en: "The bakery is closed today. You can still place an order for one of the upcoming dates.",
+    he: "המאפייה סגורה היום. עדיין ניתן להזמין לאחד התאריכים הקרובים.",
+    ar: "المخبز مغلق اليوم. لا يزال بإمكانك الطلب لأحد التواريخ القادمة.",
+  },
+  bakeryClosedTodayTitle: {
+    en: "Closed today",
+    he: "סגור היום",
+    ar: "مغلق اليوم",
   },
   fulfillmentDateNoLongerAvailable: {
     en: "This date is no longer available. Please choose another date.",

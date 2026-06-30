@@ -90,9 +90,9 @@ export const fulfillmentDaysDict = {
     ar: "توفر الاستلام والتوصيل",
   },
   adminOrderAvailabilitySubtitle: {
-    en: "Configure available weekdays for customer scheduling.",
-    he: "הגדרת ימי שבוע זמינים לקביעת הזמנות.",
-    ar: "تكوين أيام الأسبوع المتاحة لجدولة الطلبات.",
+    en: "Set recurring weekdays and manage specific dates for the next two weeks.",
+    he: "הגדרת ימי שבוע קבועים וניהול תאריכים ספציפיים לשבועיים הקרובים.",
+    ar: "تعيين أيام الأسبوع المتكررة وإدارة تواريخ محددة للأسبوعين القادمين.",
   },
   pickupAvailabilityTitle: {
     en: "Pickup availability",
@@ -139,15 +139,60 @@ export const fulfillmentDaysDict = {
     he: "השינוי חל על הזמנות חדשות מיד. הזמנות קיימות שומרות את התאריך שנבחר.",
     ar: "تُطبَّق التغييرات على الطلبات الجديدة فوراً. الطلبات السابقة تحتفظ بتاريخها المجدول.",
   },
+  adminUpcomingDatesTitle: {
+    en: "Upcoming two weeks",
+    he: "שבועיים קרובים",
+    ar: "الأسبوعان القادمان",
+  },
+  adminUpcomingDatesDescription: {
+    en: "Tap a date to close or reopen it. Closed dates won't appear at checkout.",
+    he: "לחצו על תאריך לסגירה או פתיחה. תאריכים סגורים לא יופיעו בדף ההזמנה.",
+    ar: "اضغط على تاريخ لإغلاقه أو إعادة فتحه. التواريخ المغلقة لن تظهر عند الدفع.",
+  },
+  adminDateOpen: {
+    en: "Open",
+    he: "פתוח",
+    ar: "مفتوح",
+  },
+  adminDateClosed: {
+    en: "Closed",
+    he: "סגור",
+    ar: "مغلق",
+  },
+  adminNoUpcomingDates: {
+    en: "No dates in the next two weeks. Enable at least one weekday above.",
+    he: "אין תאריכים בשבועיים הקרובים. הפעילו לפחות יום אחד למעלה.",
+    ar: "لا توجد تواريخ في الأسبوعين القادمين. فعّل يومًا واحدًا على الأقل أعلاه.",
+  },
+  adminDateToggledOpen: {
+    en: "Date reopened",
+    he: "התאריך נפתח",
+    ar: "تم إعادة فتح التاريخ",
+  },
+  adminDateToggledClosed: {
+    en: "Date closed",
+    he: "התאריך נסגר",
+    ar: "تم إغلاق التاريخ",
+  },
+  adminRecurringDaysTitle: {
+    en: "Recurring weekdays",
+    he: "ימי שבוע קבועים",
+    ar: "أيام الأسبوع المتكررة",
+  },
+  adminRecurringDaysDescription: {
+    en: "Which days of the week are open every week. Add Wednesday here if you decide to open on Wednesdays too.",
+    he: "אילו ימי שבוע פתוחים בכל שבוע. הוסיפו רביעי כאן אם תחליטו לפתוח גם בימי רביעי.",
+    ar: "أيام الأسبوع المفتوحة كل أسبوع. أضف الأربعاء هنا إذا قررتم فتح المخبز يوم الأربعاء أيضًا.",
+  },
   adminDashAvailabilityTitle: {
     en: "Order availability",
     he: "זמינות הזמנות",
     ar: "توفر الطلبات",
   },
   adminDashAvailabilityDesc: {
-    en: "Configure pickup and delivery weekdays for customer scheduling.",
-    he: "הגדרת ימי איסוף ומשלוח לקביעת תאריך הזמנה.",
-    ar: "تكوين أيام الاستلام والتوصيل لجدولة الطلبات.",
+    en: "Configure recurring weekdays and close specific dates for the next two weeks.",
+    he: "הגדרת ימי שבוע קבועים וסגירת תאריכים ספציפיים לשבועיים הקרובים.",
+    ar: "تكوين أيام الأسبوع المتكررة وإغلاق تواريخ محددة للأسبوعين القادمين.",
   },
   adminResourceLinkAvailability: {
     en: "Manage availability",

@@ -31,7 +31,8 @@ export type FulfillmentDateSelection = {
   summaryLabel: string;
 };
 
-export const UPCOMING_DATE_COUNT = 4;
+/** Two calendar weeks (Sun–Sat × 2) shown to customers and in admin. */
+export const SCHEDULE_WINDOW_DAYS = 14;
 
 type Translate = (key: keyof typeof fulfillmentDaysDict) => string;
 
@@ -81,44 +82,70 @@ export function buildCheckoutDateSummary(
   return `${prefix} ${weekday}, ${formatShortDate(date)}`;
 }
 
-export function computeNextAvailableDates(
+export function getCurrentWeekStart(date: Date = new Date()): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay());
+  return d;
+}
+
+export function computeScheduleDates(
   enabledDayOfWeek: number[],
-  count = UPCOMING_DATE_COUNT,
-  startFrom: Date = new Date(),
   restDays: RestDayRow[] = [],
+  startFrom: Date = new Date(),
+  includeClosed = false,
 ): Date[] {
   const enabled = new Set(enabledDayOfWeek);
   if (enabled.size === 0) return [];
 
-  const start = new Date(startFrom);
-  start.setHours(0, 0, 0, 0);
+  const today = new Date(startFrom);
+  today.setHours(0, 0, 0, 0);
+
+  const weekStart = getCurrentWeekStart(today);
+  const windowEnd = new Date(weekStart);
+  windowEnd.setDate(windowEnd.getDate() + SCHEDULE_WINDOW_DAYS - 1);
 
   const results: Date[] = [];
-  for (let offset = 0; offset < 366 && results.length < count; offset++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + offset);
+  for (let cursor = new Date(weekStart); cursor <= windowEnd; cursor.setDate(cursor.getDate() + 1)) {
+    const d = new Date(cursor);
+    if (d < today) continue;
     if (!enabled.has(d.getDay())) continue;
-    if (isDateRestDay(toIsoDate(d), restDays)) continue;
+    if (!includeClosed && isDateRestDay(toIsoDate(d), restDays)) continue;
     results.push(d);
   }
   return results;
+}
+
+export type ScheduleDateOption = AvailableDateOption & {
+  isOpen: boolean;
+};
+
+export function buildScheduleDateOptions(
+  enabledDayOfWeek: number[],
+  t: Translate,
+  restDays: RestDayRow[] = [],
+): ScheduleDateOption[] {
+  return computeScheduleDates(enabledDayOfWeek, [], new Date(), true).map((date) => {
+    const dayOfWeek = date.getDay();
+    const isoDate = toIsoDate(date);
+    return {
+      date,
+      isoDate,
+      dayOfWeek,
+      label: formatFulfillmentDateLabel(date, dayOfWeek, t),
+      isOpen: !isDateRestDay(isoDate, restDays),
+    };
+  });
 }
 
 export function buildAvailableDateOptions(
   enabledDayOfWeek: number[],
   t: Translate,
   restDays: RestDayRow[] = [],
-  count = UPCOMING_DATE_COUNT,
 ): AvailableDateOption[] {
-  return computeNextAvailableDates(enabledDayOfWeek, count, new Date(), restDays).map((date) => {
-    const dayOfWeek = date.getDay();
-    return {
-      date,
-      isoDate: toIsoDate(date),
-      dayOfWeek,
-      label: formatFulfillmentDateLabel(date, dayOfWeek, t),
-    };
-  });
+  return buildScheduleDateOptions(enabledDayOfWeek, t, restDays)
+    .filter((option) => option.isOpen)
+    .map(({ date, isoDate, dayOfWeek, label }) => ({ date, isoDate, dayOfWeek, label }));
 }
 
 export function rowsToWeekdayMap(rows: FulfillmentDayRow[], type: FulfillmentType): WeekdayAvailability {

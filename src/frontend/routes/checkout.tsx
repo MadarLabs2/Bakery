@@ -42,7 +42,6 @@ import { useReleasePendingCardOrder } from "@/frontend/lib/useReleasePendingCard
 import { useRestDays } from "@/frontend/hooks/useRestDays";
 import {
   isDateRestDay,
-  REST_DAY_BLOCKS_CHECKOUT_TODAY,
 } from "@/frontend/lib/restDays";
 import { CheckoutRestDayBanner } from "@/frontend/components/checkout/CheckoutRestDayBanner";
 
@@ -246,8 +245,7 @@ function CheckoutPage() {
 
   const selectedDateIsRestDay =
     fulfillmentDate !== null && isDateRestDay(fulfillmentDate.isoDate, restDays);
-  const checkoutBlockedToday = REST_DAY_BLOCKS_CHECKOUT_TODAY && bakeryClosedToday;
-  const placeOrderDisabled = checkoutBlockedToday || selectedDateIsRestDay;
+  const placeOrderDisabled = selectedDateIsRestDay;
 
   useEffect(() => {
     if (!placesLoading && recv === "delivery" && !deliveryAvailable) {
@@ -322,10 +320,6 @@ function CheckoutPage() {
     if (!fulfillmentDate) {
       setFulfillmentError(t("fulfillmentDateRequired"));
       toast.error(t("fulfillmentDateRequired"));
-      return false;
-    }
-    if (checkoutBlockedToday) {
-      toast.error(t("bakeryClosedToday"));
       return false;
     }
     if (isDateRestDay(fulfillmentDate.isoDate, restDays)) {

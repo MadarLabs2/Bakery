@@ -71,8 +71,7 @@ const navItems: NavItem[] = [
     to: "/admin/settings",
     match: (p) =>
       p.startsWith("/admin/settings") ||
-      p.startsWith("/admin/availability") ||
-      p.startsWith("/admin/rest-days"),
+      p.startsWith("/admin/availability"),
     labelKey: "adminNavSettings",
     icon: SlidersHorizontal,
   },

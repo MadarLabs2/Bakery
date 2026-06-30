@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BarChart3,
   Calendar,
-  CalendarOff,
   FolderTree,
   Mail,
   Package,
@@ -33,8 +32,7 @@ type TileTitleKey =
   | "adminDashCouponsTitle"
   | "adminDashEmailOffersTitle"
   | "adminDashSettingsTitle"
-  | "adminDashAvailabilityTitle"
-  | "adminDashRestDaysTitle";
+  | "adminDashAvailabilityTitle";
 
 type TileDescKey =
   | "adminDashReportsDesc"
@@ -44,8 +42,7 @@ type TileDescKey =
   | "adminDashCouponsDesc"
   | "adminDashEmailOffersDesc"
   | "adminDashSettingsDesc"
-  | "adminDashAvailabilityDesc"
-  | "adminDashRestDaysDesc";
+  | "adminDashAvailabilityDesc";
 
 type TileLinkKey =
   | "adminResourceLinkProducts"
@@ -55,8 +52,7 @@ type TileLinkKey =
   | "adminResourceLinkOffers"
   | "adminResourceLinkReports"
   | "adminResourceLinkSettings"
-  | "adminResourceLinkAvailability"
-  | "adminResourceLinkRestDays";
+  | "adminResourceLinkAvailability";
 
 type ResourceTile = {
   to: string;
@@ -149,16 +145,6 @@ const resourceTiles: ResourceTile[] = [
     iconClass: "bg-[#3d6b5a] text-white shadow-sm ring-1 ring-white/15",
     glowClass: "bg-[#3d6b5a]",
     linkClass: "text-[#3d6b5a]",
-  },
-  {
-    to: "/admin/rest-days",
-    icon: CalendarOff,
-    titleKey: "adminDashRestDaysTitle",
-    descKey: "adminDashRestDaysDesc",
-    linkKey: "adminResourceLinkRestDays",
-    iconClass: "bg-[#7c5c4a] text-white shadow-sm ring-1 ring-white/15",
-    glowClass: "bg-[#7c5c4a]",
-    linkClass: "text-[#7c5c4a]",
   },
 ];
 

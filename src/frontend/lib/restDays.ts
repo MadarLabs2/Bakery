@@ -15,7 +15,7 @@ export type RestDayRow = {
  * When true, checkout blocks all new orders while today is an active rest day.
  * Rest days always block the selected fulfillment date regardless of this flag.
  */
-export const REST_DAY_BLOCKS_CHECKOUT_TODAY = true;
+export const REST_DAY_BLOCKS_CHECKOUT_TODAY = false;
 
 export function restDayEndDate(row: RestDayRow): string {
   return row.end_date ?? row.start_date;
@@ -77,6 +77,34 @@ export function formatRestDayRange(row: RestDayRow): string {
   const sd = new Date(sp[0], sp[1] - 1, sp[2]);
   const ed = new Date(ep[0], ep[1] - 1, ep[2]);
   return `${formatShortDate(sd)} – ${formatShortDate(ed)}`;
+}
+
+export function findSingleDayRestDay(isoDate: string, rows: RestDayRow[]): RestDayRow | undefined {
+  return rows.find(
+    (row) => row.is_active && row.start_date === isoDate && restDayEndDate(row) === isoDate,
+  );
+}
+
+export async function toggleDateClosure(
+  isoDate: string,
+): Promise<{ ok: true; isNowClosed: boolean } | { ok: false; message: string }> {
+  const existing = await fetchAdminRestDays();
+  if (!existing.ok) return existing;
+
+  const match = findSingleDayRestDay(isoDate, existing.rows);
+  if (match) {
+    const result = await deleteRestDay(match.id);
+    if (!result.ok) return result;
+    return { ok: true, isNowClosed: false };
+  }
+
+  const result = await createRestDay({
+    startDate: isoDate,
+    endDate: null,
+    reason: null,
+  });
+  if (!result.ok) return result;
+  return { ok: true, isNowClosed: true };
 }
 
 export async function fetchActiveRestDays(): Promise<

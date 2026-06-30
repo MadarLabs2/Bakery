@@ -11,7 +11,7 @@ export function CheckoutRestDayBanner() {
     >
       <CalendarOff className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
       <div>
-        <p className="font-display text-sm font-semibold">{t("restDaysTitle")}</p>
+        <p className="font-display text-sm font-semibold">{t("bakeryClosedTodayTitle")}</p>
         <p className="mt-1 text-sm leading-relaxed">{t("bakeryClosedToday")}</p>
       </div>
     </div>

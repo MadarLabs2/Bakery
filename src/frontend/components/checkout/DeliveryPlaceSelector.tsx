@@ -5,6 +5,13 @@ import {
   pickDeliveryPlaceName,
   type DeliveryPlaceRow,
 } from "@/frontend/lib/deliveryPlaces";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/frontend/components/ui/select";
 
 type DeliveryPlaceSelectorProps = {
   places: DeliveryPlaceRow[];
@@ -15,6 +22,29 @@ type DeliveryPlaceSelectorProps = {
   error?: string | null;
 };
 
+function DeliveryPlaceOptionLabel({
+  label,
+  price,
+  className,
+}: {
+  label: string;
+  price: number;
+  className?: string;
+}) {
+  return (
+    <span className={cn("flex w-full items-center justify-between gap-3 text-start", className)}>
+      <span className="min-w-0 flex-1 font-medium">{label}</span>
+      <span
+        className="shrink-0 font-semibold tabular-nums text-[#1B4332]/80"
+        dir="ltr"
+        lang="en"
+      >
+        ₪{Number(price).toFixed(0)}
+      </span>
+    </span>
+  );
+}
+
 export function DeliveryPlaceSelector({
   places,
   loading,
@@ -23,7 +53,8 @@ export function DeliveryPlaceSelector({
   onSelect,
   error,
 }: DeliveryPlaceSelectorProps) {
-  const { t, lang } = useI18n();
+  const { t, lang, dir } = useI18n();
+  const selectedPlace = places.find((place) => place.id === selectedId) ?? null;
 
   if (loading) {
     return (
@@ -46,53 +77,65 @@ export function DeliveryPlaceSelector({
   }
 
   return (
-    <div className="space-y-2.5">
-      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#2f6a4f]">
+    <div className="space-y-2.5" dir={dir}>
+      <label
+        htmlFor="delivery-place-select"
+        className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#2f6a4f]"
+      >
         <MapPinned className="h-3.5 w-3.5 shrink-0" aria-hidden />
         {t("chooseDeliveryArea")}
-      </p>
+      </label>
+
+      <Select value={selectedId ?? undefined} onValueChange={onSelect} dir={dir}>
+        <SelectTrigger
+          id="delivery-place-select"
+          dir={dir}
+          lang={lang}
+          aria-invalid={error ? true : undefined}
+          className={cn(
+            "h-12 rounded-xl border-2 bg-white px-4 text-sm font-medium text-[#1B4332] shadow-none",
+            "text-start focus:ring-2 focus:ring-[#1B4332]/30 focus:ring-offset-0",
+            "[&>span]:w-full [&>span]:text-start",
+            error
+              ? "border-destructive/60 focus:ring-destructive/30"
+              : "border-stone-200/90 hover:border-[#1B4332]/35 data-[state=open]:border-[#1B4332]/50",
+          )}
+        >
+          <SelectValue placeholder={t("chooseDeliveryArea")}>
+            {selectedPlace ? (
+              <DeliveryPlaceOptionLabel
+                label={pickDeliveryPlaceName(selectedPlace, lang)}
+                price={selectedPlace.price}
+              />
+            ) : null}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent
+          dir={dir}
+          lang={lang}
+          className="rounded-xl border-[#1B4332]/15 bg-white text-start shadow-lg"
+          position="popper"
+        >
+          {places.map((place) => {
+            const label = pickDeliveryPlaceName(place, lang);
+            return (
+              <SelectItem
+                key={place.id}
+                value={place.id}
+                className="cursor-pointer rounded-lg py-2.5 ps-3 pe-8 text-sm focus:bg-[#1B4332]/8 focus:text-[#1B4332]"
+              >
+                <DeliveryPlaceOptionLabel label={label} price={place.price} />
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : null}
-      <div
-        className="grid gap-2 sm:grid-cols-2"
-        role="radiogroup"
-        aria-label={t("chooseDeliveryArea")}
-      >
-        {places.map((place) => {
-          const selected = selectedId === place.id;
-          const label = pickDeliveryPlaceName(place, lang);
-          return (
-            <button
-              key={place.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => onSelect(place.id)}
-              className={cn(
-                "flex items-center justify-between gap-3 rounded-xl border-2 px-3.5 py-3 text-start transition-all",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1B4332]/40 focus-visible:ring-offset-2",
-                selected
-                  ? "border-[#1B4332] bg-[#1B4332]/[0.07] shadow-sm"
-                  : "border-stone-200/90 bg-white hover:border-[#1B4332]/35 hover:bg-[#faf8f4]/80",
-              )}
-            >
-              <span className="min-w-0 flex-1 font-medium leading-snug text-[#1B4332]">{label}</span>
-              <span
-                className={cn(
-                  "shrink-0 rounded-lg px-2.5 py-1 text-sm font-semibold tabular-nums",
-                  selected ? "bg-[#1B4332] text-white" : "bg-[#1B4332]/8 text-[#1B4332]",
-                )}
-                dir="ltr"
-              >
-                ₪{Number(place.price).toFixed(0)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
